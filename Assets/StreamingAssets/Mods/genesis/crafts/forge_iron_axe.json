@@ -1,0 +1,24 @@
+{
+  "id": "genesis:forge_iron_axe",
+  "station": "genesis:anvil",
+  "inputs": [
+    {
+      "item": "genesis:iron_ingot",
+      "count": 3
+    },
+    {
+      "item": "genesis:stick",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:iron_axe",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "forging",
+    "difficulty": 2
+  }
+}

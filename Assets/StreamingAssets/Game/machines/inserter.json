@@ -1,0 +1,21 @@
+{
+  "id": "genesis:inserter",
+  "era": "steam",
+  "behavior": "inserter",
+  "tier": 1,
+  "orient": "away",
+  "input_slots": 1,
+  "output_slots": 0,
+  "params": {
+    "ticks_per_swing": 10
+  },
+  "sides": [],
+  "default_faces": {},
+  "hardness": 1,
+  "anim": "arm",
+  "textures": {
+    "all": "genesis:inserter_side",
+    "top": "genesis:inserter_top",
+    "front": "genesis:inserter_front"
+  }
+}

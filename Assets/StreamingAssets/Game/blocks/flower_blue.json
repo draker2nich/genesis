@@ -1,0 +1,7 @@
+{
+  "id": "genesis:flower_blue",
+  "render": "cutout",
+  "solid": false,
+  "hardness": 0,
+  "shape": "cross"
+}

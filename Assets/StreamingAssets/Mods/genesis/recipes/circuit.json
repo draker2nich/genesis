@@ -1,0 +1,25 @@
+{
+  "id": "genesis:circuit",
+  "machine": "genesis:circuit_assembler",
+  "inputs": [
+    {
+      "item": "genesis:copper_wire",
+      "count": 3
+    },
+    {
+      "item": "genesis:iron_plate",
+      "count": 1
+    },
+    {
+      "item": "genesis:quartz",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:circuit",
+      "count": 1
+    }
+  ],
+  "time_ticks": 60
+}

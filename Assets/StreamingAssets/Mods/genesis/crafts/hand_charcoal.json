@@ -1,0 +1,20 @@
+{
+  "id": "genesis:hand_charcoal",
+  "station": "genesis:stone_furnace",
+  "inputs": [
+    {
+      "item": "genesis:oak_log",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:charcoal",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "smelting",
+    "difficulty": 1
+  }
+}

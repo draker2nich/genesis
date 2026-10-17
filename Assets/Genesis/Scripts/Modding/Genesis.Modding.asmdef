@@ -1,0 +1,14 @@
+{
+    "name": "Genesis.Modding",
+    "rootNamespace": "Genesis.Modding",
+    "references": ["Genesis.Core", "Genesis.Data", "Genesis.World", "Genesis.Simulation", "Genesis.Gameplay"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["Newtonsoft.Json.dll"],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

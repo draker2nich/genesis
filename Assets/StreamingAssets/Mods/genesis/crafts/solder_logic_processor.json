@@ -1,0 +1,28 @@
+{
+  "id": "genesis:solder_logic_processor",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:circuit",
+      "count": 1
+    },
+    {
+      "item": "genesis:quartz",
+      "count": 2
+    },
+    {
+      "item": "genesis:copper_wire",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:logic_processor",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 3
+  }
+}

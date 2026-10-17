@@ -1,0 +1,24 @@
+{
+  "id": "genesis:gear_press",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AGA",
+    "RGR",
+    "AGA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "G": "genesis:iron_gear",
+    "R": "genesis:iron_rod"
+  },
+  "outputs": [
+    {
+      "item": "genesis:gear_press",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

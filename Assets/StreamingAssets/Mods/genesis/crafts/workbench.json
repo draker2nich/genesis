@@ -1,0 +1,16 @@
+{
+  "id": "genesis:workbench",
+  "station": "hand",
+  "inputs": [
+    {
+      "item": "genesis:planks",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:workbench",
+      "count": 1
+    }
+  ]
+}

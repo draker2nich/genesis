@@ -1,0 +1,10 @@
+{
+  "id": "genesis:quartz_crystal",
+  "render": "cutout",
+  "hardness": 1.5,
+  "tool": "pickaxe",
+  "drop": "genesis:quartz",
+  "solid": true,
+  "harvest_tier": 1,
+  "light": 5
+}

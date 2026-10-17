@@ -1,0 +1,9 @@
+{
+  "id": "genesis:water",
+  "render": "translucent",
+  "solid": false,
+  "replaceable": true,
+  "liquid": true,
+  "hardness": -1,
+  "unbreakable": true
+}

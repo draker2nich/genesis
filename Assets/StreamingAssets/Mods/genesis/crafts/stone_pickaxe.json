@@ -1,0 +1,20 @@
+{
+  "id": "genesis:stone_pickaxe",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:cobblestone",
+      "count": 3
+    },
+    {
+      "item": "genesis:stick",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:stone_pickaxe",
+      "count": 1
+    }
+  ]
+}

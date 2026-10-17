@@ -1,0 +1,11 @@
+{
+  "id": "genesis:iron_sword",
+  "max_stack": 1,
+  "tool": {
+    "type": "sword",
+    "tier": 3,
+    "speed": 6.0,
+    "durability": 250,
+    "damage": 7
+  }
+}

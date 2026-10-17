@@ -1,0 +1,24 @@
+{
+  "id": "genesis:me_controller",
+  "station": "genesis:workbench",
+  "pattern": [
+    "ALA",
+    "QLQ",
+    "ALA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "L": "genesis:logic_processor",
+    "Q": "genesis:quartz*2"
+  },
+  "outputs": [
+    {
+      "item": "genesis:me_controller",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

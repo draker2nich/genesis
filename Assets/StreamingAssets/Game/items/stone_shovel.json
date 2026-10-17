@@ -1,0 +1,11 @@
+{
+  "id": "genesis:stone_shovel",
+  "max_stack": 1,
+  "tool": {
+    "type": "shovel",
+    "tier": 2,
+    "speed": 4.0,
+    "durability": 131,
+    "damage": 3
+  }
+}

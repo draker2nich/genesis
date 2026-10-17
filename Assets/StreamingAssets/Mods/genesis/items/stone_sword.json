@@ -1,0 +1,11 @@
+{
+  "id": "genesis:stone_sword",
+  "max_stack": 1,
+  "tool": {
+    "type": "sword",
+    "tier": 2,
+    "speed": 4.0,
+    "durability": 131,
+    "damage": 6
+  }
+}

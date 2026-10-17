@@ -1,0 +1,24 @@
+{
+  "id": "genesis:steam_drill",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AGA",
+    "RGR",
+    "AGA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "G": "genesis:iron_gear",
+    "R": "genesis:iron_rod*2"
+  },
+  "outputs": [
+    {
+      "item": "genesis:steam_drill",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

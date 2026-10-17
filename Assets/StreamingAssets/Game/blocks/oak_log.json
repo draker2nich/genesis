@@ -1,0 +1,11 @@
+{
+  "id": "genesis:oak_log",
+  "hardness": 1.5,
+  "tool": "axe",
+  "orientable": false,
+  "textures": {
+    "top": "genesis:oak_log_top",
+    "bottom": "genesis:oak_log_top",
+    "side": "genesis:oak_log"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "genesis:crush_copper_ore",
+  "machine": "genesis:steam_crusher",
+  "inputs": [
+    {
+      "item": "genesis:copper_ore",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:crushed_copper_ore",
+      "count": 2
+    }
+  ],
+  "time_ticks": 80,
+  "unlock": {
+    "minigame": "forging",
+    "difficulty": 2
+  }
+}

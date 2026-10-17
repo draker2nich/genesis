@@ -1,0 +1,24 @@
+{
+  "id": "genesis:battery_cell",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WCW",
+    "AAA",
+    "WCW"
+  ],
+  "key": {
+    "W": "genesis:copper_wire",
+    "C": "genesis:circuit",
+    "A": "genesis:iron_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:battery_cell",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 2
+  }
+}

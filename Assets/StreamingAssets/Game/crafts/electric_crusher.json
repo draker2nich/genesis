@@ -1,0 +1,24 @@
+{
+  "id": "genesis:electric_crusher",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AMA",
+    "PCP"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "M": "genesis:electric_motor",
+    "C": "genesis:circuit",
+    "P": "genesis:iron_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:electric_crusher",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

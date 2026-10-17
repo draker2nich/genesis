@@ -1,0 +1,28 @@
+{
+  "id": "genesis:iron_gear",
+  "machine": "genesis:gear_press",
+  "inputs": [
+    {
+      "item": "genesis:iron_plate",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:iron_gear",
+      "count": 1
+    }
+  ],
+  "time_ticks": 40,
+  "byproducts": [
+    {
+      "item": "genesis:iron_scrap",
+      "count": 1,
+      "chance": 0.1
+    }
+  ],
+  "unlock": {
+    "minigame": "forging",
+    "difficulty": 2
+  }
+}

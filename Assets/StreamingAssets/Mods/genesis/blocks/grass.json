@@ -1,0 +1,11 @@
+{
+  "id": "genesis:grass",
+  "hardness": 0.6,
+  "tool": "shovel",
+  "drop": "genesis:dirt",
+  "textures": {
+    "top": "genesis:grass_top",
+    "side": "genesis:grass_side",
+    "bottom": "genesis:dirt"
+  }
+}

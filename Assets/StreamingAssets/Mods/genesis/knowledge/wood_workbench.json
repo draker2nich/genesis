@@ -1,0 +1,24 @@
+{
+  "id": "genesis:wood.workbench",
+  "era": "wood",
+  "requires": [
+    "genesis:wood.basics"
+  ],
+  "trigger": {
+    "type": "place",
+    "target": "genesis:workbench"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:wooden_pickaxe",
+      "genesis:wooden_axe",
+      "genesis:wooden_shovel",
+      "genesis:wooden_sword",
+      "genesis:chest"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 0,
+  "icon": "genesis:workbench"
+}

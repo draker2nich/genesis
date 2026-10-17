@@ -1,0 +1,17 @@
+{
+  "id": "genesis:pipe",
+  "station": "hand",
+  "pattern": [
+    "P",
+    "P"
+  ],
+  "key": {
+    "P": "genesis:copper_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:pipe",
+      "count": 8
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "genesis:steam_hammer",
+  "station": "genesis:workbench",
+  "pattern": [
+    "ARA",
+    "GRG",
+    "APA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "R": "genesis:iron_rod",
+    "G": "genesis:iron_gear",
+    "P": "genesis:iron_plate*2"
+  },
+  "outputs": [
+    {
+      "item": "genesis:steam_hammer",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

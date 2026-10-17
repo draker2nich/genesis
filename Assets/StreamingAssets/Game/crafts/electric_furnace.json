@@ -1,0 +1,24 @@
+{
+  "id": "genesis:electric_furnace",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AWA",
+    "WCW",
+    "AWA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "W": "genesis:copper_wire*2",
+    "C": "genesis:circuit"
+  },
+  "outputs": [
+    {
+      "item": "genesis:electric_furnace",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

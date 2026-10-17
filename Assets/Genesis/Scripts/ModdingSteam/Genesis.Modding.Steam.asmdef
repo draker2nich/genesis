@@ -1,0 +1,27 @@
+{
+    "name": "Genesis.Modding.Steam",
+    "rootNamespace": "Genesis.Modding.Steam",
+    "references": [
+        "Genesis.Modding",
+        "com.rlabrecque.steamworks.net"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "GENESIS_STEAMWORKS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.rlabrecque.steamworks.net",
+            "expression": "20.0.0",
+            "define": "GENESIS_STEAMWORKS"
+        }
+    ],
+    "noEngineReferences": false
+}

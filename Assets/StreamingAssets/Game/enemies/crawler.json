@@ -1,0 +1,26 @@
+{
+  "id": "genesis:crawler",
+  "health": 12,
+  "damage": 2,
+  "speed": 3.2,
+  "aggro": 12,
+  "spawn": "cave",
+  "width": 0.8,
+  "height": 0.9,
+  "color": "#6a8a3a",
+  "drops": [
+    {
+      "item": "genesis:mutant_flesh",
+      "count": 1,
+      "chance": 0.6
+    },
+    {
+      "item": "genesis:quartz",
+      "count": 1,
+      "chance": 0.15
+    }
+  ],
+  "model": "genesis:crawler",
+  "pack": true,
+  "attack": "melee"
+}

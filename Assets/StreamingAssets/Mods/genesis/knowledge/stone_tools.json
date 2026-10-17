@@ -1,0 +1,20 @@
+{
+  "id": "genesis:stone.tools",
+  "era": "stone",
+  "requires": [],
+  "trigger": {
+    "type": "start"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:stone_pickaxe",
+      "genesis:stone_axe",
+      "genesis:stone_shovel",
+      "genesis:stone_sword"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 0,
+  "icon": "genesis:stone_pickaxe"
+}

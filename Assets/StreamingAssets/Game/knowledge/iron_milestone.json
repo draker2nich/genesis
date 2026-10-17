@@ -1,0 +1,18 @@
+{
+  "id": "genesis:iron.milestone",
+  "era": "iron",
+  "requires": [
+    "genesis:iron.boiler"
+  ],
+  "trigger": {
+    "type": "place",
+    "target": "genesis:steam_boiler"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": true,
+  "row": 3,
+  "icon": "genesis:steam_boiler"
+}

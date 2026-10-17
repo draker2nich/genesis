@@ -1,0 +1,17 @@
+{
+  "id": "genesis:workbench",
+  "station": "hand",
+  "pattern": [
+    "PP",
+    "PP"
+  ],
+  "key": {
+    "P": "genesis:planks"
+  },
+  "outputs": [
+    {
+      "item": "genesis:workbench",
+      "count": 1
+    }
+  ]
+}

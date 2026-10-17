@@ -1,0 +1,16 @@
+{
+  "id": "genesis:planks",
+  "station": "hand",
+  "pattern": [
+    "L"
+  ],
+  "key": {
+    "L": "#logs"
+  },
+  "outputs": [
+    {
+      "item": "genesis:planks",
+      "count": 4
+    }
+  ]
+}

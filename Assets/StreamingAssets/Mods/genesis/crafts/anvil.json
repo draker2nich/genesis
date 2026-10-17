@@ -1,0 +1,20 @@
+{
+  "id": "genesis:anvil",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:iron_ingot",
+      "count": 4
+    },
+    {
+      "item": "genesis:cobblestone",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:anvil",
+      "count": 1
+    }
+  ]
+}

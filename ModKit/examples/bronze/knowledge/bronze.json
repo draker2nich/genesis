@@ -1,0 +1,18 @@
+{
+  "id": "bronze:alloys",
+  "era": "iron",
+  "requires": [
+    "genesis:iron.anvil"
+  ],
+  "trigger": {
+    "type": "start"
+  },
+  "unlocks": {
+    "crafts": [
+      "bronze:forge_bronze"
+    ],
+    "recipes": []
+  },
+  "icon": "bronze:bronze_ingot",
+  "row": 5
+}

@@ -1,0 +1,24 @@
+{
+  "id": "genesis:fluid_cell_16k",
+  "station": "genesis:workbench",
+  "pattern": [
+    "QPQ",
+    "QCQ",
+    " P "
+  ],
+  "key": {
+    "Q": "genesis:quartz",
+    "P": "genesis:copper_plate",
+    "C": "genesis:circuit"
+  },
+  "outputs": [
+    {
+      "item": "genesis:fluid_cell_16k",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 2
+  }
+}

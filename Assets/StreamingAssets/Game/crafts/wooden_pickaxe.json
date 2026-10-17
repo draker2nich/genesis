@@ -1,0 +1,19 @@
+{
+  "id": "genesis:wooden_pickaxe",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PPP",
+    " S ",
+    " S "
+  ],
+  "key": {
+    "P": "genesis:planks",
+    "S": "genesis:stick"
+  },
+  "outputs": [
+    {
+      "item": "genesis:wooden_pickaxe",
+      "count": 1
+    }
+  ]
+}

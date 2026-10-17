@@ -1,0 +1,18 @@
+{
+  "id": "genesis:chest",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PPP",
+    "P P",
+    "PPP"
+  ],
+  "key": {
+    "P": "genesis:planks"
+  },
+  "outputs": [
+    {
+      "item": "genesis:chest",
+      "count": 1
+    }
+  ]
+}

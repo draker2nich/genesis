@@ -1,0 +1,18 @@
+{
+  "id": "genesis:wood.milestone",
+  "era": "wood",
+  "requires": [
+    "genesis:wood.tools"
+  ],
+  "trigger": {
+    "type": "place",
+    "target": "genesis:stone_furnace"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": true,
+  "row": 0,
+  "icon": "genesis:stone_furnace"
+}

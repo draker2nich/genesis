@@ -1,0 +1,24 @@
+{
+  "id": "genesis:wind_turbine",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WAW",
+    "AMA",
+    "WAW"
+  ],
+  "key": {
+    "W": "genesis:planks",
+    "A": "genesis:iron_plate*2",
+    "M": "genesis:electric_motor"
+  },
+  "outputs": [
+    {
+      "item": "genesis:wind_turbine",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

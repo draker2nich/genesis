@@ -1,0 +1,18 @@
+{
+  "id": "genesis:fluid_cell_64k",
+  "station": "genesis:workbench",
+  "pattern": [
+    "KLK",
+    " K "
+  ],
+  "key": {
+    "K": "genesis:fluid_cell_16k",
+    "L": "genesis:logic_processor"
+  },
+  "outputs": [
+    {
+      "item": "genesis:fluid_cell_64k",
+      "count": 1
+    }
+  ]
+}

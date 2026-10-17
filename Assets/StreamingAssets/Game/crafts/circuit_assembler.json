@@ -1,0 +1,24 @@
+{
+  "id": "genesis:circuit_assembler",
+  "station": "genesis:workbench",
+  "pattern": [
+    "ACA",
+    "GCG",
+    "A A"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "C": "genesis:circuit",
+    "G": "genesis:iron_gear"
+  },
+  "outputs": [
+    {
+      "item": "genesis:circuit_assembler",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

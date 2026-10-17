@@ -1,0 +1,18 @@
+{
+  "id": "genesis:fluid_tank",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PPP",
+    "P P",
+    "PPP"
+  ],
+  "key": {
+    "P": "genesis:iron_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:fluid_tank",
+      "count": 1
+    }
+  ]
+}

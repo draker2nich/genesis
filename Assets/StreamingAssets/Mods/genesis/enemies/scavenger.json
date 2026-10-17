@@ -1,0 +1,23 @@
+{
+  "id": "genesis:scavenger",
+  "health": 20,
+  "damage": 3,
+  "speed": 3.6,
+  "aggro": 14,
+  "spawn": "ruin",
+  "width": 0.6,
+  "height": 1.8,
+  "color": "#8a4a3a",
+  "drops": [
+    {
+      "item": "genesis:iron_scrap",
+      "count": 2,
+      "chance": 0.8
+    },
+    {
+      "item": "genesis:iron_ingot",
+      "count": 1,
+      "chance": 0.1
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "genesis:coal",
+  "fuel_ticks": 1600,
+  "tags": [
+    "fuel"
+  ]
+}

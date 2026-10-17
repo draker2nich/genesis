@@ -1,0 +1,20 @@
+{
+  "id": "genesis:me_cable",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:quartz",
+      "count": 1
+    },
+    {
+      "item": "genesis:copper_wire",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:me_cable",
+      "count": 8
+    }
+  ]
+}

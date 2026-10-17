@@ -1,0 +1,28 @@
+{
+  "id": "genesis:chest",
+  "era": "wood",
+  "behavior": "storage",
+  "input_slots": 27,
+  "output_slots": 0,
+  "sides": [
+    "item_in",
+    "item_out"
+  ],
+  "default_faces": {
+    "front": "item_in",
+    "back": "item_in",
+    "left": "item_in",
+    "right": "item_in",
+    "top": "item_in",
+    "bottom": "item_in"
+  },
+  "hardness": 1.5,
+  "textures": {
+    "all": "genesis:chest_side",
+    "front": "genesis:chest_front",
+    "top": "genesis:chest_top",
+    "bottom": "genesis:chest_top"
+  },
+  "anim": "none",
+  "model": "genesis:chest"
+}

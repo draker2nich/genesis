@@ -1,0 +1,443 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "java_block",
+  "box_uv": false
+ },
+ "name": "grave",
+ "resolution": {
+  "width": 128,
+  "height": 128
+ },
+ "elements": [
+  {
+   "name": "mound",
+   "type": "cube",
+   "uuid": "82ce786f-6fad-7936-4406-c053f895fc55",
+   "from": [
+    2,
+    0,
+    2
+   ],
+   "to": [
+    14,
+    2.5,
+    14
+   ],
+   "origin": [
+    2,
+    0,
+    2
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      12,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      12,
+      0,
+      24,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      24,
+      0,
+      36,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      36,
+      0,
+      48,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      48,
+      0,
+      60,
+      12
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      60,
+      0,
+      72,
+      12
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "stone",
+   "type": "cube",
+   "uuid": "cfdcc257-076d-490a-e25f-4b1c6d80de7c",
+   "from": [
+    4,
+    2,
+    10
+   ],
+   "to": [
+    12,
+    13,
+    12.5
+   ],
+   "origin": [
+    4,
+    2,
+    10
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      72,
+      0,
+      80,
+      11
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      80,
+      0,
+      88,
+      11
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      88,
+      0,
+      90,
+      11
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      90,
+      0,
+      92,
+      11
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      92,
+      0,
+      100,
+      2
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      100,
+      0,
+      108,
+      2
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "top",
+   "type": "cube",
+   "uuid": "b835e8a5-3414-5e87-8c9a-37518ddcf83c",
+   "from": [
+    5,
+    13,
+    10
+   ],
+   "to": [
+    11,
+    14.5,
+    12.5
+   ],
+   "origin": [
+    5,
+    13,
+    10
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      108,
+      0,
+      114,
+      2
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      114,
+      0,
+      120,
+      2
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      120,
+      0,
+      122,
+      2
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      122,
+      0,
+      124,
+      2
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      12,
+      6,
+      14
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      6,
+      12,
+      12,
+      14
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "plaque",
+   "type": "cube",
+   "uuid": "a4fd57c5-2379-7d45-c0ae-d9c59d6b023f",
+   "from": [
+    6,
+    7,
+    9.6
+   ],
+   "to": [
+    10,
+    10,
+    10
+   ],
+   "origin": [
+    6,
+    7,
+    9.6
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      12,
+      12,
+      16,
+      15
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      16,
+      12,
+      20,
+      15
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      20,
+      12,
+      21,
+      15
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      21,
+      12,
+      22,
+      15
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      22,
+      12,
+      26,
+      13
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      26,
+      12,
+      30,
+      13
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "flower",
+   "type": "cube",
+   "uuid": "78e10e70-2bb7-1c68-2097-798c8cd3e418",
+   "from": [
+    4,
+    2.5,
+    4
+   ],
+   "to": [
+    6,
+    4,
+    6
+   ],
+   "origin": [
+    4,
+    2.5,
+    4
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      30,
+      12,
+      32,
+      14
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      12,
+      34,
+      14
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      34,
+      12,
+      36,
+      14
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      36,
+      12,
+      38,
+      14
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      38,
+      12,
+      40,
+      14
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      40,
+      12,
+      42,
+      14
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  }
+ ],
+ "outliner": [
+  "82ce786f-6fad-7936-4406-c053f895fc55",
+  "cfdcc257-076d-490a-e25f-4b1c6d80de7c",
+  "b835e8a5-3414-5e87-8c9a-37518ddcf83c",
+  "a4fd57c5-2379-7d45-c0ae-d9c59d6b023f",
+  "78e10e70-2bb7-1c68-2097-798c8cd3e418"
+ ],
+ "textures": [
+  {
+   "name": "grave.png",
+   "uuid": "429a7079-a71f-11b2-f9ee-8bc8bd1e6912",
+   "width": 128,
+   "height": 128,
+   "uv_width": 128,
+   "uv_height": 128,
+   "source": "data:image/png;base64,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"
+  }
+ ],
+ "animations": []
+}

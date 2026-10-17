@@ -1,0 +1,28 @@
+{
+  "id": "genesis:solar_panel",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:quartz",
+      "count": 4
+    },
+    {
+      "item": "genesis:circuit",
+      "count": 2
+    },
+    {
+      "item": "genesis:iron_plate",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:solar_panel",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 3
+  }
+}

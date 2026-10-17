@@ -1,0 +1,7 @@
+{
+  "bronze:bronze_ingot": {
+    "pattern": "item_ingot",
+    "color": "#c8903a",
+    "accent": "#ffe0a0"
+  }
+}

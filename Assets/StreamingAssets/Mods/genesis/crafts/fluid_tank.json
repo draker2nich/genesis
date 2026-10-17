@@ -1,0 +1,16 @@
+{
+  "id": "genesis:fluid_tank",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:iron_plate",
+      "count": 8
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:fluid_tank",
+      "count": 1
+    }
+  ]
+}

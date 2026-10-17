@@ -1,0 +1,17 @@
+{
+  "id": "genesis:fry_egg",
+  "machine": "genesis:stone_furnace",
+  "inputs": [
+    {
+      "item": "genesis:egg",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:fried_egg",
+      "count": 1
+    }
+  ],
+  "time_ticks": 120
+}

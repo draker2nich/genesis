@@ -1,0 +1,36 @@
+{
+  "id": "genesis:coal_generator",
+  "era": "electric",
+  "behavior": "generator",
+  "power": "generator",
+  "energy": {
+    "type": "none",
+    "buffer": 4000,
+    "rate": 256
+  },
+  "input_slots": 0,
+  "output_slots": 0,
+  "fuel_slots": 1,
+  "params": {
+    "mode_fuel": 1,
+    "fe_per_tick": 32
+  },
+  "sides": [
+    "item_in"
+  ],
+  "default_faces": {
+    "back": "item_in",
+    "top": "item_in",
+    "left": "item_in",
+    "right": "item_in",
+    "front": "none",
+    "bottom": "none"
+  },
+  "anim": "none",
+  "hardness": 3,
+  "textures": {
+    "all": "genesis:generator_side",
+    "front": "genesis:generator_front",
+    "top": "genesis:generator_top"
+  }
+}

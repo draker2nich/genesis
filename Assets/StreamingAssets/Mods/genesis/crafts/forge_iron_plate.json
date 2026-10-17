@@ -1,0 +1,20 @@
+{
+  "id": "genesis:forge_iron_plate",
+  "station": "genesis:anvil",
+  "inputs": [
+    {
+      "item": "genesis:iron_ingot",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:iron_plate",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "forging",
+    "difficulty": 1
+  }
+}

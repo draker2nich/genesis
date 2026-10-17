@@ -1,0 +1,18 @@
+{
+  "id": "genesis:stone_furnace",
+  "station": "genesis:workbench",
+  "pattern": [
+    "CCC",
+    "C C",
+    "CCC"
+  ],
+  "key": {
+    "C": "genesis:cobblestone"
+  },
+  "outputs": [
+    {
+      "item": "genesis:stone_furnace",
+      "count": 1
+    }
+  ]
+}

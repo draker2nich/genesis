@@ -1,0 +1,16 @@
+{
+  "id": "trash_can:trash_can",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:cobblestone",
+      "count": 7
+    }
+  ],
+  "outputs": [
+    {
+      "item": "trash_can:trash_can",
+      "count": 1
+    }
+  ]
+}

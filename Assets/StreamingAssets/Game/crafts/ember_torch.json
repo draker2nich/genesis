@@ -1,0 +1,18 @@
+{
+  "id": "genesis:ember_torch",
+  "station": "hand",
+  "pattern": [
+    "E",
+    "S"
+  ],
+  "key": {
+    "E": "genesis:ember_shard",
+    "S": "genesis:stick"
+  },
+  "outputs": [
+    {
+      "item": "genesis:torch",
+      "count": 8
+    }
+  ]
+}

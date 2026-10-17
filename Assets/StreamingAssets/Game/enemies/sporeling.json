@@ -1,0 +1,29 @@
+{
+  "id": "genesis:sporeling",
+  "kind": "hostile",
+  "health": 10,
+  "damage": 1,
+  "speed": 1.6,
+  "aggro": 12,
+  "spawn": "cave",
+  "group": [
+    1,
+    3
+  ],
+  "attack": "spores",
+  "range": 3.2,
+  "cooldown": 90,
+  "windup": 25,
+  "death_cloud": true,
+  "width": 0.8,
+  "height": 1.0,
+  "color": "#8a7a4a",
+  "drops": [
+    {
+      "item": "genesis:spore_sac",
+      "count": 1,
+      "chance": 0.7
+    }
+  ],
+  "model": "genesis:sporeling"
+}

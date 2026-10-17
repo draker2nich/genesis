@@ -1,0 +1,9 @@
+{
+  "id": "genesis:cactus",
+  "hardness": 0.4,
+  "textures": {
+    "top": "genesis:cactus_top",
+    "bottom": "genesis:cactus_top",
+    "side": "genesis:cactus"
+  }
+}

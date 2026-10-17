@@ -1,0 +1,16 @@
+{
+  "id": "genesis:copper_cable",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WWW"
+  ],
+  "key": {
+    "W": "genesis:copper_wire"
+  },
+  "outputs": [
+    {
+      "item": "genesis:copper_cable",
+      "count": 6
+    }
+  ]
+}

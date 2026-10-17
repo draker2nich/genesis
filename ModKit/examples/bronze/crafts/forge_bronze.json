@@ -1,0 +1,24 @@
+{
+  "id": "bronze:forge_bronze",
+  "station": "genesis:anvil",
+  "inputs": [
+    {
+      "item": "genesis:copper_ingot",
+      "count": 3
+    },
+    {
+      "item": "genesis:tin_ingot",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "bronze:bronze_ingot",
+      "count": 4
+    }
+  ],
+  "minigame": {
+    "template": "forging",
+    "difficulty": 2
+  }
+}

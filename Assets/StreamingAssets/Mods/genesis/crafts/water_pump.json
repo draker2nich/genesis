@@ -1,0 +1,28 @@
+{
+  "id": "genesis:water_pump",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:iron_plate",
+      "count": 3
+    },
+    {
+      "item": "genesis:iron_gear",
+      "count": 2
+    },
+    {
+      "item": "genesis:iron_rod",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:water_pump",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

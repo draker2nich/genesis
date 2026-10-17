@@ -1,0 +1,23 @@
+{
+  "id": "trash_can:trash_can",
+  "era": "stone",
+  "behavior": "trash_can:void",
+  "input_slots": 9,
+  "output_slots": 0,
+  "sides": [
+    "item_in"
+  ],
+  "default_faces": {
+    "front": "item_in",
+    "back": "item_in",
+    "left": "item_in",
+    "right": "item_in",
+    "top": "item_in",
+    "bottom": "item_in"
+  },
+  "anim": "spin",
+  "textures": {
+    "all": "genesis:machine_casing",
+    "front": "genesis:furnace_front"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "genesis:stone_axe",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:cobblestone",
+      "count": 3
+    },
+    {
+      "item": "genesis:stick",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:stone_axe",
+      "count": 1
+    }
+  ]
+}

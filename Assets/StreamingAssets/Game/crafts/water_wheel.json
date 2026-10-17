@@ -1,0 +1,24 @@
+{
+  "id": "genesis:water_wheel",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WWW",
+    "RMR",
+    "WWW"
+  ],
+  "key": {
+    "W": "genesis:planks*2",
+    "R": "genesis:iron_rod",
+    "M": "genesis:electric_motor"
+  },
+  "outputs": [
+    {
+      "item": "genesis:water_wheel",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

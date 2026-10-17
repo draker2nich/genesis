@@ -1,0 +1,33 @@
+{
+  "id": "genesis:acid_spitter",
+  "kind": "hostile",
+  "health": 12,
+  "damage": 2,
+  "speed": 2.4,
+  "aggro": 16,
+  "spawn": "surface",
+  "time": "any",
+  "biomes": [
+    "Swamp"
+  ],
+  "group": [
+    1,
+    2
+  ],
+  "attack": "ranged",
+  "range": 11,
+  "cooldown": 50,
+  "windup": 14,
+  "poison": 90,
+  "width": 0.8,
+  "height": 1.0,
+  "color": "#5a7a2a",
+  "drops": [
+    {
+      "item": "genesis:acid_gland",
+      "count": 1,
+      "chance": 0.6
+    }
+  ],
+  "model": "genesis:acid_spitter"
+}

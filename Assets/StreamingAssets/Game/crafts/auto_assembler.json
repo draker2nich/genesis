@@ -1,0 +1,24 @@
+{
+  "id": "genesis:auto_assembler",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AMA",
+    "CCC",
+    "AMA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "M": "genesis:electric_motor",
+    "C": "genesis:circuit*1"
+  },
+  "outputs": [
+    {
+      "item": "genesis:auto_assembler",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

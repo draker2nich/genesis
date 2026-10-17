@@ -1,0 +1,17 @@
+{
+  "id": "genesis:cook_bird",
+  "machine": "genesis:stone_furnace",
+  "inputs": [
+    {
+      "item": "genesis:raw_bird",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:cooked_bird",
+      "count": 1
+    }
+  ],
+  "time_ticks": 120
+}

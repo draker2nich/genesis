@@ -1,0 +1,17 @@
+{
+  "id": "genesis:iron.anvil",
+  "era": "iron",
+  "requires": [],
+  "trigger": {
+    "type": "start"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:anvil"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 0,
+  "icon": "genesis:anvil"
+}

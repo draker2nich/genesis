@@ -1,0 +1,23 @@
+{
+  "id": "genesis:me_wireless_terminal",
+  "station": "genesis:workbench",
+  "pattern": [
+    "CTC",
+    "L L"
+  ],
+  "key": {
+    "C": "genesis:circuit",
+    "T": "genesis:me_terminal",
+    "L": "genesis:logic_processor"
+  },
+  "outputs": [
+    {
+      "item": "genesis:me_wireless_terminal",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 3
+  }
+}

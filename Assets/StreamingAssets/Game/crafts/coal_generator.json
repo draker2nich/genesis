@@ -1,0 +1,24 @@
+{
+  "id": "genesis:coal_generator",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AWA",
+    "WFW",
+    "AWA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "W": "genesis:copper_wire*2",
+    "F": "genesis:stone_furnace"
+  },
+  "outputs": [
+    {
+      "item": "genesis:coal_generator",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "genesis:copper_ore_rich",
+  "hardness": 3.5,
+  "tool": "pickaxe",
+  "drop": "genesis:copper_ore",
+  "purity": 3,
+  "deposit_of": "genesis:copper_ore",
+  "harvest_tier": 2
+}

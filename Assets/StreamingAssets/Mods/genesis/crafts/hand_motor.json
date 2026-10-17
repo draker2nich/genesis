@@ -1,0 +1,28 @@
+{
+  "id": "genesis:hand_motor",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:copper_wire",
+      "count": 6
+    },
+    {
+      "item": "genesis:iron_rod",
+      "count": 2
+    },
+    {
+      "item": "genesis:iron_plate",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:electric_motor",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

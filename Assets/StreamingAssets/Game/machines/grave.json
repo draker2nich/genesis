@@ -1,0 +1,17 @@
+{
+  "id": "genesis:grave",
+  "era": "wood",
+  "behavior": "storage",
+  "input_slots": 40,
+  "output_slots": 0,
+  "hardness": 0.5,
+  "sides": [],
+  "default_faces": {},
+  "textures": {
+    "all": "genesis:grave_side",
+    "top": "genesis:grave_top",
+    "front": "genesis:grave_side"
+  },
+  "anim": "none",
+  "model": "genesis:grave"
+}

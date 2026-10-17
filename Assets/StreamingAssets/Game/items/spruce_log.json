@@ -1,0 +1,9 @@
+{
+  "id": "genesis:spruce_log",
+  "places": "genesis:spruce_log",
+  "fuel_ticks": 300,
+  "tags": [
+    "fuel",
+    "logs"
+  ]
+}

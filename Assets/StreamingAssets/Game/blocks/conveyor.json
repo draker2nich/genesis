@@ -1,0 +1,18 @@
+{
+  "id": "genesis:conveyor",
+  "hardness": 1,
+  "tool": "pickaxe",
+  "solid": true,
+  "orientable": true,
+  "render": "opaque",
+  "transport": {
+    "type": "conveyor",
+    "speed": 1.875,
+    "tier": 1
+  },
+  "textures": {
+    "top": "genesis:conveyor",
+    "side": "genesis:conveyor_side",
+    "bottom": "genesis:conveyor_side"
+  }
+}

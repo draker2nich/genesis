@@ -1,0 +1,9 @@
+{
+  "id": "genesis:iron_ore_normal",
+  "hardness": 3.0,
+  "tool": "pickaxe",
+  "drop": "genesis:iron_ore",
+  "purity": 2,
+  "deposit_of": "genesis:iron_ore",
+  "harvest_tier": 2
+}

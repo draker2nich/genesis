@@ -1,0 +1,20 @@
+{
+  "id": "genesis:forge_copper_wire",
+  "station": "genesis:anvil",
+  "inputs": [
+    {
+      "item": "genesis:copper_ingot",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:copper_wire",
+      "count": 2
+    }
+  ],
+  "minigame": {
+    "template": "forging",
+    "difficulty": 1
+  }
+}

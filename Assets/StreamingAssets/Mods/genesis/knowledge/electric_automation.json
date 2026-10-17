@@ -1,0 +1,22 @@
+{
+  "id": "genesis:electric.automation",
+  "era": "electric",
+  "requires": [
+    "genesis:electric.me",
+    "genesis:electric.motors"
+  ],
+  "trigger": {
+    "type": "start"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:auto_assembler",
+      "genesis:me_provider",
+      "genesis:cell_64k"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 6,
+  "icon": "genesis:me_provider"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "genesis:planks",
+  "station": "hand",
+  "inputs": [
+    {
+      "item": "genesis:oak_log",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:planks",
+      "count": 4
+    }
+  ]
+}

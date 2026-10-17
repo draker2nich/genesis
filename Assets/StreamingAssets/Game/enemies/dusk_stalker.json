@@ -1,0 +1,42 @@
+{
+  "id": "genesis:dusk_stalker",
+  "kind": "hostile",
+  "health": 16,
+  "damage": 3,
+  "speed": 4.2,
+  "aggro": 18,
+  "spawn": "surface",
+  "time": "night",
+  "biomes": [
+    "Plains",
+    "Forest",
+    "BirchForest",
+    "Taiga",
+    "Meadow",
+    "Tundra"
+  ],
+  "group": [
+    2,
+    3
+  ],
+  "attack": "melee",
+  "pack": true,
+  "flee_health": 0.3,
+  "width": 0.7,
+  "height": 1.0,
+  "color": "#3a3a52",
+  "weight": 1.4,
+  "drops": [
+    {
+      "item": "genesis:fur",
+      "count": 1,
+      "chance": 0.7
+    },
+    {
+      "item": "genesis:raw_meat",
+      "count": 1,
+      "chance": 0.5
+    }
+  ],
+  "model": "genesis:dusk_stalker"
+}

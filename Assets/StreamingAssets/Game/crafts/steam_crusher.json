@@ -1,0 +1,24 @@
+{
+  "id": "genesis:steam_crusher",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AGA",
+    "CGC",
+    "AGA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "G": "genesis:iron_gear",
+    "C": "genesis:cobblestone*4"
+  },
+  "outputs": [
+    {
+      "item": "genesis:steam_crusher",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "genesis:wooden_shovel",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:planks",
+      "count": 1
+    },
+    {
+      "item": "genesis:stick",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:wooden_shovel",
+      "count": 1
+    }
+  ]
+}

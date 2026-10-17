@@ -1,0 +1,21 @@
+{
+  "id": "genesis:electric.renewables",
+  "era": "electric",
+  "requires": [
+    "genesis:electric.motors"
+  ],
+  "trigger": {
+    "type": "start"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:solar_panel",
+      "genesis:wind_turbine",
+      "genesis:water_wheel"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 3,
+  "icon": "genesis:solar_panel"
+}

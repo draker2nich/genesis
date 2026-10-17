@@ -1,0 +1,10 @@
+{
+  "id": "trash_can",
+  "name": "Trash Can",
+  "version": "1.0.0",
+  "author": "you",
+  "description": "Example code mod: a machine with custom C# logic that destroys items.",
+  "dependencies": [
+    "genesis"
+  ]
+}

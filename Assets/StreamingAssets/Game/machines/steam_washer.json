@@ -1,0 +1,47 @@
+{
+  "id": "genesis:steam_washer",
+  "era": "steam",
+  "behavior": "processor",
+  "tier": 1,
+  "energy": {
+    "type": "steam",
+    "per_tick": 3
+  },
+  "input_slots": 1,
+  "output_slots": 2,
+  "module_slots": 1,
+  "tanks": [
+    {
+      "name": "water",
+      "fluid": "genesis:water",
+      "capacity": 4000,
+      "io": "in"
+    },
+    {
+      "name": "steam",
+      "fluid": "genesis:steam",
+      "capacity": 2000,
+      "io": "in"
+    }
+  ],
+  "sides": [
+    "item_in",
+    "item_out",
+    "fluid_in",
+    "steam_in"
+  ],
+  "default_faces": {
+    "back": "item_in",
+    "front": "item_out",
+    "left": "fluid_in",
+    "top": "fluid_in",
+    "right": "steam_in",
+    "bottom": "steam_in"
+  },
+  "anim": "spin",
+  "textures": {
+    "all": "genesis:steam_machine_side",
+    "front": "genesis:washer_front",
+    "top": "genesis:steam_machine_top"
+  }
+}

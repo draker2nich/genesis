@@ -1,0 +1,24 @@
+{
+  "id": "genesis:steam_washer",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PGP",
+    "I I",
+    "PGP"
+  ],
+  "key": {
+    "P": "genesis:iron_plate",
+    "G": "genesis:iron_gear",
+    "I": "genesis:pipe"
+  },
+  "outputs": [
+    {
+      "item": "genesis:steam_washer",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

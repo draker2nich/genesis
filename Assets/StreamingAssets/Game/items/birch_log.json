@@ -1,0 +1,9 @@
+{
+  "id": "genesis:birch_log",
+  "places": "genesis:birch_log",
+  "fuel_ticks": 300,
+  "tags": [
+    "fuel",
+    "logs"
+  ]
+}

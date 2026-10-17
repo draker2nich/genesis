@@ -1,0 +1,20 @@
+{
+  "id": "genesis:iron.gear",
+  "era": "iron",
+  "requires": [
+    "genesis:iron.plate"
+  ],
+  "trigger": {
+    "type": "craft",
+    "target": "genesis:forge_iron_gear"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": [
+      "genesis:iron_gear"
+    ]
+  },
+  "milestone": false,
+  "row": 2,
+  "icon": "genesis:iron_gear"
+}

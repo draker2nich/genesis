@@ -1,0 +1,17 @@
+{
+  "id": "genesis:copper_wire",
+  "machine": "genesis:rod_mill",
+  "inputs": [
+    {
+      "item": "genesis:copper_ingot",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:copper_wire",
+      "count": 3
+    }
+  ],
+  "time_ticks": 30
+}

@@ -1,0 +1,18 @@
+{
+  "id": "genesis:torch_charcoal",
+  "station": "hand",
+  "pattern": [
+    "C",
+    "S"
+  ],
+  "key": {
+    "C": "genesis:charcoal",
+    "S": "genesis:stick"
+  },
+  "outputs": [
+    {
+      "item": "genesis:torch",
+      "count": 4
+    }
+  ]
+}

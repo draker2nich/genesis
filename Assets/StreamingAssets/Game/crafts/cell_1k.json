@@ -1,0 +1,23 @@
+{
+  "id": "genesis:cell_1k",
+  "station": "genesis:workbench",
+  "pattern": [
+    "QPQ",
+    "QCQ"
+  ],
+  "key": {
+    "Q": "genesis:quartz",
+    "P": "genesis:iron_plate",
+    "C": "genesis:circuit"
+  },
+  "outputs": [
+    {
+      "item": "genesis:cell_1k",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 2
+  }
+}

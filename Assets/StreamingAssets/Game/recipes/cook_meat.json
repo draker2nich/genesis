@@ -1,0 +1,17 @@
+{
+  "id": "genesis:cook_meat",
+  "machine": "genesis:stone_furnace",
+  "inputs": [
+    {
+      "item": "genesis:raw_meat",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:cooked_meat",
+      "count": 1
+    }
+  ],
+  "time_ticks": 120
+}

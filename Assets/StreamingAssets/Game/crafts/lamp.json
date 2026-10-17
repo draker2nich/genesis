@@ -1,0 +1,20 @@
+{
+  "id": "genesis:lamp",
+  "station": "genesis:workbench",
+  "pattern": [
+    " P ",
+    "WQW",
+    " P "
+  ],
+  "key": {
+    "P": "genesis:iron_plate",
+    "W": "genesis:copper_wire",
+    "Q": "genesis:quartz"
+  },
+  "outputs": [
+    {
+      "item": "genesis:lamp",
+      "count": 4
+    }
+  ]
+}

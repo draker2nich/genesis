@@ -1,0 +1,26 @@
+{
+    "name": "Genesis.Client",
+    "rootNamespace": "Genesis.Client",
+    "references": [
+        "Genesis.Core",
+        "Genesis.Data",
+        "Genesis.World",
+        "Genesis.Simulation",
+        "Genesis.Gameplay",
+        "Genesis.Net",
+        "Genesis.Modding",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

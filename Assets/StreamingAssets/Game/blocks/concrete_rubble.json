@@ -1,0 +1,6 @@
+{
+  "id": "genesis:concrete_rubble",
+  "hardness": 3,
+  "tool": "pickaxe",
+  "harvest_tier": 1
+}

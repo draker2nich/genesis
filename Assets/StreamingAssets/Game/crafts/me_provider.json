@@ -1,0 +1,20 @@
+{
+  "id": "genesis:me_provider",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PLP",
+    "CPC",
+    "PLP"
+  ],
+  "key": {
+    "P": "genesis:iron_plate",
+    "L": "genesis:logic_processor",
+    "C": "genesis:circuit"
+  },
+  "outputs": [
+    {
+      "item": "genesis:me_provider",
+      "count": 1
+    }
+  ]
+}

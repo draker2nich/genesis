@@ -1,0 +1,16 @@
+{
+  "id": "genesis:sticks",
+  "station": "hand",
+  "inputs": [
+    {
+      "item": "genesis:planks",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:stick",
+      "count": 4
+    }
+  ]
+}

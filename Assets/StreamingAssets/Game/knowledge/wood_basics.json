@@ -1,0 +1,25 @@
+{
+  "id": "genesis:wood.basics",
+  "era": "wood",
+  "requires": [],
+  "trigger": {
+    "type": "start"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:planks",
+      "genesis:sticks",
+      "genesis:workbench",
+      "genesis:torch",
+      "genesis:torch_charcoal",
+      "genesis:planks_axe",
+      "genesis:sticks_axe",
+      "genesis:glow_jam",
+      "genesis:ember_torch"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 0,
+  "icon": "genesis:planks"
+}

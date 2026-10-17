@@ -1,0 +1,24 @@
+{
+  "id": "genesis:hand_motor",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WRW",
+    "WPW",
+    "WRW"
+  ],
+  "key": {
+    "W": "genesis:copper_wire",
+    "R": "genesis:iron_rod",
+    "P": "genesis:iron_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:electric_motor",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

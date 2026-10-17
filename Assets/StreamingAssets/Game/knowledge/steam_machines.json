@@ -1,0 +1,27 @@
+{
+  "id": "genesis:steam.machines",
+  "era": "steam",
+  "requires": [],
+  "trigger": {
+    "type": "start"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:water_pump",
+      "genesis:pipe",
+      "genesis:conveyor",
+      "genesis:steam_hammer",
+      "genesis:gear_press",
+      "genesis:rod_mill",
+      "genesis:steam_crusher",
+      "genesis:steam_washer",
+      "genesis:steam_drill",
+      "genesis:inserter",
+      "genesis:fluid_tank"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 0,
+  "icon": "genesis:steam_hammer"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "genesis:dead_bush",
+  "render": "cutout",
+  "solid": false,
+  "replaceable": true,
+  "hardness": 0,
+  "drop": "genesis:stick",
+  "shape": "cross"
+}

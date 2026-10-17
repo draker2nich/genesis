@@ -1,0 +1,15 @@
+{
+  "id": "genesis:me_drive",
+  "era": "electric",
+  "input_slots": 8,
+  "output_slots": 0,
+  "anim": "none",
+  "hardness": 3,
+  "sides": [],
+  "default_faces": {},
+  "behavior": "me_drive",
+  "textures": {
+    "all": "genesis:me_casing",
+    "front": "genesis:me_drive_front"
+  }
+}

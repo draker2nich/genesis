@@ -1,0 +1,19 @@
+{
+  "id": "genesis:me_import_bus",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PLP",
+    " M "
+  ],
+  "key": {
+    "P": "genesis:iron_plate",
+    "L": "genesis:logic_processor",
+    "M": "genesis:electric_motor"
+  },
+  "outputs": [
+    {
+      "item": "genesis:me_import_bus",
+      "count": 1
+    }
+  ]
+}

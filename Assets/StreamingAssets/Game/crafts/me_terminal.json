@@ -1,0 +1,23 @@
+{
+  "id": "genesis:me_terminal",
+  "station": "genesis:workbench",
+  "pattern": [
+    "QLQ",
+    "P P"
+  ],
+  "key": {
+    "Q": "genesis:quartz",
+    "L": "genesis:logic_processor",
+    "P": "genesis:iron_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:me_terminal",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 2
+  }
+}

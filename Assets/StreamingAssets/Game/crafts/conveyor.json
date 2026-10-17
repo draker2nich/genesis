@@ -1,0 +1,19 @@
+{
+  "id": "genesis:conveyor",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WPW",
+    " G "
+  ],
+  "key": {
+    "W": "genesis:planks",
+    "P": "genesis:iron_plate",
+    "G": "genesis:iron_gear"
+  },
+  "outputs": [
+    {
+      "item": "genesis:conveyor",
+      "count": 4
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "genesis:battery_cell",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:iron_plate",
+      "count": 4
+    },
+    {
+      "item": "genesis:circuit",
+      "count": 2
+    },
+    {
+      "item": "genesis:copper_wire",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:battery_cell",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 2
+  }
+}

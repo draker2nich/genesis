@@ -1,0 +1,20 @@
+{
+  "id": "genesis:inserter",
+  "station": "genesis:workbench",
+  "pattern": [
+    "R",
+    "G",
+    "P"
+  ],
+  "key": {
+    "R": "genesis:iron_rod",
+    "G": "genesis:iron_gear",
+    "P": "genesis:iron_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:inserter",
+      "count": 1
+    }
+  ]
+}

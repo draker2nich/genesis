@@ -1,0 +1,20 @@
+{
+  "id": "genesis:wood.tools",
+  "era": "wood",
+  "requires": [
+    "genesis:wood.workbench"
+  ],
+  "trigger": {
+    "type": "craft",
+    "target": "genesis:wooden_pickaxe"
+  },
+  "unlocks": {
+    "crafts": [
+      "genesis:stone_furnace"
+    ],
+    "recipes": []
+  },
+  "milestone": false,
+  "row": 0,
+  "icon": "genesis:wooden_pickaxe"
+}

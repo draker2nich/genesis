@@ -1,0 +1,51 @@
+{
+  "id": "genesis:steam_boiler",
+  "era": "steam",
+  "behavior": "boiler",
+  "tier": 1,
+  "energy": {
+    "type": "fuel",
+    "per_tick": 1
+  },
+  "input_slots": 0,
+  "output_slots": 0,
+  "fuel_slots": 1,
+  "tanks": [
+    {
+      "name": "water",
+      "fluid": "genesis:water",
+      "capacity": 4000,
+      "io": "in"
+    },
+    {
+      "name": "steam",
+      "fluid": "genesis:steam",
+      "capacity": 4000,
+      "io": "out"
+    }
+  ],
+  "params": {
+    "water_per_tick": 20,
+    "steam_per_tick": 20,
+    "heat_up_ticks": 100
+  },
+  "sides": [
+    "item_in",
+    "fluid_in",
+    "steam_out"
+  ],
+  "default_faces": {
+    "back": "item_in",
+    "front": "item_in",
+    "left": "fluid_in",
+    "right": "fluid_in",
+    "bottom": "fluid_in",
+    "top": "steam_out"
+  },
+  "textures": {
+    "all": "genesis:boiler_side",
+    "front": "genesis:boiler_front",
+    "top": "genesis:boiler_top"
+  },
+  "anim": "none"
+}

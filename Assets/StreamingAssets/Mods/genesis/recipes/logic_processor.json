@@ -1,0 +1,25 @@
+{
+  "id": "genesis:logic_processor",
+  "machine": "genesis:circuit_assembler",
+  "inputs": [
+    {
+      "item": "genesis:circuit",
+      "count": 1
+    },
+    {
+      "item": "genesis:quartz",
+      "count": 2
+    },
+    {
+      "item": "genesis:copper_wire",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:logic_processor",
+      "count": 1
+    }
+  ],
+  "time_ticks": 80
+}

@@ -1,0 +1,20 @@
+{
+  "id": "genesis:cell_64k",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:cell_16k",
+      "count": 3
+    },
+    {
+      "item": "genesis:logic_processor",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:cell_64k",
+      "count": 1
+    }
+  ]
+}

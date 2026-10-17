@@ -1,0 +1,34 @@
+{
+  "id": "genesis:fluid_tank",
+  "era": "steam",
+  "behavior": "tank",
+  "tier": 1,
+  "input_slots": 0,
+  "output_slots": 0,
+  "tanks": [
+    {
+      "name": "tank",
+      "capacity": 16000,
+      "io": "buffer"
+    }
+  ],
+  "sides": [
+    "fluid_in",
+    "fluid_out"
+  ],
+  "default_faces": {
+    "top": "fluid_in",
+    "bottom": "fluid_out",
+    "left": "fluid_in",
+    "right": "fluid_in",
+    "front": "fluid_out",
+    "back": "fluid_in"
+  },
+  "anim": "none",
+  "hardness": 2,
+  "textures": {
+    "all": "genesis:tank_side",
+    "top": "genesis:tank_top",
+    "front": "genesis:tank_side"
+  }
+}

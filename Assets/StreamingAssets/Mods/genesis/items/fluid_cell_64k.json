@@ -1,0 +1,8 @@
+{
+  "id": "genesis:fluid_cell_64k",
+  "max_stack": 1,
+  "storage_cell": {
+    "kind": "fluid",
+    "capacity": 64000
+  }
+}

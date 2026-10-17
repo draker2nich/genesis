@@ -1,0 +1,10 @@
+{
+  "id": "bronze",
+  "name": "Bronze Age",
+  "version": "1.0.0",
+  "author": "you",
+  "description": "Example data mod: bronze ingot forged from copper and tin.",
+  "dependencies": [
+    "genesis"
+  ]
+}

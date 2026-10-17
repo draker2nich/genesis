@@ -1,0 +1,8 @@
+{
+  "id": "genesis:planks",
+  "places": "genesis:planks",
+  "fuel_ticks": 300,
+  "tags": [
+    "fuel"
+  ]
+}

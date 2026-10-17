@@ -1,0 +1,17 @@
+{
+  "id": "genesis:sticks",
+  "station": "hand",
+  "pattern": [
+    "P",
+    "P"
+  ],
+  "key": {
+    "P": "genesis:planks"
+  },
+  "outputs": [
+    {
+      "item": "genesis:stick",
+      "count": 4
+    }
+  ]
+}

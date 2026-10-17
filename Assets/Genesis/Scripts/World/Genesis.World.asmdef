@@ -1,0 +1,14 @@
+{
+    "name": "Genesis.World",
+    "rootNamespace": "Genesis.World",
+    "references": ["Genesis.Core", "Genesis.Data"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

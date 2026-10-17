@@ -1,0 +1,24 @@
+{
+  "id": "genesis:rod_mill",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PGP",
+    "RGR",
+    "PRP"
+  ],
+  "key": {
+    "P": "genesis:iron_plate",
+    "G": "genesis:iron_gear",
+    "R": "genesis:iron_rod*2"
+  },
+  "outputs": [
+    {
+      "item": "genesis:rod_mill",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "genesis:lamp",
+  "render": "opaque",
+  "hardness": 1,
+  "tool": "pickaxe",
+  "light": 15,
+  "textures": {
+    "all": "genesis:lamp"
+  }
+}

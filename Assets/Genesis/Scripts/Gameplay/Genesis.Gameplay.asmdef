@@ -1,0 +1,14 @@
+{
+    "name": "Genesis.Gameplay",
+    "rootNamespace": "Genesis.Gameplay",
+    "references": ["Genesis.Core", "Genesis.Data", "Genesis.World", "Genesis.Simulation"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

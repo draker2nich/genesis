@@ -1,0 +1,28 @@
+{
+  "id": "genesis:auto_assembler",
+  "station": "genesis:workbench",
+  "inputs": [
+    {
+      "item": "genesis:iron_plate",
+      "count": 8
+    },
+    {
+      "item": "genesis:electric_motor",
+      "count": 2
+    },
+    {
+      "item": "genesis:circuit",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:auto_assembler",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

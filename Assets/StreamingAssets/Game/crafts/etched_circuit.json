@@ -1,0 +1,19 @@
+{
+  "id": "genesis:etched_circuit",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WAW",
+    " P "
+  ],
+  "key": {
+    "W": "genesis:copper_wire",
+    "A": "genesis:acid_gland",
+    "P": "genesis:iron_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:circuit",
+      "count": 2
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "genesis:stone_furnace",
+  "era": "stone",
+  "behavior": "furnace",
+  "tier": 1,
+  "energy": {
+    "type": "fuel",
+    "per_tick": 1
+  },
+  "input_slots": 1,
+  "output_slots": 1,
+  "fuel_slots": 1,
+  "speed": 1,
+  "sides": [
+    "item_in",
+    "item_out"
+  ],
+  "default_faces": {
+    "back": "item_in",
+    "top": "item_in",
+    "bottom": "item_in",
+    "front": "item_out",
+    "left": "none",
+    "right": "none"
+  },
+  "textures": {
+    "all": "genesis:furnace_side",
+    "front": "genesis:furnace_front",
+    "top": "genesis:furnace_top"
+  },
+  "anim": "none"
+}

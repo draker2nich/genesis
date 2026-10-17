@@ -1,0 +1,19 @@
+{
+  "id": "genesis:anvil",
+  "station": "genesis:workbench",
+  "pattern": [
+    "III",
+    " I ",
+    "CCC"
+  ],
+  "key": {
+    "I": "genesis:iron_ingot",
+    "C": "genesis:cobblestone"
+  },
+  "outputs": [
+    {
+      "item": "genesis:anvil",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "genesis:stone_shovel",
+  "station": "genesis:workbench",
+  "pattern": [
+    "C",
+    "S",
+    "S"
+  ],
+  "key": {
+    "C": "genesis:cobblestone",
+    "S": "genesis:stick"
+  },
+  "outputs": [
+    {
+      "item": "genesis:stone_shovel",
+      "count": 1
+    }
+  ]
+}

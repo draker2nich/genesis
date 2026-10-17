@@ -1,0 +1,25 @@
+{
+  "id": "genesis:water_pump",
+  "station": "genesis:workbench",
+  "pattern": [
+    "PGP",
+    "RIR",
+    "PGP"
+  ],
+  "key": {
+    "P": "genesis:iron_plate",
+    "G": "genesis:iron_gear",
+    "R": "genesis:iron_rod",
+    "I": "genesis:pipe"
+  },
+  "outputs": [
+    {
+      "item": "genesis:water_pump",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

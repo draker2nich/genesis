@@ -1,0 +1,10 @@
+{
+  "id": "genesis:tall_grass",
+  "render": "cutout",
+  "solid": false,
+  "replaceable": true,
+  "hardness": 0,
+  "drop": "none",
+  "shape": "cross",
+  "tint": "foliage"
+}

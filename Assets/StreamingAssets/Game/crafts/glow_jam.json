@@ -1,0 +1,19 @@
+{
+  "id": "genesis:glow_jam",
+  "station": "hand",
+  "pattern": [
+    "B",
+    "S",
+    "B"
+  ],
+  "key": {
+    "B": "genesis:berries",
+    "S": "genesis:spore_sac"
+  },
+  "outputs": [
+    {
+      "item": "genesis:glow_jam",
+      "count": 2
+    }
+  ]
+}

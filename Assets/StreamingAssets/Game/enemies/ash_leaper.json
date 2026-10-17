@@ -1,0 +1,41 @@
+{
+  "id": "genesis:ash_leaper",
+  "kind": "hostile",
+  "health": 14,
+  "damage": 3,
+  "speed": 3.8,
+  "aggro": 16,
+  "spawn": "surface",
+  "time": "night",
+  "biomes": [
+    "Wasteland",
+    "Badlands",
+    "Desert",
+    "Plains",
+    "Meadow"
+  ],
+  "group": [
+    1,
+    2
+  ],
+  "attack": "leap",
+  "range": 7,
+  "cooldown": 60,
+  "windup": 12,
+  "width": 0.7,
+  "height": 0.8,
+  "color": "#7a4a3a",
+  "drops": [
+    {
+      "item": "genesis:ember_shard",
+      "count": 1,
+      "chance": 0.7
+    },
+    {
+      "item": "genesis:mutant_flesh",
+      "count": 1,
+      "chance": 0.4
+    }
+  ],
+  "model": "genesis:ash_leaper"
+}

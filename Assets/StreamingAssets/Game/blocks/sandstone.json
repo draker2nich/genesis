@@ -1,0 +1,10 @@
+{
+  "id": "genesis:sandstone",
+  "hardness": 0.8,
+  "tool": "pickaxe",
+  "textures": {
+    "top": "genesis:sandstone_top",
+    "bottom": "genesis:sandstone_top",
+    "side": "genesis:sandstone"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "genesis:steam.wire",
+  "era": "steam",
+  "requires": [
+    "genesis:steam.machines"
+  ],
+  "trigger": {
+    "type": "craft",
+    "target": "genesis:forge_copper_wire"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": [
+      "genesis:copper_wire"
+    ]
+  },
+  "milestone": false,
+  "row": 4,
+  "icon": "genesis:copper_wire"
+}

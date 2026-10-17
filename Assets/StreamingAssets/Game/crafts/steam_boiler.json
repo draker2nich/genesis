@@ -1,0 +1,25 @@
+{
+  "id": "genesis:steam_boiler",
+  "station": "genesis:workbench",
+  "pattern": [
+    "ARA",
+    "P P",
+    "PFP"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "R": "genesis:iron_rod",
+    "P": "genesis:iron_plate",
+    "F": "genesis:stone_furnace"
+  },
+  "outputs": [
+    {
+      "item": "genesis:steam_boiler",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

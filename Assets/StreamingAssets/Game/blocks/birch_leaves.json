@@ -1,0 +1,7 @@
+{
+  "id": "genesis:birch_leaves",
+  "render": "cutout",
+  "hardness": 0.2,
+  "drop": "genesis:stick",
+  "tint": "foliage"
+}

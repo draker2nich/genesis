@@ -1,0 +1,20 @@
+{
+  "id": "genesis:forge_iron_rod",
+  "station": "genesis:anvil",
+  "inputs": [
+    {
+      "item": "genesis:iron_ingot",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:iron_rod",
+      "count": 2
+    }
+  ],
+  "minigame": {
+    "template": "forging",
+    "difficulty": 1
+  }
+}

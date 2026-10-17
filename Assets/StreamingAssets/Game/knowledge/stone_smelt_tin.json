@@ -1,0 +1,19 @@
+{
+  "id": "genesis:stone.smelt_tin",
+  "era": "stone",
+  "requires": [],
+  "trigger": {
+    "type": "craft",
+    "target": "genesis:hand_smelt_tin"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": [
+      "genesis:smelt_tin_ore",
+      "genesis:smelt_purified_tin_ore"
+    ]
+  },
+  "milestone": false,
+  "row": 2,
+  "icon": "genesis:tin_ingot"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "genesis:birch_log",
+  "hardness": 1.5,
+  "tool": "axe",
+  "textures": {
+    "top": "genesis:birch_log_top",
+    "bottom": "genesis:birch_log_top",
+    "side": "genesis:birch_log"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "genesis:steam.crushing",
+  "era": "steam",
+  "requires": [
+    "genesis:steam.machines"
+  ],
+  "trigger": {
+    "type": "craft",
+    "target": "genesis:hand_crush_iron"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": [
+      "genesis:crush_iron_ore",
+      "genesis:crush_copper_ore",
+      "genesis:crush_tin_ore"
+    ]
+  },
+  "milestone": false,
+  "icon": "genesis:crushed_iron_ore",
+  "row": 1
+}

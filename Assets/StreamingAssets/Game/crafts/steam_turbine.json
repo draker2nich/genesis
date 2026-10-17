@@ -1,0 +1,24 @@
+{
+  "id": "genesis:steam_turbine",
+  "station": "genesis:workbench",
+  "pattern": [
+    "AGA",
+    "WGW",
+    "AGA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "G": "genesis:iron_gear*2",
+    "W": "genesis:copper_wire*4"
+  },
+  "outputs": [
+    {
+      "item": "genesis:steam_turbine",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 3
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "genesis:me_drive",
+  "station": "genesis:workbench",
+  "pattern": [
+    "ALA",
+    "C C",
+    "ALA"
+  ],
+  "key": {
+    "A": "genesis:iron_plate*2",
+    "L": "genesis:logic_processor",
+    "C": "genesis:circuit"
+  },
+  "outputs": [
+    {
+      "item": "genesis:me_drive",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "assembly",
+    "difficulty": 2
+  }
+}

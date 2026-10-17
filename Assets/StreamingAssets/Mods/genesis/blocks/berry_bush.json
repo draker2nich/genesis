@@ -1,0 +1,9 @@
+{
+  "id": "genesis:berry_bush",
+  "render": "cutout",
+  "solid": false,
+  "hardness": 0.2,
+  "drop": "genesis:berries",
+  "drop_count": 2,
+  "shape": "cross"
+}

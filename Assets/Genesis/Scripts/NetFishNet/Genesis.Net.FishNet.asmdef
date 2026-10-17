@@ -1,0 +1,20 @@
+{
+    "name": "Genesis.Net.FishNet",
+    "rootNamespace": "Genesis.Net.FishNetTransport",
+    "references": ["Genesis.Net", "FishNet.Runtime"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": ["GENESIS_FISHNET"],
+    "versionDefines": [
+        {
+            "name": "com.firstgeargames.fishnet",
+            "expression": "4.0.0",
+            "define": "GENESIS_FISHNET"
+        }
+    ],
+    "noEngineReferences": false
+}

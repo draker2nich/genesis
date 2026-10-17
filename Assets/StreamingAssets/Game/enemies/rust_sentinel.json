@@ -1,0 +1,32 @@
+{
+  "id": "genesis:rust_sentinel",
+  "kind": "hostile",
+  "health": 40,
+  "damage": 5,
+  "speed": 2.2,
+  "aggro": 14,
+  "spawn": "ruin",
+  "attack": "charge",
+  "range": 9,
+  "cooldown": 80,
+  "windup": 18,
+  "armor": 0.6,
+  "weak_to": "pickaxe",
+  "width": 0.9,
+  "height": 1.9,
+  "color": "#8a5a3a",
+  "weight": 0.5,
+  "drops": [
+    {
+      "item": "genesis:iron_scrap",
+      "count": 3,
+      "chance": 1.0
+    },
+    {
+      "item": "genesis:circuit",
+      "count": 1,
+      "chance": 0.15
+    }
+  ],
+  "model": "genesis:rust_sentinel"
+}

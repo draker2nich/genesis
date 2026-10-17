@@ -1,0 +1,9 @@
+{
+  "id": "genesis:cave_mushroom",
+  "render": "cutout",
+  "solid": false,
+  "hardness": 0.1,
+  "drop": "genesis:cave_mushroom",
+  "shape": "cross",
+  "light": 4
+}
