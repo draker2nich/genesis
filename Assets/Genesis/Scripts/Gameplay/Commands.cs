@@ -25,7 +25,7 @@ namespace Genesis.Gameplay
             p.Position = Position;
             p.Yaw = Yaw;
             p.Pitch = Pitch;
-            p.Flying = Flying;
+            p.Flying = Flying && p.Creative; // полёт — только в креативе
         }
     }
 
@@ -53,7 +53,7 @@ namespace Genesis.Gameplay
     public sealed class RotateCommand : GameCommand
     {
         public Int3 Pos;
-        public override void Apply(GameServer s, PlayerState p) => s.Factory.Rotate(Pos);
+        public override void Apply(GameServer s, PlayerState p) => s.RotateEntity(p, Pos);
     }
 
     public sealed class SelectSlotCommand : GameCommand
@@ -94,7 +94,15 @@ namespace Genesis.Gameplay
         public Int3 Pos;
         public RelativeSide Side;
         public SideType Type;
-        public override void Apply(GameServer s, PlayerState p) => s.Factory.SetSide(Pos, Side, Type);
+        public override void Apply(GameServer s, PlayerState p) => s.SetMachineSide(p, Pos, Side, Type);
+    }
+
+    /// <summary>Выбор рецепта машины в её интерфейсе (Recipe &lt; 0 — машина выбирает сама).</summary>
+    public sealed class SetRecipeCommand : GameCommand
+    {
+        public Int3 Pos;
+        public int Recipe = -1;
+        public override void Apply(GameServer s, PlayerState p) => s.SetMachineRecipe(p, Pos, Recipe);
     }
 
     /// <summary>Переложить/поменять местами слоты инвентаря игрока.</summary>

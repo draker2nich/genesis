@@ -26,13 +26,68 @@ namespace Genesis.Net
         public readonly NetworkStream Stream;
         public readonly BlockingCollection<byte[]> Outbox = new BlockingCollection<byte[]>();
         public volatile bool Closed;
+        private volatile bool _closeAfterFlush;
+        private Timer _closeTimer;
+        /// <summary>Байт в очереди отправки (медленный клиент не должен раздувать память хоста без предела).</summary>
+        private long _pendingBytes;
+        private int _pendingCount;
+
+        /// <summary>Очередь больше — клиент отключается как «слишком медленный».</summary>
+        public const long MaxPendingBytes = 48L * 1024 * 1024;
+        /// <summary>Очередь длиннее — необязательные (unreliable) пакеты пропускаются.</summary>
+        public const int UnreliableBacklog = 256;
 
         public TcpPeer(int id, TcpClient client)
         {
             Id = id;
             Client = client;
             Client.NoDelay = true;
+            try
+            {
+                // TCP keepalive: ОС сама обнаружит «мёртвое» соединение (плюс тайм-аут на уровне игры)
+                Client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+            }
+            catch (Exception)
+            {
+                // не все платформы поддерживают
+            }
             Stream = client.GetStream();
+        }
+
+        /// <summary>Поставить пакет в очередь. false — пакет отброшен (переполнение) или соединение закрыто.</summary>
+        public bool Enqueue(byte[] data, bool reliable)
+        {
+            if (Closed || _closeAfterFlush) return false;
+            if (!reliable && Volatile.Read(ref _pendingCount) > UnreliableBacklog) return false;
+            if (Interlocked.Read(ref _pendingBytes) + data.Length > MaxPendingBytes)
+            {
+                Close(); // клиент не успевает принимать — отключаем, а не копим гигабайты
+                return false;
+            }
+            try
+            {
+                Interlocked.Add(ref _pendingBytes, data.Length);
+                Interlocked.Increment(ref _pendingCount);
+                Outbox.Add(data);
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Закрыть после отправки уже поставленного в очередь (например, причина отказа в подключении):
+        /// раньше сокет закрывался сразу, и клиент видел «connection closed» вместо причины.
+        /// </summary>
+        public void CloseAfterFlush()
+        {
+            if (Closed || _closeAfterFlush) return;
+            _closeAfterFlush = true;
+            try { Outbox.CompleteAdding(); } catch (Exception) { }
+            // Страховка: если писатель завис на медленной сети — закрыть через 3 с
+            _closeTimer = new Timer(_ => Close(), null, 3000, Timeout.Infinite);
         }
 
         public const int MaxFrame = 16 * 1024 * 1024;
@@ -68,6 +123,13 @@ namespace Genesis.Net
                     var header = BitConverter.GetBytes(data.Length);
                     Stream.Write(header, 0, 4);
                     Stream.Write(data, 0, data.Length);
+                    Interlocked.Add(ref _pendingBytes, -data.Length);
+                    Interlocked.Decrement(ref _pendingCount);
+                }
+                if (_closeAfterFlush)
+                {
+                    try { Stream.Flush(); } catch (Exception) { }
+                    Close();
                 }
             }
             catch (Exception)
@@ -80,7 +142,7 @@ namespace Genesis.Net
         {
             if (Closed) return;
             Closed = true;
-            Outbox.CompleteAdding();
+            try { Outbox.CompleteAdding(); } catch (Exception) { }
             try { Client.Close(); } catch (Exception) { }
         }
     }
@@ -99,8 +161,19 @@ namespace Genesis.Net
 
         public TcpServerTransport(int port)
         {
-            _listener = new TcpListener(IPAddress.Any, port);
-            _listener.Start();
+            // IPv6 + IPv4 (dual mode), если ОС умеет; иначе только IPv4
+            try
+            {
+                _listener = new TcpListener(IPAddress.IPv6Any, port);
+                _listener.Server.DualMode = true;
+                _listener.Start();
+            }
+            catch (Exception)
+            {
+                try { _listener?.Stop(); } catch (Exception) { }
+                _listener = new TcpListener(IPAddress.Any, port);
+                _listener.Start();
+            }
             new Thread(AcceptLoop) { IsBackground = true, Name = "TcpAccept" }.Start();
         }
 
@@ -148,15 +221,13 @@ namespace Genesis.Net
 
         public void Send(int connection, byte[] data, bool reliable)
         {
-            if (_peers.TryGetValue(connection, out var p) && !p.Closed)
-            {
-                try { p.Outbox.Add(data); } catch (InvalidOperationException) { }
-            }
+            if (_peers.TryGetValue(connection, out var p) && !p.Closed) p.Enqueue(data, reliable);
         }
 
+        /// <summary>Отключить, сначала доставив то, что уже в очереди (причина отказа и т. п.).</summary>
         public void Disconnect(int connection)
         {
-            if (_peers.TryGetValue(connection, out var p)) p.Close();
+            if (_peers.TryGetValue(connection, out var p)) p.CloseAfterFlush();
         }
 
         public void Poll()
@@ -220,7 +291,7 @@ namespace Genesis.Net
         {
             var p = _peer;
             if (p == null || p.Closed) return;
-            try { p.Outbox.Add(data); } catch (InvalidOperationException) { }
+            p.Enqueue(data, reliable);
         }
 
         public void Poll()

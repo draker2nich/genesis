@@ -58,7 +58,7 @@ namespace Genesis.Tests
             {
                 e.Position = _p.Position + new Vec3(1.2f, 0, 0);
                 _server.Attack(_p, e.Id);
-                Run(1);
+                Run(GameServer.AttackCooldownTicks);
             }
             Assert.IsNull(_server.Enemies.Get(e.Id));
             Assert.Greater(_server.Drops.Count, 0, "meat falls into the world");

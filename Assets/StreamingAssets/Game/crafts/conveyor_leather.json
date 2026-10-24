@@ -1,0 +1,18 @@
+{
+  "id": "genesis:conveyor_leather",
+  "station": "genesis:workbench",
+  "pattern": [
+    "LLL",
+    " G "
+  ],
+  "key": {
+    "L": "genesis:leather",
+    "G": "genesis:iron_gear"
+  },
+  "outputs": [
+    {
+      "item": "genesis:conveyor",
+      "count": 4
+    }
+  ]
+}

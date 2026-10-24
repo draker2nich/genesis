@@ -24,7 +24,7 @@ namespace Genesis.Client.UI
 
         private void DrawRecipesWindow()
         {
-            float w = Mathf.Min(Screen.width - 40, 980), h = Mathf.Min(Screen.height - 40, 640);
+            float w = Mathf.Min(UiScale.W - 40, 980), h = Mathf.Min(UiScale.H - 40, 640);
             var p = Panel(w, h, _ctx.Loc.Get("ui.jei"));
             const int Cols = 7;
             float listW = Cols * (Slot + Gap) - Gap + 18;

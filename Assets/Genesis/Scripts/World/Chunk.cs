@@ -136,5 +136,22 @@ namespace Genesis.World
         }
 
         public void MarkChanged() => Version++;
+
+        /// <summary>
+        /// Отпечаток содержимого (FNV-1a по блокам). Хост шлёт его вместе с «чанк не менялся»: если клиент
+        /// сгенерировал по seed что-то другое (другая версия генератора, расхождение математики на другом CPU),
+        /// он запрашивает настоящие данные чанка.
+        /// </summary>
+        public ulong ContentHash()
+        {
+            unchecked
+            {
+                // Не зависит от представления (однородный чанк и массив из одинаковых блоков дают одно и то же)
+                ulong h = 14695981039346656037UL;
+                for (int i = 0; i < WorldConstants.ChunkVolume; i++)
+                    h = (h ^ (_blocks == null ? _uniform : _blocks[i])) * 1099511628211UL;
+                return h == 0 ? 1 : h;
+            }
+        }
     }
 }

@@ -17,7 +17,9 @@
       "genesis:steam_washer",
       "genesis:steam_drill",
       "genesis:inserter",
-      "genesis:fluid_tank"
+      "genesis:fluid_tank",
+      "genesis:conveyor_leather",
+      "genesis:pipe_shell"
     ],
     "recipes": []
   },

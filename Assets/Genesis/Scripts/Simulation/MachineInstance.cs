@@ -38,6 +38,16 @@ namespace Genesis.Simulation
 
         // ---- состояние процесса
         public RecipeDef CurrentRecipe;
+        /// <summary>Рецепт, выбранный игроком в интерфейсе машины. null — машина выбирает сама.</summary>
+        public RecipeDef LockedRecipe;
+        /// <summary>
+        /// Заказ провайдера ME: следующие QueuedRuns запусков — строго этот рецепт (входы под него уже положены).
+        /// Важнее выбора игрока, иначе машина сделала бы из этих входов другое и автокрафт «потерял» бы заказ.
+        /// </summary>
+        public RecipeDef QueuedRecipe;
+        public int QueuedRuns;
+        /// <summary>Последний выполненный рецепт: при авто-выборе пробуется первым (машина не «прыгает» между рецептами).</summary>
+        public RecipeDef LastRecipe;
         public float Progress;            // в тиках рецепта
         public readonly List<ItemStack> PendingOutputs = new List<ItemStack>();
         public int BurnLeft;              // тиков горения текущего топлива
@@ -100,6 +110,9 @@ namespace Genesis.Simulation
 
         /// <summary>Инвентарь, из которого машина выталкивает предметы через item_out.</summary>
         public Inventory EjectInventory => Output.Size > 0 ? Output : Input;
+
+        /// <summary>Рецепт, под который машина сейчас принимает сырьё (заказ ME или выбор игрока), null — любой.</summary>
+        public RecipeDef PinnedRecipe => QueuedRuns > 0 && QueuedRecipe != null ? QueuedRecipe : LockedRecipe;
 
         public float ProgressFraction => CurrentRecipe == null ? 0f : Progress / CurrentRecipe.TimeTicks;
 

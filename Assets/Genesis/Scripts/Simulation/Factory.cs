@@ -40,6 +40,13 @@ namespace Genesis.Simulation
         public float Wind => (float)(0.8 + 0.3 * Math.Sin(TickCount / 1300.0) + 0.15 * Math.Sin(TickCount / 370.0));
 
         private readonly Dictionary<int, HashSet<int>> _recipeInputs = new Dictionary<int, HashSet<int>>();
+        private readonly List<Int3> _pendingRemovals = new List<Int3>();
+
+        /// <summary>Убрать блок машины после текущего тика (машина сама решила исчезнуть: пустые останки).</summary>
+        public void ScheduleRemoval(Int3 pos)
+        {
+            if (!_pendingRemovals.Contains(pos)) _pendingRemovals.Add(pos);
+        }
 
         public long TickCount { get; private set; }
 
@@ -156,12 +163,9 @@ namespace Genesis.Simulation
         /// <summary>Удаляет сущность; возвращает выпавшие предметы.</summary>
         public List<ItemStack> OnBlockRemoved(Int3 pos)
         {
-            var drops = new List<ItemStack>();
+            var drops = ContentsOf(pos);
             if (_machineAt.TryGetValue(pos, out var m))
             {
-                drops.AddRange(m.Input.NonEmpty());
-                drops.AddRange(m.Output.NonEmpty());
-                drops.AddRange(m.Fuel.NonEmpty());
                 _machineAt.Remove(pos);
                 _machines.Remove(m);
                 _networksDirty = true;
@@ -171,7 +175,6 @@ namespace Genesis.Simulation
             }
             if (_conveyorAt.TryGetValue(pos, out var c))
             {
-                foreach (var it in c.Items) drops.Add(new ItemStack(it.Item, 1));
                 _conveyorAt.Remove(pos);
                 _conveyors.Remove(c);
                 _conveyorOrderDirty = true;
@@ -197,6 +200,27 @@ namespace Genesis.Simulation
                 return drops;
             }
             if (m != null || c != null) EntityRemoved?.Invoke(pos);
+            return drops;
+        }
+
+        /// <summary>
+        /// Что выпадет при поломке блока: инвентари машины, предметы на ленте и сырьё текущего цикла
+        /// (входы списываются в начале цикла — при поломке посреди работы они возвращаются).
+        /// </summary>
+        public List<ItemStack> ContentsOf(Int3 pos)
+        {
+            var drops = new List<ItemStack>();
+            if (_machineAt.TryGetValue(pos, out var m))
+            {
+                drops.AddRange(m.Input.NonEmpty());
+                drops.AddRange(m.Output.NonEmpty());
+                drops.AddRange(m.Fuel.NonEmpty());
+                if (m.CurrentRecipe != null && m.Def.Behavior != "drill")
+                    foreach (var i in m.CurrentRecipe.Inputs)
+                        if (i.ItemId >= 0 && i.Count > 0) drops.Add(new ItemStack(i.ItemId, i.Count));
+            }
+            if (_conveyorAt.TryGetValue(pos, out var c))
+                foreach (var it in c.Items) drops.Add(new ItemStack(it.Item, 1, it.Meta));
             return drops;
         }
 
@@ -270,6 +294,40 @@ namespace Genesis.Simulation
             return false;
         }
 
+        /// <summary>Выбрать рецепт машины (null — авто). Возвращает false, если рецепт не этой машины.</summary>
+        public bool SetLockedRecipe(Int3 pos, RecipeDef recipe)
+        {
+            if (!_machineAt.TryGetValue(pos, out var m)) return false;
+            if (recipe != null)
+            {
+                bool own = false;
+                foreach (var r in Content.RecipesFor(m.Def.NumericId))
+                    if (r == recipe) { own = true; break; }
+                if (!own) return false;
+            }
+            m.LockedRecipe = recipe;
+            EntityChanged?.Invoke(pos);
+            return true;
+        }
+
+        /// <summary>
+        /// Поставив трубу в pos, игрок соединил бы сети с разными жидкостями (одна из них исчезла бы при слиянии).
+        /// </summary>
+        public bool WouldMixFluids(Int3 pos)
+        {
+            if (_networksDirty) RebuildNetworks();
+            int fluid = -1;
+            foreach (var d in Directions.All)
+            {
+                if (!_pipeAt.TryGetValue(pos + d.Offset(), out var p) || p.Network == null) continue;
+                var net = p.Network;
+                if (net.Amount <= 0 || net.Fluid < 0) continue;
+                if (fluid >= 0 && fluid != net.Fluid) return true;
+                fluid = net.Fluid;
+            }
+            return false;
+        }
+
         public void SetSide(Int3 pos, RelativeSide side, SideType type)
         {
             if (!_machineAt.TryGetValue(pos, out var m)) return;
@@ -315,24 +373,50 @@ namespace Genesis.Simulation
 
             Stats.Tick();
             TickCount++;
+
+            if (_pendingRemovals.Count > 0)
+            {
+                foreach (var pos in _pendingRemovals)
+                {
+                    if (!_machineAt.ContainsKey(pos)) continue;
+                    if (World != null && !World.IsLoaded(pos.X, pos.Y, pos.Z)) continue; // уберём, когда чанк загрузится
+                    OnBlockRemoved(pos);
+                    World?.SetBlock(pos, Content.AirNumeric);
+                }
+                _pendingRemovals.Clear();
+            }
         }
 
         // ============================================================ Предметы между блоками
 
+        /// <summary>Входы открытых (RecipeFilter) рецептов машины. Кэш сбрасывается при изменении знаний.</summary>
         private HashSet<int> RecipeInputsOf(MachineDef def)
         {
             if (_recipeInputs.TryGetValue(def.NumericId, out var set)) return set;
             set = new HashSet<int>();
             foreach (var r in Content.RecipesFor(def.NumericId))
+            {
+                if (RecipeFilter != null && !RecipeFilter(r)) continue; // неоткрытый рецепт не забивает вход сырьём
                 foreach (var i in r.Inputs) set.Add(i.ItemId);
+            }
             _recipeInputs[def.NumericId] = set;
             return set;
         }
 
-        /// <summary>Подходит ли предмет как вход машины (сырьё или топливо).</summary>
+        /// <summary>Открылись новые рецепты — пересчитать, что машины принимают на вход.</summary>
+        public void InvalidateRecipeCache() => _recipeInputs.Clear();
+
+        /// <summary>Подходит ли предмет как вход машины (сырьё). Выбран рецепт — только его входы.</summary>
         public bool AcceptsAsInput(MachineInstance m, int item)
         {
             if (m.Def.Behavior == "storage") return true;
+            var pinned = m.PinnedRecipe;
+            if (pinned != null)
+            {
+                foreach (var i in pinned.Inputs)
+                    if (i.ItemId == item) return true;
+                return false;
+            }
             return RecipeInputsOf(m.Def).Contains(item);
         }
 
@@ -349,7 +433,7 @@ namespace Genesis.Simulation
                 // Лента не принимает с собственного выхода
                 if (conv.Facing == face) return 0;
                 if (!conv.CanAccept()) return 0;
-                if (!simulate) conv.Accept(stack.Item, 0f, -conv.Speed);
+                if (!simulate) conv.Accept(stack.Item, 0f, -conv.Speed, stack.Meta);
                 return 1;
             }
 
@@ -368,9 +452,19 @@ namespace Genesis.Simulation
             var def = Content.Item(stack.Item);
             if (m.Def.Behavior == "me_drive") return def?.StorageCell != null ? m.Input.Insert(stack, simulate) : 0;
             if (m.Def.IsMeDevice) return 0;
+            // Заполненная ячейка ME в обрабатывающую машину не попадает — её съел бы рецепт вместе с содержимым
+            if (def?.StorageCell != null && Me.CellHasContents(stack.Meta)) return 0;
 
             bool isFuel = def != null && def.IsFuel && m.Fuel.Size > 0;
             bool isInput = m.Input.Size > 0 && AcceptsAsInput(m, stack.Item);
+
+            // И сырьё, и топливо (бревно в горне): если рецепт не выбран и машине нечем топиться — сначала в топливо.
+            // Раньше бревно с ленты всегда уходило на пережиг в уголь, и горн, который кормят одними брёвнами, вставал.
+            if (isInput && isFuel && m.PinnedRecipe == null && m.BurnLeft <= 0 && m.Fuel.IsEmpty)
+            {
+                int f = m.Fuel.Insert(stack.WithCount(Math.Min(stack.Count, 4)), simulate);
+                if (f > 0) return f;
+            }
 
             if (isInput)
             {
@@ -393,13 +487,19 @@ namespace Genesis.Simulation
 
                 if (side == SideType.ItemOut)
                 {
+                    // Пробуем слоты по очереди: если соседу не подходит первый предмет (например, побочка),
+                    // остальное всё равно уходит, а не стоит в очереди за ним
                     var inv = m.EjectInventory;
-                    int slot = inv.FirstNonEmpty();
-                    if (slot < 0) continue;
-                    var st = inv[slot];
                     int limit = _conveyorAt.ContainsKey(target) ? 1 : 4;
-                    int n = InsertInto(target, st.WithCount(Math.Min(limit, st.Count)), face);
-                    if (n > 0) inv.ExtractFromSlot(slot, n);
+                    for (int slot = 0; slot < inv.Size; slot++)
+                    {
+                        var st = inv[slot];
+                        if (st.IsEmpty) continue;
+                        int n = InsertInto(target, st.WithCount(Math.Min(limit, st.Count)), face);
+                        if (n <= 0) continue;
+                        inv.ExtractFromSlot(slot, n);
+                        break;
+                    }
                 }
                 else if (_machineAt.TryGetValue(target, out var other))
                 {
@@ -465,7 +565,7 @@ namespace Genesis.Simulation
             {
                 for (int i = 0; i < conv.Items.Count; i++)
                 {
-                    var cand = new ItemStack(conv.Items[i].Item, 1);
+                    var cand = conv.StackAt(i);
                     if (PutInto(target, cand, targetFace, true) <= 0) continue;
                     conv.Items.RemoveAt(i);
                     return cand;
@@ -492,7 +592,7 @@ namespace Genesis.Simulation
         {
             if (World == null) return;
             var below = m.Pos + Int3.Down;
-            if (!World.IsLoaded(below.X, below.Y, below.Z)) return;
+            if (!World.IsLoaded(below.X, below.Y, below.Z)) return; // чанк выгружен — залежь из сохранения
             var def = World.GetBlockDef(below);
             if (def.DepositOf != null)
             {
@@ -568,7 +668,7 @@ namespace Genesis.Simulation
                         if (nextConv.Facing != face && nextConv.CanAccept(0f))
                         {
                             float overshoot = Math.Min(target - 1f, Conveyor.Spacing * 0.5f);
-                            nextConv.Accept(it.Item, overshoot, overshoot - c.Speed);
+                            nextConv.Accept(it.Item, overshoot, overshoot - c.Speed, it.Meta);
                             moved = true;
                         }
                         else moved = false;
@@ -576,7 +676,7 @@ namespace Genesis.Simulation
                     else
                     {
                         // Реплика не знает, примет ли машина предмет, — ждёт снапшот хоста.
-                        moved = !IsReplica && InsertInto(next, new ItemStack(it.Item, 1), face) > 0;
+                        moved = !IsReplica && InsertInto(next, new ItemStack(it.Item, 1, it.Meta), face) > 0;
                     }
 
                     if (moved)
@@ -878,7 +978,8 @@ namespace Genesis.Simulation
 
         // ============================================================ Сохранение
 
-        private const int SaveVersion = 3;
+        // 4: Meta предметов на лентах, залежь буров, выбранный рецепт машины и заказ ME
+        private const int SaveVersion = 4;
 
         public void Write(BinaryWriter w)
         {
@@ -918,6 +1019,12 @@ namespace Genesis.Simulation
                 w.Write(m.Rng.State);
                 w.Write(m.EnergyStored);
                 MeSystem.WriteDevice(w, m, Content);
+                // v4
+                w.Write(m.LockedRecipe != null ? m.LockedRecipe.Id : "");
+                w.Write(m.QueuedRecipe != null && m.QueuedRuns > 0 ? m.QueuedRecipe.Id : "");
+                w.Write(m.QueuedRuns);
+                w.Write(m.DepositItem >= 0 ? Content.Items.IdOf(m.DepositItem) ?? "" : "");
+                w.Write(m.DepositPurity);
             }
 
             w.Write(_conveyors.Count);
@@ -931,6 +1038,7 @@ namespace Genesis.Simulation
                 {
                     w.Write(Content.Items.IdOf(it.Item) ?? "");
                     w.Write(it.Pos);
+                    w.Write(it.Meta);
                 }
             }
 
@@ -1026,6 +1134,16 @@ namespace Genesis.Simulation
                 ulong rng = r.ReadUInt64();
                 float energy = ver >= 2 ? r.ReadSingle() : 0f;
                 if (ver >= 3) MeSystem.ReadDevice(r, m, Content);
+                string locked = "", queued = "", deposit = "";
+                int queuedRuns = 0, purity = 0;
+                if (ver >= 4)
+                {
+                    locked = r.ReadString();
+                    queued = r.ReadString();
+                    queuedRuns = r.ReadInt32();
+                    deposit = r.ReadString();
+                    purity = r.ReadInt32();
+                }
 
                 if (m == null)
                 {
@@ -1042,6 +1160,12 @@ namespace Genesis.Simulation
                 m.HasSource = hasSource;
                 m.Rng.State = rng;
                 m.EnergyStored = Math.Min(energy, m.EnergyCapacity);
+                m.LockedRecipe = locked.Length > 0 ? Content.Recipes.Get(locked) : null;
+                m.QueuedRecipe = queued.Length > 0 ? Content.Recipes.Get(queued) : null;
+                m.QueuedRuns = m.QueuedRecipe != null ? queuedRuns : 0;
+                // Залежь бура сохраняется: дальний бур работает сразу после загрузки, не дожидаясь своего чанка
+                m.DepositItem = deposit.Length > 0 ? Content.Items.IndexOf(deposit) : -1;
+                m.DepositPurity = Math.Max(1, purity);
                 AddMachine(m);
             }
 
@@ -1064,8 +1188,9 @@ namespace Genesis.Simulation
                 {
                     string iid = r.ReadString();
                     float ipos = r.ReadSingle();
+                    int imeta = ver >= 4 ? r.ReadInt32() : 0;
                     int idx = Content.Items.IndexOf(iid);
-                    if (c != null && idx >= 0) c.Items.Add(new BeltItem { Item = idx, Pos = ipos, PrevPos = ipos });
+                    if (c != null && idx >= 0) c.Items.Add(new BeltItem { Item = idx, Meta = imeta, Pos = ipos, PrevPos = ipos });
                 }
             }
             _conveyorOrderDirty = true;

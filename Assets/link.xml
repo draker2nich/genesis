@@ -1,0 +1,16 @@
+<!--
+  IL2CPP (WebGL / Яндекс Игры) вырезает «неиспользуемый» код. Определения контента создаются Newtonsoft.Json
+  через рефлексию, поэтому их сборки и сам Json.NET сохраняем целиком.
+-->
+<linker>
+  <assembly fullname="Genesis.Core" preserve="all"/>
+  <assembly fullname="Genesis.Data" preserve="all"/>
+  <assembly fullname="Genesis.World" preserve="all"/>
+  <assembly fullname="Genesis.Simulation" preserve="all"/>
+  <assembly fullname="Genesis.Gameplay" preserve="all"/>
+  <assembly fullname="Genesis.Modding" preserve="all"/>
+  <assembly fullname="Newtonsoft.Json" preserve="all"/>
+  <assembly fullname="System.Core">
+    <type fullname="System.Linq.Expressions.Interpreter.LightLambda" preserve="all"/>
+  </assembly>
+</linker>

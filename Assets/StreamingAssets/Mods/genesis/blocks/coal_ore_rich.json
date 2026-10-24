@@ -1,9 +1,0 @@
-{
-  "id": "genesis:coal_ore_rich",
-  "hardness": 3.5,
-  "tool": "pickaxe",
-  "drop": "genesis:coal",
-  "purity": 3,
-  "deposit_of": "genesis:coal",
-  "harvest_tier": 1
-}

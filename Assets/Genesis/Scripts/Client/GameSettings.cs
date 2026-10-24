@@ -16,14 +16,21 @@ namespace Genesis.Client
 
         private const string Prefix = "genesis.settings.";
 
+        /// <summary>Игрок уже выбирал язык (иначе в Яндекс Играх берётся язык площадки).</summary>
+        public static bool HasSavedLanguage => PlayerPrefs.HasKey(Prefix + "lang");
+
         public static void Load()
         {
+            bool web = Application.platform == RuntimePlatform.WebGLPlayer;
             Language = PlayerPrefs.GetString(Prefix + "lang", Application.systemLanguage == SystemLanguage.Russian ? "ru" : "en");
-            ViewRadius = Mathf.Clamp(PlayerPrefs.GetInt(Prefix + "view", 8), 4, 16);
+            // В браузере по умолчанию ближе дальность и без теней — ровнее кадр на слабых ПК
+            ViewRadius = Mathf.Clamp(PlayerPrefs.GetInt(Prefix + "view", web ? (Application.isMobilePlatform ? 4 : 5) : 8), 4, 16);
             MouseSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(Prefix + "mouse", 2.2f), 0.3f, 8f);
             Fov = Mathf.Clamp(PlayerPrefs.GetFloat(Prefix + "fov", 75f), 55f, 100f);
-            Shadows = PlayerPrefs.GetInt(Prefix + "shadows", 1) == 1;
-            PostProcessing = PlayerPrefs.GetInt(Prefix + "post", 1) == 1;
+            Shadows = PlayerPrefs.GetInt(Prefix + "shadows", web ? 0 : 1) == 1;
+            // Poki просит отключать постобработку URP в браузере (дорого на слабых устройствах); игрок может включить
+            bool mobile = Application.isMobilePlatform;
+            PostProcessing = PlayerPrefs.GetInt(Prefix + "post", web && (WebPortal.IsPoki || mobile) ? 0 : 1) == 1;
             ViewBobbing = PlayerPrefs.GetInt(Prefix + "bob", 1) == 1;
             Clouds = PlayerPrefs.GetInt(Prefix + "clouds", 1) == 1;
             InputReader.MouseSensitivity = MouseSensitivity;

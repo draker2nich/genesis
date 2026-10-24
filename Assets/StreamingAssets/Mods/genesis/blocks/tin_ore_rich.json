@@ -1,9 +1,0 @@
-{
-  "id": "genesis:tin_ore_rich",
-  "hardness": 3.5,
-  "tool": "pickaxe",
-  "drop": "genesis:tin_ore",
-  "purity": 3,
-  "deposit_of": "genesis:tin_ore",
-  "harvest_tier": 2
-}

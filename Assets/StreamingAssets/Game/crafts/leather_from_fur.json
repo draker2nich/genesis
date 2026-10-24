@@ -1,0 +1,17 @@
+{
+  "id": "genesis:leather_from_fur",
+  "station": "hand",
+  "shapeless": true,
+  "inputs": [
+    {
+      "item": "genesis:fur",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:leather",
+      "count": 1
+    }
+  ]
+}

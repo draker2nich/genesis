@@ -35,18 +35,19 @@ namespace Genesis.Client
             "       ###  ",
         };
 
-        public static void Apply()
+        public static void Apply(string coreRoot = null)
         {
-            if (_tex == null) _tex = LoadPng() ?? Build();
+            if (_tex == null) _tex = LoadPng(coreRoot) ?? Build();
             if (_tex == null) return;
             Cursor.SetCursor(_tex, Vector2.zero, CursorMode.Auto);
         }
 
-        private static Texture2D LoadPng()
+        private static Texture2D LoadPng(string coreRoot)
         {
             try
             {
-                string path = System.IO.Path.Combine(Application.streamingAssetsPath, "Game", "textures", "cursor.png");
+                string root = coreRoot ?? System.IO.Path.Combine(Application.streamingAssetsPath, "Game");
+                string path = System.IO.Path.Combine(root, "textures", "cursor.png");
                 if (!System.IO.File.Exists(path)) return null;
                 var t = new Texture2D(2, 2, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
                 return t.LoadImage(System.IO.File.ReadAllBytes(path)) ? t : null;

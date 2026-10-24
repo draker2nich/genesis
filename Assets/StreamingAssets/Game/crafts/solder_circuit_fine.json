@@ -1,0 +1,26 @@
+{
+  "id": "genesis:solder_circuit_fine",
+  "station": "genesis:workbench",
+  "pattern": [
+    "WQW",
+    "SPS",
+    "BW "
+  ],
+  "key": {
+    "W": "genesis:copper_wire",
+    "Q": "genesis:quartz",
+    "P": "genesis:iron_plate",
+    "S": "genesis:solder",
+    "B": "~genesis:flux_brush"
+  },
+  "outputs": [
+    {
+      "item": "genesis:circuit",
+      "count": 2
+    }
+  ],
+  "minigame": {
+    "template": "soldering",
+    "difficulty": 2
+  }
+}

@@ -13,6 +13,10 @@
     {
       "item": "genesis:quartz",
       "count": 1
+    },
+    {
+      "item": "genesis:solder",
+      "count": 1
     }
   ],
   "outputs": [

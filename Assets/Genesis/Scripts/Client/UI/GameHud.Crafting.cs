@@ -59,7 +59,7 @@ namespace Genesis.Client.UI
             float w = GridWidth + 24;
             float craftH = 3 * (Slot + Gap) + 4;
             float h = 44 + craftH + 18 + GridHeight + 16;
-            float panelW = Mathf.Clamp(Screen.width - w - 60, 240, 380);
+            float panelW = Mathf.Clamp(UiScale.W - w - 60, 240, 380);
             var p = Panel(w, h, title, -(panelW + 12) / 2f);
             _windowRect = p;
             var player = _ctx.Player;
@@ -134,7 +134,7 @@ namespace Genesis.Client.UI
             }
 
             // ---- Справочник справа
-            _panelRect = new Rect(p.xMax + 12, Mathf.Max(20, p.y - 40), panelW, Mathf.Min(Screen.height - 40, h + 80));
+            _panelRect = new Rect(p.xMax + 12, Mathf.Max(20, p.y - 40), panelW, Mathf.Min(UiScale.H - 40, h + 80));
             DrawJeiPanel(_panelRect, size);
 
             // ---- Клик мимо окна — выбросить то, что на курсоре

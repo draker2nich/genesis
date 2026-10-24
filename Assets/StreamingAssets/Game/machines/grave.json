@@ -13,5 +13,7 @@
     "front": "genesis:grave_side"
   },
   "anim": "none",
+  "drop": "none",
+  "params": { "remove_when_empty": 1 },
   "model": "genesis:grave"
 }

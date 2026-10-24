@@ -13,6 +13,10 @@ namespace Genesis.Net
         Hello = 1,
         Command = 2,
         ChunkRequest = 3,
+        /// <summary>Полные данные чанков (сгенерированный клиентом не совпал с отпечатком хоста).</summary>
+        ChunkRequestFull = 4,
+        /// <summary>«Я жив» от клиента раз в 2 с (тайм-аут мёртвых соединений на хосте).</summary>
+        Ping = 5,
 
         // хост → клиент
         Welcome = 20,
@@ -32,12 +36,16 @@ namespace Genesis.Net
         Time = 34,
         MeSnapshot = 35,
         Drops = 36,
+        /// <summary>Пачка состояний машин за проход (раньше — отдельный пакет на машину).</summary>
+        Machines = 37,
+        /// <summary>Пачка состояний лент за проход.</summary>
+        Conveyors = 38,
     }
 
     public static class Protocol
     {
         /// <summary>Меняется при несовместимых изменениях формата пакетов.</summary>
-        public const int Version = 5;
+        public const int Version = 6;
         public const int DefaultPort = 27015;
 
         public static BinaryWriter Begin(MsgType type, out MemoryStream ms)
@@ -184,6 +192,11 @@ namespace Genesis.Net
                     w.Write((byte)33);
                     w.Write(c.CreatureId);
                     break;
+                case SetRecipeCommand c:
+                    w.Write((byte)34);
+                    Protocol.WritePos(w, c.Pos);
+                    w.Write(c.Recipe);
+                    break;
                 case FillGridCommand c:
                     w.Write((byte)32);
                     w.Write(c.CraftId);
@@ -310,6 +323,7 @@ namespace Genesis.Net
                 case 31: return new DropCursorCommand { All = r.ReadBoolean() };
                 case 32: return new FillGridCommand { CraftId = r.ReadInt32(), Max = r.ReadBoolean() };
                 case 33: return new InteractCommand { CreatureId = r.ReadInt32() };
+                case 34: return new SetRecipeCommand { Pos = Protocol.ReadPos(r), Recipe = r.ReadInt32() };
                 case 13: return new CraftCommand { CraftId = r.ReadInt32(), Station = Protocol.ReadPos(r), MinigameSuccess = r.ReadBoolean() };
                 case 14: return new AttackCommand { EnemyId = r.ReadInt32() };
                 case 15: return new EatCommand();
@@ -374,7 +388,7 @@ namespace Genesis.Net
                 }
                 w.Write((ushort)(s.Item + 1));
                 w.Write((ushort)s.Count);
-                w.Write((ushort)s.Meta);
+                w.Write(s.Meta);
             }
         }
 
@@ -389,7 +403,7 @@ namespace Genesis.Net
                 else
                 {
                     int count = r.ReadUInt16();
-                    stack = new ItemStack(item, count, r.ReadUInt16());
+                    stack = new ItemStack(item, count, r.ReadInt32());
                 }
                 if (i < inv.Size && !inv[i].Equals(stack)) inv[i] = stack;
             }
@@ -416,6 +430,9 @@ namespace Genesis.Net
             w.Write(m.FluidFilter);
             w.Write((ushort)m.Patterns.Count);
             foreach (var p in m.Patterns) w.Write(p);
+            w.Write(m.LockedRecipe != null ? m.LockedRecipe.NumericId : -1);
+            w.Write(m.QueuedRuns > 0 && m.QueuedRecipe != null ? m.QueuedRecipe.NumericId : -1);
+            w.Write(m.QueuedRuns);
             WriteInventory(w, m.Input);
             WriteInventory(w, m.Output);
             WriteInventory(w, m.Fuel);
@@ -462,6 +479,11 @@ namespace Genesis.Net
             int pc = r.ReadUInt16();
             m.Patterns.Clear();
             for (int i = 0; i < pc; i++) m.Patterns.Add(r.ReadInt32());
+            int locked = r.ReadInt32();
+            m.LockedRecipe = locked >= 0 ? f.Content.Recipes.Get(locked) : null;
+            int queued = r.ReadInt32();
+            m.QueuedRecipe = queued >= 0 ? f.Content.Recipes.Get(queued) : null;
+            m.QueuedRuns = r.ReadInt32();
             ReadInventory(r, m.Input);
             ReadInventory(r, m.Output);
             ReadInventory(r, m.Fuel);
@@ -490,6 +512,7 @@ namespace Genesis.Net
             {
                 w.Write((ushort)it.Item);
                 w.Write((byte)Math.Round(Math.Max(0, Math.Min(1, it.Pos)) * 250));
+                w.Write(it.Meta);
             }
         }
 
@@ -506,7 +529,8 @@ namespace Genesis.Net
             {
                 int item = r.ReadUInt16();
                 float p = r.ReadByte() / 250f;
-                c.Items.Add(new BeltItem { Item = item, Pos = p, PrevPos = p });
+                int meta = r.ReadInt32();
+                c.Items.Add(new BeltItem { Item = item, Meta = meta, Pos = p, PrevPos = p });
             }
             return c;
         }

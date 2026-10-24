@@ -250,6 +250,7 @@ namespace Genesis.Modding
         /// <summary>Код-моды: загрузить DLL и вызвать OnLoad у всех IGenesisMod. Вызывать до content.Freeze().</summary>
         public void LoadCode(ContentDatabase content, Localization loc)
         {
+            if (!Genesis.Core.Platform.CodeMods) return; // браузер: загрузка DLL невозможна
             foreach (var m in _order)
             {
                 if (!m.HasCode) continue;

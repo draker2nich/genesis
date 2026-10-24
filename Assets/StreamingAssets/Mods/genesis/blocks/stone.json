@@ -1,7 +1,0 @@
-{
-  "id": "genesis:stone",
-  "hardness": 1.5,
-  "tool": "pickaxe",
-  "drop": "genesis:cobblestone",
-  "harvest_tier": 1
-}

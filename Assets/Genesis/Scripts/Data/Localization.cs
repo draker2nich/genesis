@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using Genesis.Core;
 using Newtonsoft.Json;
 
 namespace Genesis.Data
@@ -24,7 +26,18 @@ namespace Genesis.Data
             foreach (var file in Directory.GetFiles(dir, "*.json"))
             {
                 string code = Path.GetFileNameWithoutExtension(file);
-                var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(file));
+                Dictionary<string, string> dict;
+                try
+                {
+                    dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(file));
+                }
+                catch (Exception e)
+                {
+                    // Сломанный файл перевода мода не должен ронять загрузку игры
+                    Log.Error($"Bad language file {file}: {e.Message}");
+                    Errors.Add($"{file}: {e.Message}");
+                    continue;
+                }
                 if (dict == null) continue;
                 if (!_tables.TryGetValue(code, out var table)) _tables[code] = table = new Dictionary<string, string>();
                 foreach (var kv in dict) table[kv.Key] = kv.Value;
@@ -45,7 +58,27 @@ namespace Genesis.Data
             return key;
         }
 
-        public string Format(string key, params object[] args) => string.Format(Get(key), args);
+        /// <summary>Ошибки чтения файлов перевода (для экрана модов).</summary>
+        public readonly List<string> Errors = new List<string>();
+
+        /// <summary>Строка с подстановками; кривой перевод («{2}» при одном аргументе) не роняет игру.</summary>
+        public string Format(string key, params object[] args)
+        {
+            string pattern = Get(key);
+            try
+            {
+                return string.Format(pattern, args);
+            }
+            catch (FormatException)
+            {
+                string fb = _tables.TryGetValue(Fallback, out var t) && t.TryGetValue(key, out var s) ? s : null;
+                if (fb != null && fb != pattern)
+                {
+                    try { return string.Format(fb, args); } catch (FormatException) { }
+                }
+                return pattern + " " + string.Join(" ", args);
+            }
+        }
 
         public IEnumerable<string> Languages => _tables.Keys;
     }

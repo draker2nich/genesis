@@ -48,6 +48,8 @@ namespace Genesis.Gameplay
         public int LoveTicks;      // накормлено — ищет пару
         public int BreedCooldown;
         public int LayTimer;
+        /// <summary>Домашнее животное (кормили или родилось на ферме): не исчезает вдали от игроков и сохраняется.</summary>
+        public bool Domestic;
     }
 
     /// <summary>Снаряд существа (кислотный плевок).</summary>
@@ -80,6 +82,10 @@ namespace Genesis.Gameplay
         public const int MaxHostilePerPlayer = 6;
         public const int MaxPassivePerPlayer = 10;
         public const float LeashRadius = 20f;
+        /// <summary>Поводок ночных существ поверхности: дальше не преследуют, возвращаются.</summary>
+        public const float SurfaceLeashRadius = 32f;
+        /// <summary>Свет, который считается «рукотворным» (факел, лампа): возле него враги не появляются и не заходят.</summary>
+        public const int BaseLightLevel = 10;
         public const float DespawnRadius = 72f;
         public const float PassiveDespawnRadius = 110f;
         public const float AttackRange = 1.6f;
@@ -99,10 +105,73 @@ namespace Genesis.Gameplay
         /// <summary>Можно отключить (мирные тесты); мирного режима в игре нет.</summary>
         public bool SpawningEnabled = true;
 
+        // ---- «Безопасные зоны»: чанки с машинами или яркими источниками света (база игрока)
+        private readonly Dictionary<Int3, int> _machinesInChunk = new Dictionary<Int3, int>();
+        private readonly Dictionary<Int3, int> _lightsInChunk = new Dictionary<Int3, int>();
+
         public EnemyManager(GameServer server)
         {
             _server = server;
             _rng = new Random64(Hash.SplitMix((ulong)server.Seed ^ 0xE1E1E1UL));
+            server.Factory.MachineAdded += m => Count(_machinesInChunk, WorldConstants.ChunkOf(m.Pos), +1);
+            server.Factory.MachineRemoved += pos => Count(_machinesInChunk, WorldConstants.ChunkOf(pos), -1);
+            server.World.ChunkLoaded += OnChunkLoaded;
+            server.World.ChunkUnloaded += c => _lightsInChunk.Remove(c);
+            server.World.BlockChanged += OnBlockChanged;
+        }
+
+        private static void Count(Dictionary<Int3, int> map, Int3 key, int delta)
+        {
+            int n = (map.TryGetValue(key, out int v) ? v : 0) + delta;
+            if (n <= 0) map.Remove(key);
+            else map[key] = n;
+        }
+
+        private bool IsBaseLight(ushort block) => _server.Content.Block(block).Light >= BaseLightLevel;
+
+        private void OnChunkLoaded(Chunk chunk)
+        {
+            var data = new ushort[WorldConstants.ChunkVolume];
+            chunk.CopyTo(data);
+            int n = 0;
+            ushort last = ushort.MaxValue;
+            bool lastLit = false;
+            for (int i = 0; i < data.Length; i++)
+            {
+                if (data[i] != last)
+                {
+                    last = data[i];
+                    lastLit = IsBaseLight(last);
+                }
+                if (lastLit) n++;
+            }
+            if (n > 0) _lightsInChunk[chunk.Coord] = n;
+            else _lightsInChunk.Remove(chunk.Coord);
+        }
+
+        private void OnBlockChanged(Int3 pos, ushort oldBlock, ushort newBlock)
+        {
+            bool was = IsBaseLight(oldBlock), now = IsBaseLight(newBlock);
+            if (was == now) return;
+            Count(_lightsInChunk, WorldConstants.ChunkOf(pos), now ? +1 : -1);
+        }
+
+        /// <summary>
+        /// Точка у базы игрока: в этом или соседнем чанке стоят машины или горят факелы/лампы.
+        /// Враги здесь не появляются, не заходят сюда и не преследуют игрока внутри (ТЗ: «не атакуют базу»).
+        /// </summary>
+        public bool IsSafeZone(Vec3 p)
+        {
+            if (_machinesInChunk.Count == 0 && _lightsInChunk.Count == 0) return false;
+            var c = WorldConstants.ChunkOf(p.Floor());
+            for (int dy = -1; dy <= 1; dy++)
+            for (int dz = -1; dz <= 1; dz++)
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                var k = new Int3(c.X + dx, c.Y + dy, c.Z + dz);
+                if (_machinesInChunk.ContainsKey(k) || _lightsInChunk.ContainsKey(k)) return true;
+            }
+            return false;
         }
 
         public Enemy Get(int id)
@@ -141,7 +210,8 @@ namespace Genesis.Gameplay
             {
                 var e = _enemies[i];
                 float despawn = e.Def.IsPassive ? PassiveDespawnRadius : DespawnRadius;
-                bool gone = e.Health <= 0 || !AnyPlayerWithin(e.Position, despawn);
+                // Домашние животные не исчезают: вдали от игроков они просто «замирают» (чанк не загружен)
+                bool gone = e.Health <= 0 || (!e.Domestic && !AnyPlayerWithin(e.Position, despawn));
                 // Ночные существа на поверхности уходят с рассветом (если никто не видит рядом)
                 if (!gone && e.Def.Time == "night" && IsDay && e.Def.Spawn == "surface" && !AnyPlayerWithin(e.Position, 20) && _rng.Chance(0.01)) gone = true;
                 if (gone)
@@ -262,6 +332,8 @@ namespace Genesis.Gameplay
                         e.BreedCooldown = o.BreedCooldown = 20 * 60 * 5;
                         var baby = Spawn(e.Def, e.Position + new Vec3(0.5f, 0.2f, 0.5f));
                         baby.Health = e.Def.Health;
+                        baby.Domestic = true;
+                        baby.Home = baby.Position;
                         return;
                     }
                     Dir(to, out wishX, out wishZ);
@@ -297,7 +369,8 @@ namespace Genesis.Gameplay
         private void HostileBrain(Enemy e, ref float wishX, ref float wishZ, ref float speed, ref bool jump)
         {
             var def = e.Def;
-            bool leashed = def.Spawn != "surface";
+            // Поводок есть у всех: пещерные и руинные — 20 блоков, ночные с поверхности — 32. К базе не идут.
+            float leash = def.Spawn == "surface" ? SurfaceLeashRadius : LeashRadius;
             float aggro = def.Aggro * (e.AlertTicks > 0 ? 2f : 1f);
             PlayerState target = null;
             if (def.IsHostile || e.Provoked)
@@ -307,8 +380,8 @@ namespace Genesis.Gameplay
                 {
                     if (p.Health <= 0) continue;
                     float d = (p.Position - e.Position).LengthSquared;
-                    bool inLeash = !leashed || (p.Position - e.Home).LengthSquared < (LeashRadius + 6) * (LeashRadius + 6);
-                    if (d < best && inLeash)
+                    bool inLeash = (p.Position - e.Home).LengthSquared < (leash + 6) * (leash + 6);
+                    if (d < best && inLeash && !IsSafeZone(p.Position))
                     {
                         best = d;
                         target = p;
@@ -365,7 +438,8 @@ namespace Genesis.Gameplay
             if (target == null)
             {
                 if (e.State == CreatureState.Windup) e.State = CreatureState.Normal;
-                if (leashed && (e.Home - e.Position).LengthSquared > LeashRadius * LeashRadius)
+                // Ушёл за поводок или забрёл к базе — домой
+                if ((e.Home - e.Position).LengthSquared > leash * leash || IsSafeZone(e.Position))
                 {
                     Dir(e.Home - e.Position, out wishX, out wishZ);
                     return;
@@ -504,7 +578,7 @@ namespace Genesis.Gameplay
 
         private void Hit(Enemy e, PlayerState target, float damage, float knock)
         {
-            _server.DamagePlayer(target, damage, "enemy");
+            _server.DamagePlayer(target, damage * _server.Settings.Difficulty, "enemy");
             if (e.Def.Poison > 0) target.PoisonTicks = Math.Max(target.PoisonTicks, e.Def.Poison);
             var dir = target.Position - e.Position;
             Dir(dir, out float x, out float z);
@@ -636,6 +710,11 @@ namespace Genesis.Gameplay
                 int y = (int)Math.Floor(p.Position.Y) + _rng.NextInt(-10, 11);
                 if (Math.Abs(x) < 16 && z > -16 && z < 56) continue; // не у входа в бункер
                 if (!FindFloor(x, y, z, passive, out int fy, out string place)) continue;
+                if (!passive)
+                {
+                    if (place == "surface" && !_server.Settings.SurfaceEnemies) continue; // настройка мира
+                    if (IsSafeZone(new Vec3(x + 0.5f, fy, z + 0.5f))) continue;         // у базы не появляются
+                }
                 var def = Pick(x, z, place, passive);
                 if (def == null) continue;
                 int count = def.Group[0] + _rng.NextInt(Math.Max(1, def.Group[1] - def.Group[0] + 1));
@@ -784,10 +863,64 @@ namespace Genesis.Gameplay
         {
             if (!e.Def.IsPassive || e.Def.FoodItem < 0) return false;
             e.Health = Math.Min(e.Def.Health, e.Health + 4);
+            e.Domestic = true;
             if (e.BreedCooldown > 0) return true;
             e.LoveTicks = 600;
             return true;
         }
+
+        // ============================================================ Сохранение
+
+        /// <summary>Сохраняются мирные животные (ферма переживает перезапуск); враги появляются заново.</summary>
+        public void Write(System.IO.BinaryWriter w)
+        {
+            w.Write(1);
+            int n = 0;
+            foreach (var e in _enemies) if (e.Def.IsPassive && e.Health > 0) n++;
+            w.Write(n);
+            foreach (var e in _enemies)
+            {
+                if (!e.Def.IsPassive || e.Health <= 0) continue;
+                w.Write(e.Def.Id);
+                w.Write(e.Position.X);
+                w.Write(e.Position.Y);
+                w.Write(e.Position.Z);
+                w.Write(e.Home.X);
+                w.Write(e.Home.Y);
+                w.Write(e.Home.Z);
+                w.Write(e.Health);
+                w.Write(e.Domestic);
+                w.Write(e.BreedCooldown);
+                w.Write(e.LayTimer);
+            }
+        }
+
+        public void Read(System.IO.BinaryReader r)
+        {
+            _enemies.Clear();
+            r.ReadInt32();
+            int n = r.ReadInt32();
+            for (int i = 0; i < n; i++)
+            {
+                string id = r.ReadString();
+                var pos = new Vec3(r.ReadSingle(), r.ReadSingle(), r.ReadSingle());
+                var home = new Vec3(r.ReadSingle(), r.ReadSingle(), r.ReadSingle());
+                float health = r.ReadSingle();
+                bool domestic = r.ReadBoolean();
+                int breed = r.ReadInt32();
+                int lay = r.ReadInt32();
+                var def = _server.Content.Enemies.Get(id);
+                if (def == null) continue;
+                var e = Spawn(def, pos);
+                e.Home = home;
+                e.Health = Math.Min(def.Health, health);
+                e.Domestic = domestic;
+                e.BreedCooldown = breed;
+                e.LayTimer = lay;
+            }
+        }
+
+        public void Clear() => _enemies.Clear();
 
         public List<ItemStack> RollDrops(Enemy e)
         {

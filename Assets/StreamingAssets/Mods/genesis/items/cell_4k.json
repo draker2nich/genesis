@@ -1,8 +1,0 @@
-{
-  "id": "genesis:cell_4k",
-  "max_stack": 1,
-  "storage_cell": {
-    "kind": "item",
-    "capacity": 4096
-  }
-}

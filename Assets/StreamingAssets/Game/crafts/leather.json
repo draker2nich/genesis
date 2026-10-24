@@ -1,0 +1,17 @@
+{
+  "id": "genesis:leather",
+  "station": "hand",
+  "shapeless": true,
+  "inputs": [
+    {
+      "item": "genesis:hide",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:leather",
+      "count": 1
+    }
+  ]
+}

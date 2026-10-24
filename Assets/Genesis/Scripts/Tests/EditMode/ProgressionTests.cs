@@ -226,7 +226,12 @@ namespace Genesis.Tests
 
             Give("iron_sword", 1);
             Select("iron_sword");
-            for (int i = 0; i < 10 && e.Health > 0; i++) _server.Attack(_p, e.Id);
+            for (int i = 0; i < 10 && e.Health > 0; i++)
+            {
+                e.Position = _p.Position + new Vec3(1.2f, 0, 0);
+                _server.Attack(_p, e.Id);
+                if (e.Health > 0) Run(GameServer.AttackCooldownTicks);
+            }
             Assert.LessOrEqual(e.Health, 0f);
             Run(1);
             Assert.IsNull(_server.Enemies.Get(e.Id));

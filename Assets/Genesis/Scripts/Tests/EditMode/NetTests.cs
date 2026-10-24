@@ -260,6 +260,7 @@ namespace Genesis.Tests
                 new MeFluidFilterCommand { Pos = new Int3(1, 2, 3), Fluid = 1 },
                 new MePatternCommand { Pos = new Int3(1, 2, 3), Recipe = 5, Enabled = true },
                 new MeLinkCommand { Controller = new Int3(1, 2, 3) },
+                new SetRecipeCommand { Pos = new Int3(1, 2, 3), Recipe = 6 },
             };
             foreach (var cmd in cmds)
             {

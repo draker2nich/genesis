@@ -49,6 +49,19 @@ namespace Genesis.Client
             LockCursor(true);
         }
 
+        /// <summary>Поставить камеру: позиция глаз, рыскание и наклон (съёмка скриншотов). Игрок зависает в полёте.</summary>
+        public void SetView(Vector3 eye, float yaw, float pitch)
+        {
+            _body.Position = new Vec3(eye.x, eye.y - PlayerPhysics.EyeHeight, eye.z);
+            _body.Velocity = Vec3.Zero;
+            _body.Flying = true;
+            _body.Yaw = yaw;
+            _body.Pitch = pitch;
+            _bobAmount = 0f;
+            _ready = true;
+            UpdateCamera();
+        }
+
         public static void LockCursor(bool locked)
         {
             Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
@@ -65,12 +78,25 @@ namespace Genesis.Client
             bool locked = Cursor.lockState == CursorLockMode.Locked;
             // Система отобрала захват (Alt+Tab, клик вне окна в редакторе) — ставим паузу, как Minecraft
             if (_lockApplied && !locked && !Application.isFocused && _ctx.WantsCursorLock) _ctx.Paused = true;
+            // В браузере Esc снимает захват мыши сам (и до игры может не дойти) — тоже пауза. Захват браузер даёт
+            // не сразу, а по следующему клику, поэтому считаем потерей только то, что уже было захвачено.
+            if (YandexGames.IsWebGL)
+            {
+                if (locked) _sawLocked = true;
+                else if (_sawLocked && _ctx.WantsCursorLock)
+                {
+                    _ctx.Paused = true;
+                    _sawLocked = false;
+                }
+                if (!_ctx.WantsCursorLock) _sawLocked = false;
+            }
             bool want = _ctx.WantsCursorLock && Application.isFocused;
             if (want != locked || Cursor.visible == want) LockCursor(want);
             _lockApplied = want;
         }
 
         private bool _lockApplied;
+        private bool _sawLocked;
 
         private void OnApplicationFocus(bool focus)
         {
@@ -80,6 +106,7 @@ namespace Genesis.Client
         private void Update()
         {
             if (_ctx == null) return;
+            if (WebPortal.AdShowing) return; // во время рекламы ввод выключен (требование площадок)
             var world = _ctx.Session.World;
             var input = InputReader.Read();
 
@@ -116,7 +143,8 @@ namespace Genesis.Client
             bool uiOpen = !_ctx.WantsCursorLock;
 
             // ---- Взгляд
-            if (!uiOpen && Cursor.lockState == CursorLockMode.Locked)
+            bool aiming = Cursor.lockState == CursorLockMode.Locked || TouchControls.Enabled; // на сенсорном экране захвата мыши нет
+            if (!uiOpen && aiming)
             {
                 _body.Yaw = Mathf.Repeat(_body.Yaw + input.LookX, 360f);
                 _body.Pitch = Mathf.Clamp(_body.Pitch - input.LookY, -89f, 89f);
@@ -131,7 +159,8 @@ namespace Genesis.Client
                 move.Jump = input.Jump;
                 move.Sprint = input.Sprint;
                 move.Descend = input.Descend;
-                if (input.ToggleFly)
+                if (!_ctx.Player.Creative && _body.Flying) _body.Flying = false; // креатив выключили
+                if (input.ToggleFly && _ctx.Player.Creative)
                 {
                     _body.Flying = !_body.Flying;
                     _body.Velocity = Vec3.Zero;
@@ -167,7 +196,7 @@ namespace Genesis.Client
 
             // ---- Цель и взаимодействие
             UpdateTarget(world);
-            if (uiOpen || Cursor.lockState != CursorLockMode.Locked)
+            if (uiOpen || !aiming)
             {
                 _ctx.BreakProgress = 0;
                 Effects?.SetBreaking(false, default, 0);
@@ -213,10 +242,11 @@ namespace Genesis.Client
                 var boot = GetComponent<GenesisBootstrap>();
                 if (_ctx.Window != UiWindow.None) _ctx.Window = UiWindow.None;
                 else if (_ctx.Paused && boot != null && boot.InGameSettings) boot.InGameSettings = false; // из настроек — назад в меню паузы
-                else _ctx.Paused = !_ctx.Paused;
+                else if (!_ctx.Paused) _ctx.Paused = true;
+                else WebPortal.BreakOnResume(() => { if (_ctx != null) _ctx.Paused = false; }); // Poki: реклама — при возвращении в игру
             }
             if (input.Inventory) ToggleWindow(UiWindow.Inventory);
-            if (input.Creative) ToggleWindow(UiWindow.Creative);
+            if (input.Creative && _ctx.Player.Creative) ToggleWindow(UiWindow.Creative);
             if (input.Knowledge) ToggleWindow(UiWindow.Knowledge);
             if (input.Stats) ToggleWindow(UiWindow.Stats);
             if (input.Recipes) ToggleWindow(UiWindow.Recipes);

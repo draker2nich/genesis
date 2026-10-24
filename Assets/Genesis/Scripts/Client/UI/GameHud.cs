@@ -69,6 +69,7 @@ namespace Genesis.Client.UI
         {
             if (_ctx == null) return;
             EnsureStyles();
+            UiScale.Begin();
             // Кнопки и поля — в стиле игры (общий скин Unity возвращаем в конце кадра)
             var oldButton = GUI.skin.button;
             var oldField = GUI.skin.textField;
@@ -88,8 +89,8 @@ namespace Genesis.Client.UI
             var feet = _ctx.Player.Position.Floor();
             if (!_ctx.Session.World.IsLoaded(feet.X, feet.Y, feet.Z))
             {
-                Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.05f, 0.05f, 0.06f, 1f));
-                GUI.Label(new Rect(0, 0, Screen.width, Screen.height), _ctx.Loc.Get("ui.loading"), _center);
+                Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0.05f, 0.05f, 0.06f, 1f));
+                GUI.Label(new Rect(0, 0, UiScale.W, UiScale.H), _ctx.Loc.Get("ui.loading"), _center);
                 return;
             }
 
@@ -101,6 +102,11 @@ namespace Genesis.Client.UI
             DrawTargetInfo();
             if (_ctx.ShowDebug) DrawDebug();
             DrawToast();
+            TouchControls.Suspended = _ctx.Window != UiWindow.None || _ctx.Paused || _ctx.InMinigame;
+            if (!TouchControls.Suspended) TouchControls.Draw(_ctx.Loc);
+            else if (TouchControls.Enabled && _ctx.Window != UiWindow.None && !_ctx.InMinigame &&
+                     GUI.Button(new Rect(UiScale.W - 60, 8, 52, 52), "X", UiSkin.Button))
+                _ctx.Window = UiWindow.None; // на телефоне нет Esc — кнопка закрытия окна
 
             switch (_ctx.Window)
             {
@@ -124,16 +130,28 @@ namespace Genesis.Client.UI
         {
             var boot = GetComponent<GenesisBootstrap>();
             if (boot != null && boot.InGameSettings) return;
-            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, 0.35f));
-            float w = 300, h = _ctx.Session.CanSave ? 230 : 190;
+            Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0, 0, 0, 0.35f));
+            var local = _ctx.Session as Genesis.Net.LocalSession;
+            if (_worldSettingsEdit != null && local != null)
+            {
+                DrawWorldSettingsPanel(local);
+                return;
+            }
+            float w = 300, h = (_ctx.Session.CanSave ? 230 : 190) + (local != null ? 40 : 0);
             var p = Panel(w, h, _ctx.Loc.Get("menu.pause"));
             float y = p.y + 48;
             if (GUI.Button(new Rect(p.x + 16, y, w - 32, 32), _ctx.Loc.Get("menu.resume"), UiSkin.AccentButton))
-                _ctx.Paused = false;
+                WebPortal.BreakOnResume(() => { if (_ctx != null) _ctx.Paused = false; });
             y += 40;
             if (boot != null && GUI.Button(new Rect(p.x + 16, y, w - 32, 32), _ctx.Loc.Get("menu.settings")))
                 boot.InGameSettings = true;
             y += 40;
+            if (local != null)
+            {
+                if (GUI.Button(new Rect(p.x + 16, y, w - 32, 32), _ctx.Loc.Get("ws.title")))
+                    _worldSettingsEdit = local.Server.Settings.Clone();
+                y += 40;
+            }
             if (_ctx.Session.CanSave)
             {
                 if (GUI.Button(new Rect(p.x + 16, y, w - 32, 32), _ctx.Loc.Get("menu.save")))
@@ -142,6 +160,25 @@ namespace Genesis.Client.UI
             }
             if (GUI.Button(new Rect(p.x + 16, y, w - 32, 32), _ctx.Loc.Get("menu.to_menu")))
                 GetComponent<GenesisBootstrap>()?.ReturnToMenu(null);
+        }
+
+        /// <summary>Черновик настроек мира в меню паузы хоста (null — панель закрыта).</summary>
+        private WorldSettings _worldSettingsEdit;
+
+        private void DrawWorldSettingsPanel(Genesis.Net.LocalSession local)
+        {
+            float w = 360, h = 250;
+            var p = Panel(w, h, _ctx.Loc.Get("ws.title"));
+            float y = p.y + 48;
+            y += UiSkin.WorldSettingsEditor(p.x + 16, y, w - 32, _worldSettingsEdit, _ctx.Loc) + 8;
+            float bw = (w - 40) / 2f;
+            if (GUI.Button(new Rect(p.x + 16, p.yMax - 46, bw, 32), _ctx.Loc.Get("ws.apply"), UiSkin.AccentButton))
+            {
+                local.Server.ApplySettings(local.LocalPlayer, _worldSettingsEdit);
+                _worldSettingsEdit = null;
+            }
+            if (GUI.Button(new Rect(p.x + 24 + bw, p.yMax - 46, bw, 32), _ctx.Loc.Get("ws.cancel")))
+                _worldSettingsEdit = null;
         }
 
         // ================================================================ Примитивы
@@ -204,7 +241,7 @@ namespace Genesis.Client.UI
             var m = Event.current.mousePosition;
             var size = _small.CalcSize(new GUIContent(_tooltip));
             var r = new Rect(m.x + 14, m.y + 10, size.x + 14, size.y + 8);
-            if (r.xMax > Screen.width) r.x = m.x - r.width - 6;
+            if (r.xMax > UiScale.W) r.x = m.x - r.width - 6;
             Fill(r, UiSkin.PanelDark);
             Fill(new Rect(r.x + 1, r.y + 1, r.width - 2, r.height - 2), new Color(0.12f, 0.08f, 0.16f, 0.97f));
             Fill(new Rect(r.x + 1, r.y + 1, r.width - 2, 1), new Color(0.45f, 0.25f, 0.75f, 1f));
@@ -214,7 +251,7 @@ namespace Genesis.Client.UI
 
         private Rect Panel(float w, float h, string title, float offsetX = 0f)
         {
-            var r = new Rect((Screen.width - w) / 2f + offsetX, (Screen.height - h) / 2f, w, h);
+            var r = new Rect((UiScale.W - w) / 2f + offsetX, (UiScale.H - h) / 2f, w, h);
             return PanelAt(r, title);
         }
 
@@ -229,7 +266,7 @@ namespace Genesis.Client.UI
 
         private void DrawCrosshair()
         {
-            float cx = Screen.width / 2f, cy = Screen.height / 2f;
+            float cx = UiScale.W / 2f, cy = UiScale.H / 2f;
             var shadow = new Color(0, 0, 0, 0.55f);
             Fill(new Rect(cx - 10, cy - 2, 20, 4), shadow);
             Fill(new Rect(cx - 2, cy - 10, 4, 20), shadow);
@@ -241,8 +278,10 @@ namespace Genesis.Client.UI
         private void DrawHotbar()
         {
             float w = PlayerState.HotbarSize * (Slot + Gap) - Gap;
-            float x0 = (Screen.width - w) / 2f;
-            float y0 = Screen.height - Slot - 14;
+            float x0 = (UiScale.W - w) / 2f;
+            float y0 = UiScale.H - Slot - 14;
+            TouchControls.HotbarRect = _ctx.Window == UiWindow.None ? new Rect(x0, y0, w, Slot) : Rect.zero;
+            TouchControls.HotbarSlots = PlayerState.HotbarSize;
             UiSkin.DrawPanel(new Rect(x0 - 6, y0 - 6, w + 12, Slot + 12));
             var inv = _ctx.Player.Inventory;
             for (int i = 0; i < PlayerState.HotbarSize; i++)
@@ -266,7 +305,7 @@ namespace Genesis.Client.UI
             {
                 var old = GUI.color;
                 GUI.color = new Color(1, 1, 1, alpha);
-                UiSkin.Shadowed(new Rect(0, y0 - 64, Screen.width, 22), _ctx.ItemName(sel.Item), _center);
+                UiSkin.Shadowed(new Rect(0, y0 - 64, UiScale.W, 22), _ctx.ItemName(sel.Item), _center);
                 GUI.color = old;
             }
         }
@@ -283,7 +322,7 @@ namespace Genesis.Client.UI
             var conv = _ctx.Session.Factory.ConveyorAt(_ctx.Target);
             if (conv != null) text += $"  ({conv.Items.Count}/4)";
             var size = _label.CalcSize(new GUIContent(text));
-            var r = new Rect((Screen.width - size.x) / 2f - 10, 8, size.x + 20, 28);
+            var r = new Rect((UiScale.W - size.x) / 2f - 10, 8, size.x + 20, 28);
             UiSkin.DrawPanel(r);
             if (_ctx.BreakProgress > 0)
                 UiSkin.Bar(new Rect(r.x + 4, r.yMax - 5, (r.width - 8), 4), _ctx.BreakProgress, Accent);
@@ -322,7 +361,7 @@ namespace Genesis.Client.UI
                 $"Factory: {_ctx.Session.Factory.Machines.Count} machines, {_ctx.Session.Factory.Conveyors.Count} belts, " +
                 $"{_ctx.Session.Factory.Networks.Count} pipe nets, {_ctx.Session.Factory.PowerNetworks.Count} power nets, tick {_ctx.Session.Factory.TickCount}\n" +
                 $"<size=11>{_ctx.Loc.Get("ui.help")}</size>";
-            var size = new Vector2(Mathf.Min(560, Screen.width - 20), 120);
+            var size = new Vector2(Mathf.Min(560, UiScale.W - 20), 120);
             Fill(new Rect(6, 6, size.x, size.y), new Color(0.03f, 0.04f, 0.05f, 0.55f));
             GUI.Label(new Rect(12, 9, size.x - 12, size.y), text, _small);
         }
@@ -331,7 +370,7 @@ namespace Genesis.Client.UI
         {
             if (string.IsNullOrEmpty(_ctx.Toast) || Time.time > _ctx.ToastUntil) return;
             var size = _label.CalcSize(new GUIContent(_ctx.Toast));
-            var r = new Rect((Screen.width - size.x) / 2f - 14, Screen.height * 0.3f, size.x + 28, 32);
+            var r = new Rect((UiScale.W - size.x) / 2f - 14, UiScale.H * 0.3f, size.x + 28, 32);
             UiSkin.DrawPanel(r);
             Fill(new Rect(r.x + 3, r.y + 3, 3, r.height - 6), Accent);
             UiSkin.Shadowed(r, _ctx.Toast, _center);
@@ -390,7 +429,7 @@ namespace Genesis.Client.UI
 
         private void DrawCreativeWindow()
         {
-            float w = GridWidth + 40, h = Mathf.Min(Screen.height - 40, 520);
+            float w = GridWidth + 40, h = Mathf.Min(UiScale.H - 40, 520);
             var p = Panel(w, h, _ctx.Loc.Get("ui.creative"));
             if (GUI.Button(new Rect(p.xMax - 230, p.y + 8, 218, 24), _ctx.Loc.Get("era." + _ctx.Session.Knowledge.EraName) + " → +1 (dev)"))
                 _ctx.Send(new CreativeAdvanceEraCommand());
@@ -442,7 +481,11 @@ namespace Genesis.Client.UI
             }
 
             float w = GridWidth + 24 + 230;
+            var machineRecipes = (m.Def.Behavior == "processor" || m.Def.Behavior == "furnace")
+                ? _ctx.Content.RecipesFor(m.Def.NumericId) : null;
+            int recipeRows = machineRecipes != null && machineRecipes.Count > 1 ? (machineRecipes.Count + 1 + 6) / 7 : 0;
             float h = GridHeight + 300 + Mathf.Max(0, (m.Input.Size - 27 + 8) / 9) * (Slot + Gap);
+            h = Mathf.Max(h, GridHeight + 40 + 200 + (recipeRows > 0 ? 24 + recipeRows * 30 : 0) + 24);
             bool hasCrafts = HasCrafts(m.Def.Id);
             var p = Panel(w, h, _ctx.Loc.Get(m.Def.NameKey), hasCrafts ? -(CraftPanelWidth + 12) / 2f : 0f);
             if (hasCrafts) DrawCraftPanel(new Rect(p.xMax + 12, p.y, CraftPanelWidth, h), m.Def.Id, m.Pos);
@@ -539,11 +582,63 @@ namespace Genesis.Client.UI
 
             // Настройка сторон (справа)
             DrawSideConfig(m, p.xMax - 230, p.y + 40);
+            if (recipeRows > 0) DrawRecipeSelector(m, machineRecipes, p.xMax - 230, p.y + 40 + 200);
 
             // Инвентарь игрока снизу: клик — положить в машину
             float gy = p.yMax - GridHeight - 12;
             DrawPlayerGrid(x, gy, slot => _ctx.Send(new PutIntoMachineCommand { Pos = m.Pos, PlayerSlot = slot }));
             DrawTooltip();
+        }
+
+        /// <summary>
+        /// Выбор рецепта машины: «Авто» или конкретный рецепт. Выбранный рецепт машина делает всегда,
+        /// и лента/манипулятор кладут в неё только его сырьё. Рамка-пунктир — заказ автокрафта ME.
+        /// </summary>
+        private void DrawRecipeSelector(MachineInstance m, IReadOnlyList<RecipeDef> recipes, float x, float y)
+        {
+            GUI.Label(new Rect(x, y, 220, 20), _ctx.Loc.Get("ui.recipe_select"), _label);
+            y += 24;
+            const float cell = 28, gap = 2;
+            for (int i = 0; i <= recipes.Count; i++)
+            {
+                var r = new Rect(x + (i % 7) * (cell + gap), y + (i / 7) * (cell + gap), cell, cell);
+                bool hover = r.Contains(Event.current.mousePosition);
+                var recipe = i == 0 ? null : recipes[i - 1];
+                bool selected = m.LockedRecipe == recipe;
+                Fill(r, selected ? new Color(Accent.r, Accent.g, Accent.b, 0.55f) : (hover ? new Color(1, 1, 1, 0.16f) : SlotColor));
+                if (recipe == null)
+                {
+                    GUI.Label(r, "A", new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter });
+                    if (hover) _tooltip = _ctx.Loc.Get("ui.recipe_auto");
+                }
+                else
+                {
+                    int outItem = recipe.Outputs.Count > 0 ? recipe.Outputs[0].ItemId : -1;
+                    var icon = outItem >= 0 ? _ctx.IconOf(outItem) : null;
+                    if (icon != null) GUI.DrawTexture(new Rect(r.x + 4, r.y + 4, cell - 8, cell - 8), icon, ScaleMode.ScaleToFit);
+                    if (m.QueuedRuns > 0 && m.QueuedRecipe == recipe)
+                    {
+                        Fill(new Rect(r.x, r.yMax - 3, r.width, 3), new Color(0.45f, 0.75f, 1f));
+                    }
+                    if (hover)
+                    {
+                        var sb = new System.Text.StringBuilder();
+                        sb.Append(outItem >= 0 ? _ctx.ItemName(outItem) : recipe.Id);
+                        sb.Append("  ←  ");
+                        for (int k = 0; k < recipe.Inputs.Count; k++)
+                        {
+                            if (k > 0) sb.Append(", ");
+                            sb.Append(recipe.Inputs[k].Count).Append("× ").Append(_ctx.ItemName(recipe.Inputs[k].ItemId));
+                        }
+                        _tooltip = sb.ToString();
+                    }
+                }
+                if (hover && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+                {
+                    _ctx.Send(new SetRecipeCommand { Pos = m.Pos, Recipe = recipe != null ? recipe.NumericId : -1 });
+                    Event.current.Use();
+                }
+            }
         }
 
         private static readonly string[] FaceKeys = { "front", "back", "left", "right", "top", "bottom" };

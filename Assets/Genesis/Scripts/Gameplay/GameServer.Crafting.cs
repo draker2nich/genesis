@@ -195,6 +195,7 @@ namespace Genesis.Gameplay
                     if (match == null || match.Craft != craft) break;
                 }
                 var outputs = RollOutputs(p, craft);
+                if (!CarryMeta(p, match, outputs)) break;
                 if (shift)
                 {
                     if (!p.Inventory.CanInsertAll(outputs)) break;
@@ -245,6 +246,41 @@ namespace Genesis.Gameplay
             return list;
         }
 
+        /// <summary>
+        /// Предметы с данными в Meta (ячейки ME, беспроводной терминал) не должны молча сгорать в крафте:
+        /// апгрейд ячейки (1k → 4k) переносит её содержимое в новую ячейку (тот же id в реестре, ёмкость
+        /// обновится в приводе), привязка терминала переходит к результату. Непустую ячейку, которой некуда
+        /// перенести содержимое, крафт не берёт. false — крафт запрещён.
+        /// </summary>
+        private bool CarryMeta(PlayerState p, GridMatch match, List<ItemStack> outputs)
+        {
+            int carry = 0;
+            for (int s = 0; s < 9; s++)
+            {
+                var ing = match.Slots[s];
+                if (ing == null || ing.Keep) continue;
+                var st = p.CraftGrid[s];
+                if (st.IsEmpty || st.Meta == 0) continue;
+                var def = Content.Item(st.Item);
+                if (def?.StorageCell != null)
+                {
+                    if (!Factory.Me.CellHasContents(st.Meta)) continue; // пустая — просто расходуется
+                    var cell = Factory.Me.Cell(st.Meta);
+                    var outSpec = outputs.Count > 0 ? Content.Item(outputs[0].Item)?.StorageCell : null;
+                    if (carry != 0 || outSpec == null || outSpec.IsFluid != cell.Fluid || outSpec.Capacity < cell.Used || outputs[0].Count != 1)
+                    {
+                        Notify?.Invoke(p.Id, "ui.cell_not_empty");
+                        return false;
+                    }
+                    carry = st.Meta;
+                }
+                else if (def != null && def.MeWireless && carry == 0 && outputs.Count > 0 && Content.Item(outputs[0].Item)?.MeWireless == true)
+                    carry = st.Meta;
+            }
+            if (carry != 0) outputs[0] = new ItemStack(outputs[0].Item, outputs[0].Count, carry);
+            return true;
+        }
+
         private void Consume(PlayerState p, GridMatch match)
         {
             for (int s = 0; s < 9; s++)
@@ -262,6 +298,7 @@ namespace Genesis.Gameplay
                     if (meta >= tool.Durability) Notify?.Invoke(p.Id, "ui.tool_broke");
                     continue;
                 }
+                if (Content.Item(st.Item)?.StorageCell != null) Factory.Me.ReleaseCell(st.Meta);
                 p.CraftGrid[s] = st.WithCount(st.Count - ing.Count);
             }
         }

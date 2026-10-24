@@ -140,9 +140,13 @@ namespace Genesis.Client.Rendering
                 if (!_inFlight.Contains(c)) _sortBuffer.Add(c);
             _sortBuffer.Sort((a, b) => a.DistanceSquared(camChunk).CompareTo(b.DistanceSquared(camChunk)));
 
+            // Браузер без потоков: строим меши прямо здесь, но не дольше нескольких миллисекунд за кадр
+            bool inline = !Genesis.Core.Platform.Threads;
+            var budget = inline ? System.Diagnostics.Stopwatch.StartNew() : null;
             foreach (var coord in _sortBuffer)
             {
                 if (_inFlight.Count >= MaxMeshJobsInFlight) break;
+                if (inline && budget.ElapsedMilliseconds > InlineMeshBudgetMs) break;
                 _dirty.Remove(coord);
                 if (!_world.TryGetChunk(coord, out var chunk)) continue;
 
@@ -150,7 +154,7 @@ namespace Genesis.Client.Rendering
                 _inFlight.Add(coord);
                 if (!_meshPool.TryTake(out var mesh)) mesh = new MeshData();
                 var table = _table;
-                Task.Run(() =>
+                System.Action work = () =>
                 {
                     try
                     {
@@ -163,9 +167,14 @@ namespace Genesis.Client.Rendering
                         mesh.Coord = snap.Coord;
                     }
                     _ready.Enqueue(mesh);
-                });
+                };
+                if (inline) work();
+                else Task.Run(work);
             }
         }
+
+        /// <summary>Сколько миллисекунд за кадр можно тратить на меши без потоков (WebGL).</summary>
+        public static int InlineMeshBudgetMs = 6;
 
         /// <summary>Множитель цвета листвы и травы: тёплые сухие края — желтее, холодные — сизые, болота — оливковые.</summary>
         public static Color32 BiomeTint(in ColumnInfo c)

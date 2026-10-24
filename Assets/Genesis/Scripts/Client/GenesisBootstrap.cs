@@ -41,6 +41,28 @@ namespace Genesis.Client
         private readonly List<Component> _components = new List<Component>();
         private float _nextAutosave;
         private Camera _cam;
+
+        // ---- Для автоматической съёмки скриншотов (Editor → Genesis → Скриншоты для площадок)
+        public bool ContentReady => _contentReady;
+
+        /// <summary>Сколько блоков загружено (1 = только воздух: контент игры не найден).</summary>
+        public int BlockCount => _content?.Blocks.Count ?? 0;
+        public IGameSession Session => _session;
+        public ClientContext Context => _ctx;
+        public Camera GameCamera => _cam;
+        public bool InWorld => _mode == Mode.Playing && _ctx != null;
+
+        /// <summary>Открыть (заново) мир для съёмки: без рекламы, с креативом (свободный полёт камеры).</summary>
+        public void StartCaptureWorld(string worldName, long seed)
+        {
+            if (_session != null) ReturnToMenu(null);
+            string dir = Path.Combine(Application.persistentDataPath, "saves", worldName);
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch (Exception e) { Debug.LogWarning(e.Message); }
+            _worldName = worldName;
+            _seedText = seed.ToString();
+            _newWorldSettings = new WorldSettings { Creative = true, SurfaceEnemies = false };
+            StartLocalNow(false);
+        }
         private EnvironmentRenderer _env;
 
         // Поля меню
@@ -54,6 +76,29 @@ namespace Genesis.Client
 
         private const string PrefName = "genesis.name";
         private const string PrefAddress = "genesis.address";
+        private const string PrefToken = "genesis.token";
+
+        /// <summary>Настройки для создаваемого мира (экран «Играть»).</summary>
+        private WorldSettings _newWorldSettings = new WorldSettings();
+
+        /// <summary>
+        /// Постоянный секрет этого ПК: сервер друга запоминает его вместе с ником — занять чужой ник
+        /// (и инвентарь) с другого компьютера нельзя.
+        /// </summary>
+        private static string PlayerToken
+        {
+            get
+            {
+                string t = PlayerPrefs.GetString(PrefToken, "");
+                if (t.Length == 0)
+                {
+                    t = Guid.NewGuid().ToString("N");
+                    PlayerPrefs.SetString(PrefToken, t);
+                    PlayerPrefs.Save();
+                }
+                return t;
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoCreate()
@@ -62,26 +107,56 @@ namespace Genesis.Client
             new GameObject("Genesis").AddComponent<GenesisBootstrap>();
         }
 
+        /// <summary>Контент загружен, меню можно показывать (в браузере контент сначала скачивается).</summary>
+        private bool _contentReady;
+        private string _loadingStatus = "";
+
         private void Awake()
         {
-            Application.targetFrameRate = 144;
-            QualitySettings.vSyncCount = 1;
             Genesis.Core.Log.InfoSink = Debug.Log;
             Genesis.Core.Log.WarnSink = Debug.LogWarning;
             Genesis.Core.Log.ErrorSink = Debug.LogError;
+            if (WebPortal.IsWebGL)
+            {
+                WebPortal.Init(); // Poki: PokiSDK.init() как можно раньше
+                // Браузер: нет потоков, zlib и DLL; сохранения нужно явно сбрасывать в IndexedDB
+                Genesis.Core.Platform.Threads = false;
+                Genesis.Core.Platform.Compression = false;
+                Genesis.Core.Platform.CodeMods = false;
+                Genesis.Core.Platform.AfterSave = WebPortal.SyncFileSystem;
+                Application.targetFrameRate = -1; // частоту задаёт браузер (requestAnimationFrame)
+                AutosaveMinutes = 2f;
+                StartCoroutine(WebContent.Prepare(this, root => FinishStartup(root), s => _loadingStatus = s));
+                return;
+            }
+            Application.targetFrameRate = 144;
+            QualitySettings.vSyncCount = 1;
+            FinishStartup(Path.Combine(Application.streamingAssetsPath, ModLoader.CoreFolderName));
+        }
+
+        private void FinishStartup(string coreRoot)
+        {
             GameSettings.Load();
+            if (WebPortal.IsWebGL && !GameSettings.HasSavedLanguage)
+            {
+                // Первый запуск в браузере: язык площадки (Яндекс) или браузера (Poki)
+                string lang = WebPortal.GameLanguageFor(WebPortal.Language);
+                if (lang != null) GameSettings.Language = lang;
+            }
             ViewRadius = GameSettings.ViewRadius;
 
-            _modsRoot = Path.Combine(Application.streamingAssetsPath, ModLoader.CoreFolderName);
+            _modsRoot = coreRoot;
             LoadContent();
 
             TransportRegistry.EnsureBuiltIn();
             _seedText = DefaultSeed.ToString();
             _playerName = PlayerPrefs.GetString(PrefName, "Player");
             _address = PlayerPrefs.GetString(PrefAddress, "127.0.0.1");
-            GameCursor.Apply();
+            GameCursor.Apply(_modsRoot);
             PlayerController.LockCursor(false);
             StartPanorama();
+            _contentReady = true;
+            WebPortal.Ready(); // меню доступно — LoadingAPI.ready() / gameLoadingFinished()
         }
 
         /// <summary>
@@ -103,6 +178,10 @@ namespace Genesis.Client
                 foreach (var e in _content.Errors) Debug.LogError("[Content] " + e);
             Debug.Log($"[Genesis] Content: {_content.Blocks.Count} blocks, {_content.Items.Count} items, " +
                       $"{_content.Machines.Count} machines, {_content.Recipes.Count} recipes, hash {_content.ContentHash:X16}");
+            if (_content.Blocks.Count <= 1)
+                Debug.LogError("[Genesis] Контент игры не найден: в " + _modsRoot + " нет blocks/, items/ и т. д. " +
+                               "Скорее всего, папка Assets/StreamingAssets/Game опустела после прерванной браузерной сборки — " +
+                               "верните её из GenesisGameBackup (рядом с Assets) или из репозитория. Мир без контента не создать.");
 
             _textures = new BlockTextureFactory();
             _textures.Build(_content, _modsRoot, _mods.LoadOrder);
@@ -113,11 +192,17 @@ namespace Genesis.Client
             Rendering.Models.ModelLibrary.Current.Preload(_content);
         }
 
-        private static int Workers => Mathf.Clamp(SystemInfo.processorCount - 2, 1, 6);
+        private static int Workers => Genesis.Core.Platform.Threads ? Mathf.Clamp(SystemInfo.processorCount - 2, 1, 6) : 0;
 
         // ============================================================ Запуск сессий
 
+        /// <summary>Вход в мир — логическая пауза: в Яндекс Играх перед ним может быть полноэкранная реклама.</summary>
         private void StartLocal(bool host)
+        {
+            WebPortal.BreakBeforeGameplay(() => StartLocalNow(host));
+        }
+
+        private void StartLocalNow(bool host)
         {
             _menuError = null;
             StopPanorama();
@@ -126,10 +211,11 @@ namespace Genesis.Client
                 long seed = long.TryParse(_seedText, out var s) ? s : DefaultSeed;
                 string saveDir = Path.Combine(Application.persistentDataPath, "saves", SafeName(_worldName));
                 _mapFile = Path.Combine(saveDir, "map.dat");
-                var server = GameServer.Open(_content, saveDir, seed, Workers);
+                var server = GameServer.Open(_content, saveDir, seed, Workers, _newWorldSettings);
                 server.ViewRadius = ViewRadius;
+                if (!Genesis.Core.Platform.Threads) server.World.MainThreadBudgetMs = 8;
                 _mods.AttachServer(server);
-                var local = new LocalSession(server, _playerName);
+                var local = new LocalSession(server, _playerName, PlayerToken);
                 local.NetLog += msg => Debug.Log("[Net] " + msg);
                 if (host)
                 {
@@ -166,7 +252,7 @@ namespace Genesis.Client
             try
             {
                 _mapFile = null; // для подключения — после приветствия (нужен seed)
-                var remote = new RemoteSession(_content, provider.CreateClient(_address.Trim(), port), _playerName, Workers)
+                var remote = new RemoteSession(_content, provider.CreateClient(_address.Trim(), port), _playerName, Workers, PlayerToken)
                 {
                     ViewRadius = ViewRadius,
                     ModList = _mods.Fingerprint
@@ -218,16 +304,60 @@ namespace Genesis.Client
             _mode = Mode.Menu;
             PlayerController.LockCursor(false);
             StartPanorama();
+            if (error == null) WebPortal.BreakOnMenu(); // выход в меню — логическая пауза (на Яндексе — реклама)
         }
+
+        // ============================================================ Яндекс Игры (вызовы из JS по имени объекта «Genesis»)
+
+        private void OnYandexAdOpened()
+        {
+            YandexGames.SetGameplay(false);
+        }
+
+        private void OnYandexAdClosed(string shown)
+        {
+            YandexGames.OnAdClosed();
+        }
+
+        /// <summary>Площадка просит паузу (вкладка скрыта, открыт оверлей): мир и звук замирают.</summary>
+        private void OnYandexPause()
+        {
+            YandexGames.PlatformPaused = true;
+            AudioListener.pause = true;
+            if (_ctx != null && _mode == Mode.Playing) _ctx.Paused = true;
+        }
+
+        private void OnYandexResume()
+        {
+            YandexGames.PlatformPaused = false;
+            AudioListener.pause = YandexGames.AdShowing;
+        }
+
+        /// <summary>Страницу скрыли или закрывают — сохраняемся (прогресс не должен теряться).</summary>
+        private void OnPageHidden()
+        {
+            if (_mode == Mode.Playing) SaveNow();
+        }
+
+        /// <summary>Геймплей идёт: мир открыт, нет паузы, рекламы и потери фокуса.</summary>
+        private bool GameplayActive =>
+            _mode == Mode.Playing && _ctx != null && !_ctx.Paused && !WebPortal.AdShowing &&
+            !WebPortal.PlatformPaused && Application.isFocused;
 
         // ============================================================ Цикл
 
         private void Update()
         {
+            if (_mode == Mode.Playing && (Input.anyKeyDown || Input.touchCount > 0)) WebPortal.NoteInput();
+            WebPortal.SetGameplay(GameplayActive);
+            TouchControls.Detect();
+            if (!_contentReady) return;
             ModLoader.Workshop?.Update();
             UpdatePanorama();
             if (_session == null) return;
-            _session.Update(Time.deltaTime, Time.time);
+            // Реклама или пауза площадки: одиночный мир замирает (в коопе время у хоста идёт)
+            bool frozen = (WebPortal.AdShowing || WebPortal.PlatformPaused) && !(_session is LocalSession ls && ls.IsHosting);
+            if (!frozen) _session.Update(Time.deltaTime, Time.time);
 
             if (_session.State == SessionState.Failed)
             {
@@ -243,16 +373,16 @@ namespace Genesis.Client
             if (_mode == Mode.Playing && _session.CanSave && Time.time >= _nextAutosave)
             {
                 _nextAutosave = Time.time + AutosaveMinutes * 60f;
-                SaveNow();
+                SaveNow(true); // запись на диск — в фоне, без фриза
             }
         }
 
-        public void SaveNow()
+        public void SaveNow(bool background = false)
         {
             if (_session == null || !_session.CanSave) return;
             try
             {
-                _session.Save();
+                _session.Save(background);
                 _ctx?.Map?.Save();
                 _ctx?.ShowToast(_loc.Get("ui.saved"));
             }

@@ -16,10 +16,15 @@ namespace Genesis.Gameplay
     public sealed partial class GameServer : IDisposable
     {
         public const float ReachDistance = 6.5f;
-        private const int SaveVersion = 2;
+        // 3: настройки мира
+        private const int SaveVersion = 3;
         /// <summary>Длина суток в тиках: 24000 = 20 минут.</summary>
         public const int DayLength = 24000;
-        private const int PlayersVersion = 3;
+        // 4: токен игрока
+        private const int PlayersVersion = 4;
+
+        /// <summary>Файлы состояния, которые пишутся одной транзакцией (и попадают в резервные копии).</summary>
+        private static readonly string[] StateFiles = { "world.dat", "factory.dat", "knowledge.dat", "items.dat", "players.dat", "creatures.dat" };
         public const float AttackReach = 4.5f;
 
         public readonly ContentDatabase Content;
@@ -31,6 +36,10 @@ namespace Genesis.Gameplay
         public readonly EnemyManager Enemies;
         /// <summary>Предметы, лежащие в мире.</summary>
         public readonly DroppedItems Drops;
+        /// <summary>Настройки мира (креатив, враги на поверхности, правила смерти, сложность).</summary>
+        public WorldSettings Settings = new WorldSettings();
+        /// <summary>Имя игрока-хоста (локальный игрок): ему доступен креатив и настройки мира.</summary>
+        public string HostName;
 
         private readonly Dictionary<int, PlayerState> _players = new Dictionary<int, PlayerState>();
         private readonly Dictionary<string, PlayerState> _savedPlayers = new Dictionary<string, PlayerState>();
@@ -70,10 +79,14 @@ namespace Genesis.Gameplay
             Factory = new Factory(content, World);
             Knowledge = new KnowledgeState(content);
             Factory.RecipeFilter = Knowledge.IsRecipeUnlocked;
+            Knowledge.Changed += Factory.InvalidateRecipeCache;
             Enemies = new EnemyManager(this);
             Drops = new DroppedItems(World, content);
+            // Заполненная ячейка ME, выпавшая в мир, не исчезает (иначе пропало бы всё её содержимое)
+            Drops.NeverDespawn = st => st.Meta > 0 && Content.Item(st.Item)?.StorageCell != null && Factory.Me.CellHasContents(st.Meta);
             Knowledge.NodeUnlocked += n => NotifyAll("ui.unlocked|" + n.NameKey);
             Knowledge.EraAdvanced += era => NotifyAll("ui.new_era|era." + Eras.All[era]);
+            World.Store.RegionDamaged += path => NotifyAll("ui.region_damaged");
         }
 
         public long TickCount => Factory.TickCount;
@@ -93,38 +106,76 @@ namespace Genesis.Gameplay
         }
 
         /// <summary>Открыть существующее сохранение или создать новый мир.</summary>
-        public static GameServer Open(ContentDatabase content, string saveDir, long newSeed, int workerThreads)
+        /// <param name="settingsForNew">Настройки для нового мира (у существующего читаются из world.dat).</param>
+        public static GameServer Open(ContentDatabase content, string saveDir, long newSeed, int workerThreads, WorldSettings settingsForNew = null)
         {
             long seed = newSeed;
             long savedTime = -1;
+            var settings = settingsForNew?.Clone() ?? new WorldSettings();
             if (saveDir != null)
             {
                 Directory.CreateDirectory(saveDir);
+                SaveTransaction.Recover(saveDir); // прерванное сохранение — довести до конца
                 string meta = Path.Combine(saveDir, "world.dat");
-                if (File.Exists(meta))
+                if (SafeFile.Exists(meta))
                 {
-                    using (var r = new BinaryReader(File.OpenRead(meta)))
+                    bool newer = false;
+                    bool ok = SafeFile.TryRead(meta, r =>
                     {
                         int ver = r.ReadInt32();
-                        if (ver > SaveVersion) throw new InvalidDataException("Save is from a newer version");
+                        if (ver > SaveVersion)
+                        {
+                            newer = true;
+                            return;
+                        }
                         seed = r.ReadInt64();
                         if (ver >= 2) savedTime = r.ReadInt64();
-                    }
+                        // Миры до настроек создавались с креативом — сохраняем его хосту
+                        settings = ver >= 3 ? WorldSettings.Read(r) : new WorldSettings { Creative = true };
+                    });
+                    if (newer) throw new InvalidDataException("Save is from a newer version");
+                    if (!ok) throw new InvalidDataException("world.dat is damaged and has no backup (see backups folder)");
                 }
             }
-            var server = new GameServer(content, saveDir, seed, workerThreads);
+            var server = new GameServer(content, saveDir, seed, workerThreads) { Settings = settings };
             if (savedTime >= 0) server.WorldTime = savedTime;
             server.LoadState();
             return server;
         }
 
+        /// <summary>Может ли игрок пользоваться креативом в этом мире.</summary>
+        public bool CreativeAllowed(PlayerState p) =>
+            Settings.Creative && (Settings.CreativeForGuests || HostName == null || p.Name == HostName);
+
+        /// <summary>Хост меняет настройки мира (меню паузы).</summary>
+        public void ApplySettings(PlayerState by, WorldSettings s)
+        {
+            if (HostName != null && by.Name != HostName) return;
+            Settings = s.Clone();
+            foreach (var p in _players.Values)
+            {
+                p.Creative = CreativeAllowed(p);
+                if (!p.Creative) p.Flying = false;
+            }
+        }
+
         // ============================================================ Игроки
 
-        public PlayerState Join(string name)
+        /// <summary>
+        /// Вход игрока. token — постоянный секрет клиента: сохранённого игрока может занять только владелец
+        /// того же токена (иначе любой мог зайти под ником отсутствующего друга и забрать его инвентарь).
+        /// Возвращает null, если ник занят (онлайн или чужим токеном).
+        /// </summary>
+        public PlayerState Join(string name, string token = null, bool host = false)
         {
+            token = token ?? "";
+            foreach (var online in _players.Values)
+                if (online.Name == name) return null;
+            if (host) HostName = name;
             PlayerState p;
             if (_savedPlayers.TryGetValue(name, out var saved))
             {
+                if (saved.Token.Length > 0 && saved.Token != token && !host) return null;
                 p = saved;
                 _savedPlayers.Remove(name);
             }
@@ -136,6 +187,10 @@ namespace Genesis.Gameplay
             }
             var player = new PlayerState(_nextPlayerId++, p.Name, Content);
             CopyPlayer(p, player);
+            if (token.Length > 0) player.Token = token;
+            else player.Token = p.Token;
+            player.Creative = CreativeAllowed(player);
+            if (!player.Creative) player.Flying = false;
             CloseGrid(player); // предметы, оставшиеся в сетке и на курсоре, — обратно в инвентарь
             _players[player.Id] = player;
             PlayerJoined?.Invoke(player);
@@ -161,6 +216,7 @@ namespace Genesis.Gameplay
             for (int i = 0; i < from.Inventory.Size && i < to.Inventory.Size; i++) to.Inventory[i] = from.Inventory[i];
             for (int i = 0; i < 9; i++) to.CraftGrid[i] = from.CraftGrid[i];
             to.Cursor[0] = from.Cursor[0];
+            to.Token = from.Token;
             foreach (var kv in from.Mastery) to.Mastery[kv.Key] = kv.Value;
         }
 
@@ -215,6 +271,35 @@ namespace Genesis.Gameplay
 
         // ============================================================ Действия
 
+        // ============================================================ Настройка машин (с проверкой дистанции)
+
+        /// <summary>Поворот гаечным ключом/клавишей R — только в пределах досягаемости.</summary>
+        public void RotateEntity(PlayerState p, Int3 pos)
+        {
+            if (!InReach(p, pos)) return;
+            Factory.Rotate(pos);
+        }
+
+        public void SetMachineSide(PlayerState p, Int3 pos, RelativeSide side, SideType type)
+        {
+            if (!InReach(p, pos)) return;
+            Factory.SetSide(pos, side, type);
+        }
+
+        /// <summary>Выбрать рецепт машины в её интерфейсе; recipeId &lt; 0 — авто.</summary>
+        public void SetMachineRecipe(PlayerState p, Int3 pos, int recipeId)
+        {
+            if (!InReach(p, pos)) return;
+            var recipe = recipeId >= 0 ? Content.Recipes.Get(recipeId) : null;
+            if (recipeId >= 0 && recipe == null) return;
+            if (recipe != null && !Knowledge.IsRecipeUnlocked(recipe))
+            {
+                Notify?.Invoke(p.Id, "ui.locked");
+                return;
+            }
+            Factory.SetLockedRecipe(pos, recipe);
+        }
+
         private bool InReach(PlayerState p, Int3 pos)
         {
             var eye = p.EyePosition;
@@ -262,7 +347,7 @@ namespace Genesis.Gameplay
             }
             var c = Factory.ConveyorAt(pos);
             if (c != null)
-                foreach (var it in c.Items) list.Add(new ItemStack(it.Item, 1));
+                foreach (var it in c.Items) list.Add(new ItemStack(it.Item, 1, it.Meta));
             return list;
         }
 
@@ -280,6 +365,12 @@ namespace Genesis.Gameplay
 
             var block = Content.Blocks.Get(item.PlacesBlock);
             if (block.Solid && PlayerPhysics.IntersectsBlock(p, pos)) return false;
+            // Труба между сетями с разными жидкостями слила бы их, и одна исчезла бы
+            if (block.Transport != null && block.Transport.Type == "pipe" && Factory.WouldMixFluids(pos))
+            {
+                Notify?.Invoke(p.Id, "ui.pipe_mixed");
+                return false;
+            }
             foreach (var other in _players.Values)
                 if (other != p && block.Solid && PlayerPhysics.IntersectsBlock(other, pos)) return false;
 
@@ -302,7 +393,7 @@ namespace Genesis.Gameplay
             var stack = p.SelectedStack;
             if (c == null || stack.IsEmpty || !InReach(p, pos)) return;
             if (!c.CanAccept()) return;
-            c.Accept(stack.Item, 0f, 0f);
+            c.Accept(stack.Item, 0f, 0f, stack.Meta);
             p.Inventory.ExtractFromSlot(p.SelectedSlot, 1);
         }
 
@@ -405,24 +496,26 @@ namespace Genesis.Gameplay
         /// <summary>Смерть: вещи остаются в «останках» на месте гибели, игрок возрождается в бункере.</summary>
         public void Kill(PlayerState p)
         {
-            var graveBlock = Content.Blocks.Get("genesis:grave");
-            if (graveBlock != null && !p.Inventory.IsEmpty)
+            CloseGrid(p); // сетка крафта и курсор — в инвентарь (раньше переживали смерть)
+            if (!Settings.KeepInventory && !p.Inventory.IsEmpty)
             {
-                var feet = p.Position.Floor();
-                for (int dy = 0; dy < 6; dy++)
+                var items = new List<ItemStack>(p.Inventory.NonEmpty());
+                p.Inventory.Clear();
+                var grave = PlaceGrave(p.Position.Floor());
+                var deathPos = new Vec3(p.Position.X, p.Position.Y + 0.5f, p.Position.Z);
+                foreach (var st in items)
                 {
-                    var pos = feet + new Int3(0, dy, 0);
-                    if (!World.IsLoaded(pos.X, pos.Y, pos.Z) || !World.GetBlockDef(pos).Replaceable) continue;
-                    if (Factory.MachineAt(pos) != null || Factory.ConveyorAt(pos) != null) continue;
-                    if (!World.SetBlock(pos, graveBlock.NumericId)) continue;
-                    Factory.OnBlockPlaced(pos, graveBlock, Direction.North);
-                    var grave = Factory.MachineAt(pos);
-                    if (grave != null)
-                        foreach (var st in p.Inventory.NonEmpty()) grave.Input.Insert(st);
-                    break;
+                    int put = grave != null ? grave.Input.Insert(st) : 0;
+                    // Не влезло в останки или их негде поставить — вещи выпадают на месте гибели и лежат дольше
+                    // обычного, а не исчезают молча
+                    if (put < st.Count)
+                    {
+                        var d = Drops.Spawn(st.WithCount(st.Count - put), deathPos, Vec3.Zero, 0, true);
+                        if (d != null) d.Age = -DroppedItems.DespawnTicks * 2;
+                    }
                 }
+                if (grave == null) Notify?.Invoke(p.Id, "ui.items_dropped");
             }
-            p.Inventory.Clear();
 
             var sp = World.Generator.SpawnPoint;
             p.Position = new Vec3(sp.X + 0.5f, sp.Y + 0.01f, sp.Z + 0.5f);
@@ -436,6 +529,29 @@ namespace Genesis.Gameplay
             for (int dx = -1; dx <= 1; dx++)
                 World.LoadNow(new Int3(c.X + dx, c.Y + dy, c.Z + dz));
             Notify?.Invoke(p.Id, "ui.died");
+        }
+
+        /// <summary>Найти место для останков рядом с точкой гибели (столб вверх, потом соседние клетки).</summary>
+        private MachineInstance PlaceGrave(Int3 feet)
+        {
+            var graveBlock = Content.Blocks.Get("genesis:grave");
+            if (graveBlock == null) return null;
+            for (int ring = 0; ring <= 2; ring++)
+            for (int dy = 0; dy < 6; dy++)
+            for (int dz = -ring; dz <= ring; dz++)
+            for (int dx = -ring; dx <= ring; dx++)
+            {
+                if (Math.Max(Math.Abs(dx), Math.Abs(dz)) != ring) continue;
+                var pos = feet + new Int3(dx, dy, dz);
+                if (pos.Y < WorldConstants.MinY + 1 || pos.Y > WorldConstants.MaxY) continue;
+                if (!World.IsLoaded(pos.X, pos.Y, pos.Z) || !World.GetBlockDef(pos).Replaceable) continue;
+                if (World.GetBlockDef(pos).Liquid && ring < 2) continue; // в воде — только если иначе никак
+                if (Factory.MachineAt(pos) != null || Factory.ConveyorAt(pos) != null) continue;
+                if (!World.SetBlock(pos, graveBlock.NumericId)) continue;
+                Factory.OnBlockPlaced(pos, graveBlock, Direction.North);
+                return Factory.MachineAt(pos);
+            }
+            return null;
         }
 
         public void Eat(PlayerState p)
@@ -473,11 +589,17 @@ namespace Genesis.Gameplay
             if (Enemies.Feed(e)) p.Inventory[p.SelectedSlot] = held.WithCount(held.Count - 1);
         }
 
+        public const int AttackCooldownTicks = 7;
+
         public void Attack(PlayerState p, int enemyId)
         {
             var e = Enemies.Get(enemyId);
-            if (e == null || p.Health <= 0) return;
+            // Уже мёртв (удаляется только в следующем тике) — иначе пачка команд за кадр давала лут много раз
+            if (e == null || e.Health <= 0 || p.Health <= 0) return;
             if ((e.Position - p.Position).LengthSquared > AttackReach * AttackReach + 4) return;
+            // Серверная перезарядка удара (клиентская — 0.45 с; небольшой запас на задержку сети)
+            if (TickCount < p.NextAttackTick) return;
+            p.NextAttackTick = TickCount + AttackCooldownTicks;
             var tool = Mining.ToolOf(Content, p.SelectedStack);
             if (Enemies.Damage(e, Mining.AttackDamage(tool), p.Position, tool?.Type))
                 foreach (var d in Enemies.RollDrops(e))
@@ -502,16 +624,20 @@ namespace Genesis.Gameplay
             if (!CanCraftAt(p, craft, stationPos)) return false;
             if (craft.Minigame != null && !minigameSuccess) return false;
 
+            // Непустые ячейки ME в крафт не идут (их содержимое пропало бы)
+            Func<ItemStack, bool> usable = s => !Factory.Me.CellHasContents(s.Meta) || Content.Item(s.Item)?.StorageCell == null;
             foreach (var i in craft.Inputs)
-                if (p.Inventory.CountOf(i.ItemId) < i.Count) return false;
+                if (p.Inventory.CountOf(i.ItemId, usable) < i.Count) return false;
 
-            // Места под выход: проверяем на копии с уже изъятыми входами
+            // Места под выход: проверяем после изъятия входов; не влезло — откат по снимку (Meta сохраняется,
+            // изношенный инструмент не превращается в новый)
             var outputs = new List<ItemStack>();
             foreach (var o in craft.Outputs) outputs.Add(new ItemStack(o.ItemId, o.Count));
-            foreach (var i in craft.Inputs) p.Inventory.Extract(i.ItemId, i.Count);
+            var snapshot = p.Inventory.Snapshot();
+            foreach (var i in craft.Inputs) p.Inventory.Extract(i.ItemId, i.Count, usable);
             if (!p.Inventory.CanInsertAll(outputs))
             {
-                foreach (var i in craft.Inputs) p.Inventory.Insert(new ItemStack(i.ItemId, i.Count));
+                p.Inventory.Restore(snapshot);
                 Notify?.Invoke(p.Id, "ui.inventory_full");
                 return false;
             }
@@ -661,26 +787,43 @@ namespace Genesis.Gameplay
 
         // ============================================================ Сохранение
 
+        private System.Threading.Tasks.Task _saveTask;
+        private List<RegionStore.RegionWrite> _savingRegions;
+
+        /// <summary>Сохранить мир синхронно (выход из игры, ручное сохранение, тесты).</summary>
         public void Save()
         {
-            if (SaveDir == null) return;
+            SaveAsync();
+            WaitForSave();
+        }
+
+        /// <summary>
+        /// Сохранение без фриза: в главном потоке только снимок состояния в память (быстро), сжатие регионов
+        /// и запись на диск — в фоне. Все файлы состояния коммитятся одной транзакцией; раз в 15 минут —
+        /// ротация резервных копий (backups/1..3).
+        /// </summary>
+        public System.Threading.Tasks.Task SaveAsync()
+        {
+            if (SaveDir == null) return System.Threading.Tasks.Task.CompletedTask;
+            WaitForSave(); // предыдущее сохранение ещё пишется — дождаться
             Directory.CreateDirectory(SaveDir);
 
-            WriteAtomic(Path.Combine(SaveDir, "world.dat"), w =>
+            CollectCellGarbage();
+            var regions = World.PrepareSave();
+            _savingRegions = regions;
+            var tx = new SaveTransaction(SaveDir);
+            tx.Add("world.dat", w =>
             {
                 w.Write(SaveVersion);
                 w.Write(Seed);
                 w.Write(WorldTime);
+                Settings.Write(w);
             });
-
-            World.Save();
-
-            WriteAtomic(Path.Combine(SaveDir, "factory.dat"), w => Factory.Write(w));
-
-            WriteAtomic(Path.Combine(SaveDir, "knowledge.dat"), w => Knowledge.Write(w));
-            WriteAtomic(Path.Combine(SaveDir, "items.dat"), w => Drops.Write(w));
-
-            WriteAtomic(Path.Combine(SaveDir, "players.dat"), w =>
+            tx.Add("factory.dat", w => Factory.Write(w));
+            tx.Add("knowledge.dat", w => Knowledge.Write(w));
+            tx.Add("items.dat", w => Drops.Write(w));
+            tx.Add("creatures.dat", w => Enemies.Write(w));
+            tx.Add("players.dat", w =>
             {
                 var all = new List<PlayerState>(_players.Values);
                 all.AddRange(_savedPlayers.Values);
@@ -688,57 +831,149 @@ namespace Genesis.Gameplay
                 w.Write(all.Count);
                 foreach (var p in all) p.Write(w);
             });
-            Log.Info($"World saved to {SaveDir}");
+
+            string dir = SaveDir;
+            Action job = () =>
+            {
+                foreach (var r in regions) RegionStore.WriteRegion(r);
+                tx.Commit();
+                try
+                {
+                    SafeFile.RotateBackups(dir, StateFiles, 3, TimeSpan.FromMinutes(15));
+                }
+                catch (Exception e)
+                {
+                    Log.Warn("Backup rotation failed: " + e.Message);
+                }
+                Log.Info($"World saved to {dir}");
+            };
+            if (Platform.Threads)
+            {
+                _saveTask = System.Threading.Tasks.Task.Run(job);
+                return _saveTask;
+            }
+            // Браузер: потоков нет — пишем сразу (файловая система в памяти, это быстро), затем сброс в IndexedDB
+            try
+            {
+                job();
+                _saveTask = System.Threading.Tasks.Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                _saveTask = System.Threading.Tasks.Task.FromException(e);
+            }
+            Platform.AfterSave?.Invoke();
+            return _saveTask;
         }
 
+        /// <summary>Убрать из реестра ячеек ME записи, на которые больше не ссылается ни один предмет.</summary>
+        private void CollectCellGarbage()
+        {
+            var refs = new HashSet<int>();
+            void Scan(Inventory inv)
+            {
+                for (int i = 0; i < inv.Size; i++)
+                {
+                    var s = inv[i];
+                    if (!s.IsEmpty && s.Meta > 0 && Content.Item(s.Item)?.StorageCell != null) refs.Add(s.Meta);
+                }
+            }
+            foreach (var m in Factory.Machines)
+            {
+                Scan(m.Input);
+                Scan(m.Output);
+                Scan(m.Fuel);
+            }
+            foreach (var c in Factory.Conveyors)
+                foreach (var it in c.Items)
+                    if (it.Meta > 0 && Content.Item(it.Item)?.StorageCell != null) refs.Add(it.Meta);
+            foreach (var p in _players.Values)
+            {
+                Scan(p.Inventory);
+                Scan(p.CraftGrid);
+                Scan(p.Cursor);
+            }
+            foreach (var p in _savedPlayers.Values)
+            {
+                Scan(p.Inventory);
+                Scan(p.CraftGrid);
+                Scan(p.Cursor);
+            }
+            foreach (var d in Drops.All)
+                if (d.Stack.Meta > 0 && Content.Item(d.Stack.Item)?.StorageCell != null) refs.Add(d.Stack.Meta);
+            int removed = Factory.Me.CollectGarbage(refs);
+            if (removed > 0) Log.Info($"ME: removed {removed} orphaned storage cells");
+        }
+
+        /// <summary>Дождаться фонового сохранения (ошибка записи — в лог и наружу).</summary>
+        public void WaitForSave()
+        {
+            var t = _saveTask;
+            if (t == null) return;
+            _saveTask = null;
+            try
+            {
+                t.Wait();
+            }
+            catch (AggregateException e)
+            {
+                var inner = e.InnerException ?? e;
+                Log.Error("Save failed: " + inner);
+                // Регионы снова «грязные» — запишутся при следующем сохранении
+                if (_savingRegions != null) World.Store.MarkDirty(_savingRegions);
+                _savingRegions = null;
+                throw new IOException("Save failed: " + inner.Message, inner);
+            }
+            _savingRegions = null;
+        }
+
+        public bool IsSaving => _saveTask != null && !_saveTask.IsCompleted;
+
+        /// <summary>
+        /// Загрузка состояния: каждый файл читается с откатом на .bak. Фабрика не прочиталась ни из файла,
+        /// ни из копии — мир не открываем (иначе следующее сохранение затёрло бы постройки пустой фабрикой).
+        /// </summary>
         private void LoadState()
         {
             if (SaveDir == null) return;
             string factory = Path.Combine(SaveDir, "factory.dat");
-            if (File.Exists(factory))
-                using (var r = new BinaryReader(File.OpenRead(factory)))
-                    Factory.Read(r);
+            if (SafeFile.Exists(factory) && !SafeFile.TryRead(factory, r => Factory.Read(r)))
+                throw new InvalidDataException("factory.dat is damaged and its backup too. Restore a copy from the 'backups' folder of the world.");
 
             string players = Path.Combine(SaveDir, "players.dat");
-            if (File.Exists(players))
+            SafeFile.TryRead(players, r =>
             {
-                using (var r = new BinaryReader(File.OpenRead(players)))
+                int first = r.ReadInt32();
+                int version = first < 0 ? -first : 1;
+                int n = first < 0 ? r.ReadInt32() : first;
+                for (int i = 0; i < n; i++)
                 {
-                    int first = r.ReadInt32();
-                    int version = first < 0 ? -first : 1;
-                    int n = first < 0 ? r.ReadInt32() : first;
-                    for (int i = 0; i < n; i++)
-                    {
-                        var p = new PlayerState(0, "", Content);
-                        p.Read(r, version);
-                        _savedPlayers[p.Name] = p;
-                    }
+                    var p = new PlayerState(0, "", Content);
+                    p.Read(r, version);
+                    _savedPlayers[p.Name] = p;
                 }
-            }
+            }, () => _savedPlayers.Clear());
 
             string itemsFile = Path.Combine(SaveDir, "items.dat");
-            if (File.Exists(itemsFile))
-                using (var r = new BinaryReader(File.OpenRead(itemsFile)))
-                    Drops.Read(r);
+            SafeFile.TryRead(itemsFile, r => Drops.Read(r), () => Drops.Clear());
+
+            string creatures = Path.Combine(SaveDir, "creatures.dat");
+            SafeFile.TryRead(creatures, r => Enemies.Read(r), () => Enemies.Clear());
 
             string knowledge = Path.Combine(SaveDir, "knowledge.dat");
-            if (File.Exists(knowledge))
-                using (var r = new BinaryReader(File.OpenRead(knowledge)))
-                    Knowledge.Read(r);
-        }
-
-        private static void WriteAtomic(string path, Action<BinaryWriter> write)
-        {
-            string tmp = path + ".tmp";
-            using (var fs = File.Create(tmp))
-            using (var w = new BinaryWriter(fs))
-                write(w);
-            if (File.Exists(path)) File.Delete(path);
-            File.Move(tmp, path);
+            SafeFile.TryRead(knowledge, r => Knowledge.Read(r));
         }
 
         public void Dispose()
         {
+            try
+            {
+                WaitForSave();
+            }
+            catch (IOException)
+            {
+                // уже в логе
+            }
             World.Dispose();
         }
     }

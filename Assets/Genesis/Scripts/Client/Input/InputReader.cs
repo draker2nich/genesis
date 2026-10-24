@@ -30,7 +30,10 @@ namespace Genesis.Client
             s.LookX = Input.GetAxisRaw("Mouse X") * MouseSensitivity;
             s.LookY = Input.GetAxisRaw("Mouse Y") * MouseSensitivity;
             s.Jump = Input.GetKey(KeyCode.Space);
-            s.Sprint = Input.GetKey(KeyCode.LeftControl);
+            // В браузере Ctrl+W закрывает вкладку, Ctrl+Q — браузер, F5 — перезагрузка: бег на Shift,
+            // «выбросить стак» — Shift+Q, сохранение — автоматически (и в меню паузы)
+            bool web = YandexGames.IsWebGL;
+            s.Sprint = web ? Input.GetKey(KeyCode.LeftShift) : Input.GetKey(KeyCode.LeftControl);
             s.Descend = Input.GetKey(KeyCode.LeftShift);
             s.Sneak = Input.GetKey(KeyCode.LeftShift);
             s.Attack = Input.GetMouseButton(0);
@@ -41,14 +44,16 @@ namespace Genesis.Client
             s.ToggleFly = Input.GetKeyDown(KeyCode.F);
             s.Inventory = Input.GetKeyDown(KeyCode.E);
             s.Creative = Input.GetKeyDown(KeyCode.C);
-            s.Save = Input.GetKeyDown(KeyCode.F5);
+            s.Save = !web && Input.GetKeyDown(KeyCode.F5);
             s.Escape = Input.GetKeyDown(KeyCode.Escape);
-            s.Debug = Input.GetKeyDown(KeyCode.F3);
+            s.Debug = !WebPortal.IsPoki && Input.GetKeyDown(KeyCode.F3); // Poki: без отладочных инструментов
             s.Knowledge = Input.GetKeyDown(KeyCode.K);
             s.Stats = Input.GetKeyDown(KeyCode.P);
             s.Recipes = Input.GetKeyDown(KeyCode.J);
             s.Drop = Input.GetKeyDown(KeyCode.Q);
-            s.DropAll = s.Drop && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl));
+            s.DropAll = s.Drop && (web
+                ? Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)
+                : Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl));
             s.Map = Input.GetKeyDown(KeyCode.M);
             s.MapZoomIn = Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus);
             s.MapZoomOut = Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus);
@@ -64,6 +69,7 @@ namespace Genesis.Client
             }
             float wheel = Input.mouseScrollDelta.y;
             s.Scroll = wheel > 0.01f ? -1 : (wheel < -0.01f ? 1 : 0);
+            TouchControls.Apply(ref s); // телефоны и планшеты
             return s;
         }
     }

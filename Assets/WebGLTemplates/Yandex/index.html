@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden;               /* без полос прокрутки (требование 1.10) */
+      background: #14171b;
+      overscroll-behavior: none;      /* без pull-to-refresh */
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;    /* долгий тап не открывает меню */
+      -webkit-tap-highlight-color: transparent;
+    }
+    #unity-canvas {
+      position: fixed; left: 0; top: 0;
+      width: 100%; height: 100%;
+      display: block; background: #14171b; outline: none;
+    }
+    #loader {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #14171b; color: #e8e6de;
+      font: 600 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: .04em; z-index: 2;
+    }
+    #loader .logo { font-size: 42px; letter-spacing: .3em; color: #f2a33a; margin-bottom: 26px; text-shadow: 0 4px 0 #965c18; }
+    #loader .bar { width: min(360px, 70vw); height: 10px; background: #0e1013; border: 2px solid #404750; }
+    #loader .fill { height: 100%; width: 0; background: linear-gradient(90deg, #f2a33a, #ffd27a); transition: width .15s; }
+    #loader .hint { margin-top: 14px; color: #969aa0; font-weight: 400; }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <div id="loader">
+    <div class="logo">GENESIS</div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="hint" id="hint">Загрузка…</div>
+  </div>
+
+  <script>
+    // ---------------------------------------------------------------- Yandex Games SDK
+    // Вызовы из Unity, пришедшие до инициализации SDK, ставятся в очередь и выполняются после YaGames.init().
+    window.GenesisPortal = 'yandex'; // площадка для моста Unity (WebPortal)
+    window.GenesisYandex = {
+      ysdk: null,
+      queue: [],
+      call: function (fn) {
+        if (this.ysdk) { try { fn(this.ysdk); } catch (e) { console.warn(e); } }
+        else this.queue.push(fn);
+      }
+    };
+
+    function sendToUnity(method, arg) {
+      if (window.unityInstance) window.unityInstance.SendMessage('Genesis', method, arg === undefined ? '' : arg);
+    }
+
+    function initSDK() {
+      if (typeof YaGames === 'undefined') return;
+      YaGames.init().then(function (ysdk) {
+        var y = window.GenesisYandex;
+        y.ysdk = ysdk;
+        // Пауза и продолжение от площадки (оверлеи, сворачивание)
+        try {
+          ysdk.on('game_api_pause', function () { sendToUnity('OnYandexPause'); });
+          ysdk.on('game_api_resume', function () { sendToUnity('OnYandexResume'); });
+        } catch (e) { console.warn('[Genesis] pause events:', e); }
+        var q = y.queue; y.queue = [];
+        q.forEach(function (fn) { try { fn(ysdk); } catch (e) { console.warn(e); } });
+        var lang = ysdk.environment && ysdk.environment.i18n ? ysdk.environment.i18n.lang : '';
+        if (lang && !/^(ru|be|kk|uk|uz)$/.test(lang)) document.getElementById('hint').textContent = 'Loading…';
+      }).catch(function (e) { console.warn('[Genesis] YaGames.init failed:', e); });
+    }
+  </script>
+  <script async src="/sdk.js" onload="initSDK()"></script>
+
+  <script>
+    // ---------------------------------------------------------------- Страница
+    var canvas = document.getElementById('unity-canvas');
+
+    // Без контекстного меню и выделения; клавиши игры не прокручивают страницу
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    window.addEventListener('keydown', function (e) {
+      if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].indexOf(e.key) >= 0) e.preventDefault();
+    }, { passive: false });
+    window.addEventListener('wheel', function (e) { if (e.target === canvas) e.preventDefault(); }, { passive: false });
+    canvas.addEventListener('pointerdown', function () { canvas.focus(); });
+
+    // Свернули вкладку — сохраняемся (Unity при этом сама встаёт на паузу: runInBackground выключен)
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') sendToUnity('OnPageHidden');
+    });
+    window.addEventListener('pagehide', function () { sendToUnity('OnPageHidden'); });
+
+    // Холст — по размеру окна с учётом плотности пикселей (без растягивания при повороте/ресайзе)
+    function fitCanvas() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+    }
+    window.addEventListener('resize', fitCanvas);
+    fitCanvas();
+
+    // ---------------------------------------------------------------- Unity
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    var config = {
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_WASM
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+      memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      matchWebGLToCanvasSize: true,
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      showBanner: function (msg, type) {
+        // Технические предупреждения Unity игроку не показываем (требование 1.14) — только в консоль
+        if (type === 'error') console.error(msg); else console.warn(msg);
+      }
+    };
+
+    var script = document.createElement('script');
+    script.src = loaderUrl;
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (progress) {
+        document.getElementById('fill').style.width = Math.round(progress * 100) + '%';
+      }).then(function (instance) {
+        window.unityInstance = instance;
+        document.getElementById('loader').style.display = 'none';
+        canvas.focus();
+      }).catch(function (message) {
+        console.error(message);
+        document.getElementById('hint').textContent = String(message);
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

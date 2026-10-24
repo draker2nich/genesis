@@ -123,6 +123,12 @@ namespace Genesis.Simulation
                 var recipe = FindRecipe(m, recipes, f.RecipeFilter);
                 if (recipe == null)
                 {
+                    // Заказ ME больше невыполним (сырьё забрали руками) — снимаем, иначе машина ждала бы вечно
+                    if (m.QueuedRuns > 0)
+                    {
+                        m.QueuedRuns = 0;
+                        m.QueuedRecipe = null;
+                    }
                     m.Status = MachineStatus.NoInput;
                     return;
                 }
@@ -167,25 +173,43 @@ namespace Genesis.Simulation
                 Finish(m, f);
         }
 
+        /// <summary>
+        /// Какой рецепт запустить: заказ ME → выбор игрока → (авто) последний выполненный → первый подходящий.
+        /// Закреплённый рецепт не подменяется другим, даже если для другого хватает сырья.
+        /// </summary>
         private static RecipeDef FindRecipe(MachineInstance m, IReadOnlyList<RecipeDef> recipes, Func<RecipeDef, bool> filter)
         {
+            var pinned = m.PinnedRecipe;
+            if (pinned != null) return (filter == null || filter(pinned)) && HasInputs(m, pinned) ? pinned : null;
+            var last = m.LastRecipe;
+            if (last != null && (filter == null || filter(last)) && Contains(recipes, last) && HasInputs(m, last)) return last;
             foreach (var r in recipes)
             {
                 if (filter != null && !filter(r)) continue;
-                bool ok = true;
-                foreach (var input in r.Inputs)
-                    if (m.Input.CountOf(input.ItemId) < input.Count) { ok = false; break; }
-                if (!ok) continue;
-                foreach (var fi in r.FluidInputs)
-                {
-                    int have = 0;
-                    foreach (var t in m.Tanks)
-                        if (!t.IsOutput && t.Fluid == fi.FluidId) have += t.Amount;
-                    if (have < fi.Amount) { ok = false; break; }
-                }
-                if (ok) return r;
+                if (HasInputs(m, r)) return r;
             }
             return null;
+        }
+
+        private static bool Contains(IReadOnlyList<RecipeDef> list, RecipeDef r)
+        {
+            for (int i = 0; i < list.Count; i++)
+                if (list[i] == r) return true;
+            return false;
+        }
+
+        public static bool HasInputs(MachineInstance m, RecipeDef r)
+        {
+            foreach (var input in r.Inputs)
+                if (m.Input.CountOf(input.ItemId) < input.Count) return false;
+            foreach (var fi in r.FluidInputs)
+            {
+                int have = 0;
+                foreach (var t in m.Tanks)
+                    if (!t.IsOutput && t.Fluid == fi.FluidId) have += t.Amount;
+                if (have < fi.Amount) return false;
+            }
+            return true;
         }
 
         private static void Start(MachineInstance m, RecipeDef r, Factory f)
@@ -204,12 +228,15 @@ namespace Genesis.Simulation
 
             m.PendingOutputs.Clear();
             foreach (var o in r.Outputs)
-                m.PendingOutputs.Add(new ItemStack(o.ItemId, o.Count));
+                if (o.Chance >= 1f || m.Rng.Chance(o.Chance))
+                    m.PendingOutputs.Add(new ItemStack(o.ItemId, o.Count));
             foreach (var b in r.Byproducts)
                 if (b.Chance >= 1f || m.Rng.Chance(b.Chance))
                     m.PendingOutputs.Add(new ItemStack(b.ItemId, b.Count));
 
+            if (m.QueuedRuns > 0 && m.QueuedRecipe == r && --m.QueuedRuns <= 0) m.QueuedRecipe = null;
             m.CurrentRecipe = r;
+            m.LastRecipe = r;
             m.Progress = 0;
         }
 
@@ -343,6 +370,9 @@ namespace Genesis.Simulation
         public void Tick(MachineInstance m, Factory f)
         {
             m.Status = MachineStatus.Idle;
+            // Останки игрока исчезают, когда из них всё забрали
+            if (f.TickCount % 20 == 0 && m.Input.IsEmpty && m.Def.Param("remove_when_empty", 0) > 0)
+                f.ScheduleRemoval(m.Pos);
         }
     }
 

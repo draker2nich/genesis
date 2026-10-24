@@ -8,6 +8,8 @@ namespace Genesis.Simulation
     public sealed class BeltItem
     {
         public int Item;
+        /// <summary>Доп. данные стака (износ инструмента, id ячейки ME, привязка терминала) — едут вместе с предметом.</summary>
+        public int Meta;
         public float Pos;
         public float PrevPos; // для интерполяции рендера между тиками
     }
@@ -47,10 +49,12 @@ namespace Genesis.Simulation
             return Items[Items.Count - 1].Pos >= atPos + Spacing;
         }
 
-        public void Accept(int item, float atPos, float prevPos)
+        public void Accept(int item, float atPos, float prevPos, int meta = 0)
         {
-            Items.Add(new BeltItem { Item = item, Pos = atPos, PrevPos = prevPos });
+            Items.Add(new BeltItem { Item = item, Meta = meta, Pos = atPos, PrevPos = prevPos });
         }
+
+        public ItemStack StackAt(int i) => new ItemStack(Items[i].Item, 1, Items[i].Meta);
     }
 
     /// <summary>Сегмент трубы. Трубы объединяются в сети с общим буфером.</summary>

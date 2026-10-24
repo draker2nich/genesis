@@ -82,7 +82,8 @@ namespace Genesis.Client.UI
             if (!clip.Contains(p)) return;
             var old = GUI.matrix;
             var oldColor = GUI.color;
-            GUIUtility.RotateAroundPivot(angle, p);
+            // Поворот вокруг точки в координатах GUI (RotateAroundPivot считает в экранных — при масштабе интерфейса уехало бы)
+            GUI.matrix = old * Matrix4x4.TRS(p, Quaternion.Euler(0, 0, angle), Vector3.one) * Matrix4x4.TRS(-p, Quaternion.identity, Vector3.one);
             GUI.color = color;
             GUI.DrawTexture(new Rect(p.x - size / 2f, p.y - size / 2f, size, size), tex);
             GUI.matrix = old;
@@ -127,7 +128,7 @@ namespace Genesis.Client.UI
         {
             if (_ctx.Map == null || _ctx.Window != UiWindow.None) return;
             const float Size = 164f;
-            var outer = new Rect(Screen.width - Size - 18, 44, Size + 8, Size + 26);
+            var outer = new Rect(UiScale.W - Size - 18, 44, Size + 8, Size + 26);
             UiSkin.DrawPanel(outer);
             var r = new Rect(outer.x + 4, outer.y + 4, Size, Size);
             var me = _ctx.Player.Position;
@@ -145,7 +146,7 @@ namespace Genesis.Client.UI
 
         private void DrawMapWindow()
         {
-            float w = Screen.width - 60, h = Screen.height - 60;
+            float w = UiScale.W - 60, h = UiScale.H - 60;
             var p = Panel(w, h, _ctx.Loc.Get("ui.map"));
             var r = new Rect(p.x + 10, p.y + 40, w - 20, h - 76);
             var me = _ctx.Player.Position;

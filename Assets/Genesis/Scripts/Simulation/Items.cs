@@ -86,6 +86,52 @@ namespace Genesis.Simulation
             return n;
         }
 
+        /// <summary>Сколько предметов item в стаках, которые разрешает allow.</summary>
+        public int CountOf(int item, Func<ItemStack, bool> allow)
+        {
+            int n = 0;
+            foreach (var s in _slots)
+                if (!s.IsEmpty && s.Item == item && (allow == null || allow(s))) n += s.Count;
+            return n;
+        }
+
+        /// <summary>
+        /// Изъять count штук item: сначала из стаков без Meta (новые инструменты, пустые ячейки не трогаем
+        /// раньше обычных), потом из остальных, которые разрешает allow. Возвращает сколько изъято.
+        /// </summary>
+        public int Extract(int item, int count, Func<ItemStack, bool> allow)
+        {
+            int remaining = count;
+            for (int pass = 0; pass < 2 && remaining > 0; pass++)
+                for (int i = _slots.Length - 1; i >= 0 && remaining > 0; i--)
+                {
+                    var s = _slots[i];
+                    if (s.IsEmpty || s.Item != item) continue;
+                    if (pass == 0 && s.Meta != 0) continue;
+                    if (pass == 1 && (s.Meta == 0 || (allow != null && !allow(s)))) continue;
+                    int take = Math.Min(s.Count, remaining);
+                    _slots[i] = s.WithCount(s.Count - take);
+                    remaining -= take;
+                }
+            int extracted = count - remaining;
+            if (extracted > 0) Changed?.Invoke();
+            return extracted;
+        }
+
+        /// <summary>Снимок слотов (для отката операции целиком, с сохранением Meta).</summary>
+        public ItemStack[] Snapshot()
+        {
+            var copy = new ItemStack[_slots.Length];
+            Array.Copy(_slots, copy, _slots.Length);
+            return copy;
+        }
+
+        public void Restore(ItemStack[] snapshot)
+        {
+            Array.Copy(snapshot, _slots, Math.Min(snapshot.Length, _slots.Length));
+            Changed?.Invoke();
+        }
+
         /// <summary>Вставить стак. Возвращает сколько вставлено.</summary>
         public int Insert(ItemStack stack, bool simulate = false)
         {

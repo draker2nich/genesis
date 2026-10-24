@@ -31,8 +31,8 @@ namespace Genesis.Client.UI
             }
 
             float w = PlayerState.HotbarSize * (Slot + Gap) - Gap;
-            float x0 = (Screen.width - w) / 2f;
-            float y = Screen.height - Slot - 14 - 26;
+            float x0 = (UiScale.W - w) / 2f;
+            float y = UiScale.H - Slot - 14 - 26;
             float half = w / 2f - 6;
 
             // Здоровье мигает при низком уровне, голод — тёплым цветом
@@ -51,15 +51,15 @@ namespace Genesis.Client.UI
             string era = _ctx.Loc.Get("ui.era") + ": " + _ctx.Loc.Get("era." + _ctx.Session.Knowledge.EraName) +
                          "   " + _ctx.Loc.Get(day ? "ui.time.day" : "ui.time.night");
             var size = _label.CalcSize(new GUIContent(era));
-            UiSkin.DrawPanel(new Rect(Screen.width - size.x - 26, 8, size.x + 18, 28));
-            UiSkin.Shadowed(new Rect(Screen.width - size.x - 17, 11, size.x + 4, 22), era, _label);
+            UiSkin.DrawPanel(new Rect(UiScale.W - size.x - 26, 8, size.x + 18, 28));
+            UiSkin.Shadowed(new Rect(UiScale.W - size.x - 17, 11, size.x + 4, 22), era, _label);
         }
 
         private void DrawDamageFlash()
         {
             if (Time.time > _damageFlashUntil) return;
             float a = (_damageFlashUntil - Time.time) / 0.35f * 0.35f;
-            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.8f, 0f, 0f, a));
+            Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0.8f, 0f, 0f, a));
         }
 
         // ================================================================ Крафт
@@ -226,8 +226,8 @@ namespace Genesis.Client.UI
                 };
             }
 
-            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, 0.55f));
-            float w = Mathf.Min(620, Screen.width - 40), h = 380;
+            Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0, 0, 0, 0.55f));
+            float w = Mathf.Min(620, UiScale.W - 40), h = 380;
             var craft = _ctx.MinigameCraft;
             string title = craft.Outputs.Count > 0 ? _ctx.ItemName(craft.Outputs[0].ItemId) : craft.Id;
             var p = Panel(w, h, title);
@@ -271,8 +271,8 @@ namespace Genesis.Client.UI
 
             float innerW = columns.Count * ColW + 20;
             float innerH = maxRows * RowH + 50;
-            float w = Mathf.Min(Screen.width - 40, innerW + 40);
-            float h = Mathf.Min(Screen.height - 60, innerH + 70);
+            float w = Mathf.Min(UiScale.W - 40, innerW + 40);
+            float h = Mathf.Min(UiScale.H - 60, innerH + 70);
             var p = Panel(w, h, _ctx.Loc.Get("ui.knowledge"));
             var view = new Rect(p.x + 10, p.y + 40, w - 20, h - 50);
             _knowledgeScroll = GUI.BeginScrollView(view, _knowledgeScroll, new Rect(0, 0, innerW, innerH));

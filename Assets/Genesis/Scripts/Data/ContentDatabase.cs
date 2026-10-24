@@ -221,6 +221,7 @@ namespace Genesis.Data
                         Hardness = m.Hardness,
                         Tool = "pickaxe",
                         Orientable = true,
+                        Drop = m.Drop,
                         Textures = m.Textures ?? new BlockTextures { All = "genesis:machine_casing" }
                     }, m.Id);
                 }
@@ -297,6 +298,9 @@ namespace Genesis.Data
                 {
                     if (c.Station != m.CraftsOf && !(c.IsGrid && m.CraftsOf == "genesis:workbench")) continue;
                     if (c.Inputs.Count == 0) continue;
+                    // Рецепт с катализатором (~#axes) машине не подходит: инструмента у неё нет, а без проверки
+                    // она делала бы «доски топором» вообще без топора
+                    if (c.Cells != null && Array.Exists(c.Cells, g => g != null && g.Keep)) continue;
                     var r = new RecipeDef
                     {
                         Id = m.Id + "." + c.Id.Replace(':', '.'),
@@ -388,11 +392,14 @@ namespace Genesis.Data
                     Errors.Add($"machine {m.Id}: recipes_of '{m.RecipesOf}' not found");
                     continue;
                 }
-                if (!_recipesByMachine.TryGetValue(target.NumericId, out var shared))
-                    _recipesByMachine[target.NumericId] = shared = new List<RecipeDef>();
-                if (_recipesByMachine.TryGetValue(m.NumericId, out var own) && own != shared)
-                    foreach (var r in own) if (!shared.Contains(r)) shared.Add(r);
-                _recipesByMachine[m.NumericId] = shared;
+                // Свой список: рецепты цели + собственные. Список цели не трогаем — раньше собственные рецепты
+                // электропечи попадали и в каменный горн
+                var combined = _recipesByMachine.TryGetValue(target.NumericId, out var shared)
+                    ? new List<RecipeDef>(shared)
+                    : new List<RecipeDef>();
+                if (_recipesByMachine.TryGetValue(m.NumericId, out var own))
+                    foreach (var r in own) if (!combined.Contains(r)) combined.Add(r);
+                _recipesByMachine[m.NumericId] = combined;
             }
 
             BuildTextureTable();
@@ -493,25 +500,52 @@ namespace Genesis.Data
             }
         }
 
+        private static readonly JsonSerializerSettings FingerprintSettings = new JsonSerializerSettings
+        {
+            Converters = { new StringEnumConverter() },
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Formatting = Formatting.None
+        };
+
+        /// <summary>
+        /// Отпечаток контента: ID в порядке регистрации И значения определений (рецепты, время крафта,
+        /// прочность, свойства блоков). Раньше учитывались только ID — у друга с изменённым рецептом
+        /// хеш совпадал, и справочник показывал неверные рецепты.
+        /// </summary>
         private ulong ComputeHash()
         {
             var sb = new System.Text.StringBuilder();
-            for (int i = 0; i < Blocks.Count; i++) sb.Append(Blocks.IdOf(i)).Append('|');
-            sb.Append('#');
-            for (int i = 0; i < Items.Count; i++) sb.Append(Items.IdOf(i)).Append('|');
-            sb.Append('#');
-            for (int i = 0; i < Fluids.Count; i++) sb.Append(Fluids.IdOf(i)).Append('|');
-            sb.Append('#');
-            for (int i = 0; i < Machines.Count; i++) sb.Append(Machines.IdOf(i)).Append('|');
-            sb.Append('#');
-            for (int i = 0; i < Recipes.Count; i++) sb.Append(Recipes.IdOf(i)).Append('|');
-            sb.Append('#');
-            for (int i = 0; i < Crafts.Count; i++) sb.Append(Crafts.IdOf(i)).Append('|');
-            sb.Append('#');
-            for (int i = 0; i < Knowledge.Count; i++) sb.Append(Knowledge.IdOf(i)).Append('|');
-            sb.Append('#');
-            for (int i = 0; i < Enemies.Count; i++) sb.Append(Enemies.IdOf(i)).Append('|');
+            void Section<T>(Registry<T> reg) where T : class
+            {
+                for (int i = 0; i < reg.Count; i++)
+                {
+                    sb.Append(reg.IdOf(i)).Append('=');
+                    sb.Append(Fingerprint(reg.Get(i))).Append('|');
+                }
+                sb.Append('#');
+            }
+            Section(Blocks);
+            Section(Items);
+            Section(Fluids);
+            Section(Machines);
+            Section(Recipes);
+            Section(Crafts);
+            Section(Knowledge);
+            Section(Enemies);
             return Hash.String(sb.ToString());
+        }
+
+        private static string Fingerprint(object def)
+        {
+            if (def == null) return "";
+            try
+            {
+                return JsonConvert.SerializeObject(def, FingerprintSettings);
+            }
+            catch (Exception)
+            {
+                return def.GetType().Name;
+            }
         }
 
         // ------------------------------------------------------------ Запросы
@@ -530,6 +564,10 @@ namespace Genesis.Data
                 c.GridW = c.GridH = cells.Count <= 4 ? 2 : 3;
                 if (cells.Count > 9) Errors.Add($"craft {c.Id}: shapeless recipe needs more than 9 cells");
                 c.Cells = cells.ToArray();
+                // inputs бесформенного рецепта — это спецификации клеток (могут быть теги «#logs», катализаторы «~»):
+                // для автосборщика и справочника пересчитываем их в конкретные предметы
+                c.Inputs.Clear();
+                SumCellsIntoInputs(c);
                 return;
             }
 
@@ -587,17 +625,21 @@ namespace Genesis.Data
             }
 
             // Входы для автосборщика/справочника: сумма по клеткам (катализаторы не тратятся — не входят)
-            if (c.Inputs.Count == 0)
+            if (c.Inputs.Count == 0) SumCellsIntoInputs(c);
+        }
+
+        private void SumCellsIntoInputs(CraftDef c)
+        {
+            var sum = new Dictionary<int, int>();
+            var order = new List<int>();
+            foreach (var ing in c.Cells)
             {
-                var sum = new Dictionary<int, int>();
-                foreach (var ing in c.Cells)
-                {
-                    if (ing == null || ing.Keep || ing.Matches.Length == 0) continue;
-                    int item = ing.Matches[0];
-                    sum[item] = (sum.TryGetValue(item, out var n) ? n : 0) + ing.Count;
-                }
-                foreach (var kv in sum) c.Inputs.Add(new ItemAmount { Item = Items.IdOf(kv.Key), Count = kv.Value });
+                if (ing == null || ing.Keep || ing.Matches.Length == 0) continue;
+                int item = ing.Matches[0];
+                if (!sum.ContainsKey(item)) order.Add(item);
+                sum[item] = (sum.TryGetValue(item, out var n) ? n : 0) + ing.Count;
             }
+            foreach (var item in order) c.Inputs.Add(new ItemAmount { Item = Items.IdOf(item), Count = sum[item] });
         }
 
         /// <summary>"[~][#]id[*N]": ~ — катализатор, # — тег, *N — штук в клетке.</summary>

@@ -3,13 +3,14 @@
   "station": "genesis:workbench",
   "pattern": [
     "WQW",
-    " P ",
+    "SPS",
     " W "
   ],
   "key": {
     "W": "genesis:copper_wire",
     "Q": "genesis:quartz",
-    "P": "genesis:iron_plate"
+    "P": "genesis:iron_plate",
+    "S": "genesis:solder"
   },
   "outputs": [
     {

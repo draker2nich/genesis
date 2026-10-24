@@ -16,6 +16,8 @@ namespace Genesis.World
     public interface IChunkSource
     {
         void RequestChunk(Int3 coord);
+        /// <summary>Запросить полные данные чанка (сгенерированный по seed не совпал с хостом).</summary>
+        void RequestChunkFull(Int3 coord);
     }
 
     /// <summary>
@@ -39,11 +41,22 @@ namespace Genesis.World
         public event BlockChangedHandler BlockChanged;
         public event Action<Chunk> ChunkLoaded;
         public event Action<Int3> ChunkUnloaded;
+        /// <summary>Ожидаемый чанк больше не нужен (игрок ушёл) — реплика сбрасывает буфер изменений для него.</summary>
+        public event Action<Int3> PendingCanceled;
+
+        /// <summary>Ожидаемые отпечатки нетронутых чанков от хоста (сверка генерации).</summary>
+        private readonly Dictionary<Int3, ulong> _expectedHash = new Dictionary<Int3, ulong>();
 
         public readonly ushort Bedrock;
 
         /// <summary>Если задан — мир работает как реплика: чанки запрашиваются у хоста.</summary>
         public IChunkSource Remote { get; set; }
+
+        /// <summary>
+        /// Без потоков (браузер): генерация в главном потоке, но не больше стольких миллисекунд за кадр (Pump).
+        /// 0 — синхронно сразу при запросе (тесты).
+        /// </summary>
+        public int MainThreadBudgetMs;
 
         public int LoadedCount => _chunks.Count;
         public int PendingCount => _pending.Count;
@@ -126,26 +139,29 @@ namespace Genesis.World
                 return;
             }
 
-            if (_workers.Length == 0)
+            if (_workers.Length == 0 && MainThreadBudgetMs <= 0)
             {
                 Integrate(Generator.Generate(coord));
                 return;
             }
             _pending.Add(coord);
             _requests.Enqueue(coord);
-            _signal.Release();
+            if (_workers.Length > 0) _signal.Release();
         }
 
         public bool IsPending(Int3 coord) => _pending.Contains(coord);
 
-        /// <summary>Ответ хоста: чанк не менялся — генерируем по seed.</summary>
-        public void ProvidePristine(Int3 coord)
+        /// <summary>Ответ хоста: чанк не менялся — генерируем по seed. hash — отпечаток хоста (0 — неизвестен).</summary>
+        public void ProvidePristine(Int3 coord, ulong hash = 0)
         {
             if (!_pending.Contains(coord) || _chunks.ContainsKey(coord)) return;
-            if (_workers.Length == 0)
+            if (hash != 0) _expectedHash[coord] = hash;
+            if (_workers.Length == 0 && MainThreadBudgetMs <= 0)
             {
+                var gen = Generator.Generate(coord);
+                if (!MatchesHost(gen)) return;
                 _pending.Remove(coord);
-                Integrate(Generator.Generate(coord));
+                Integrate(gen);
                 return;
             }
             _requests.Enqueue(coord);
@@ -173,12 +189,35 @@ namespace Genesis.World
         /// <summary>Забрать готовые чанки из фоновых потоков. Вызывать каждый кадр.</summary>
         public void Pump(int maxPerCall = 64)
         {
+            // Браузер: генерируем сами, сколько успеваем за бюджет кадра
+            if (_workers.Length == 0 && MainThreadBudgetMs > 0 && !_requests.IsEmpty)
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                while (sw.ElapsedMilliseconds < MainThreadBudgetMs && _requests.TryDequeue(out var coord))
+                {
+                    if (!_pending.Contains(coord) || _chunks.ContainsKey(coord)) continue;
+                    _completed.Enqueue(Generator.Generate(coord));
+                }
+            }
             for (int i = 0; i < maxPerCall && _completed.TryDequeue(out var chunk); i++)
             {
-                if (!_pending.Remove(chunk.Coord)) continue; // отменён или уже загружен синхронно
+                if (!_pending.Contains(chunk.Coord)) continue; // отменён или уже загружен синхронно
                 if (_chunks.ContainsKey(chunk.Coord)) continue;
+                if (!MatchesHost(chunk)) continue; // ждём данные от хоста
+                _pending.Remove(chunk.Coord);
                 Integrate(chunk);
             }
+        }
+
+        /// <summary>Сгенерированный чанк совпал с отпечатком хоста? Нет — просим у хоста полные данные.</summary>
+        private bool MatchesHost(Chunk chunk)
+        {
+            if (!_expectedHash.TryGetValue(chunk.Coord, out ulong h)) return true;
+            _expectedHash.Remove(chunk.Coord);
+            if (chunk.ContentHash() == h) return true;
+            Log.Warn($"Chunk {chunk.Coord} generated differently from host, requesting data");
+            Remote?.RequestChunkFull(chunk.Coord);
+            return false;
         }
 
         private void Integrate(Chunk chunk)
@@ -251,7 +290,12 @@ namespace Genesis.World
                 var drop = new List<Int3>();
                 foreach (var p in _pending)
                     if (!wantedSet.Contains(p)) drop.Add(p);
-                foreach (var p in drop) _pending.Remove(p);
+                foreach (var p in drop)
+                {
+                    _pending.Remove(p);
+                    _expectedHash.Remove(p);
+                    PendingCanceled?.Invoke(p);
+                }
             }
         }
 
@@ -282,6 +326,14 @@ namespace Genesis.World
             foreach (var c in _chunks.Values)
                 if (c.Modified) Store.Store(c);
             Store.Flush();
+        }
+
+        /// <summary>Положить изменённые чанки в регионы и вернуть снимок для записи в фоне.</summary>
+        public List<RegionStore.RegionWrite> PrepareSave()
+        {
+            foreach (var c in _chunks.Values)
+                if (c.Modified) Store.Store(c);
+            return Store.SnapshotDirty();
         }
 
         public void Dispose()

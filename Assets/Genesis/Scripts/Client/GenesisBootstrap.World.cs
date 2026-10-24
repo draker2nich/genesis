@@ -152,6 +152,7 @@ namespace Genesis.Client
 
             _nextAutosave = Time.time + AutosaveMinutes * 60f;
             _mode = Mode.Playing;
+            WebPortal.WorldOpened(); // Poki: gameplayStart — по первому действию игрока в мире
         }
 
         /// <summary>Настройки изменились в игре (меню паузы) — применить к камере и окружению.</summary>
@@ -169,8 +170,9 @@ namespace Genesis.Client
             if (_panorama != null || _panoramaFailed || _session != null) return;
             try
             {
-                var server = GameServer.Open(_content, null, DefaultSeed, Mathf.Clamp(SystemInfo.processorCount - 2, 1, 4));
-                server.ViewRadius = 6;
+                var server = GameServer.Open(_content, null, DefaultSeed, Genesis.Core.Platform.Threads ? Mathf.Clamp(SystemInfo.processorCount - 2, 1, 4) : 0);
+                if (!Genesis.Core.Platform.Threads) server.World.MainThreadBudgetMs = 6;
+                server.ViewRadius = Genesis.Core.Platform.Threads ? 6 : 4;
                 server.VerticalRadius = 3;
                 server.Enemies.SpawningEnabled = false;
                 server.WorldTime = GameServer.DayLength / 10; // утро — тёплый низкий свет

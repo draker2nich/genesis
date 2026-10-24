@@ -68,6 +68,12 @@ namespace Genesis.World
     /// </summary>
     public sealed partial class WorldGenerator
     {
+        /// <summary>
+        /// Версия алгоритма генерации. Увеличивать при любом изменении, меняющем результат: клиент коопа
+        /// генерирует нетронутые чанки сам, и разные версии дали бы разный мир (хост отклонит такого клиента).
+        /// </summary>
+        public const int Version = 3;
+
         public readonly long Seed;
         private const int Sea = WorldConstants.SeaLevel;
 

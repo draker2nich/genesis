@@ -252,6 +252,36 @@ namespace Genesis.Simulation
 
         public CellStorage Cell(int id) => _cells.TryGetValue(id, out var c) ? c : null;
 
+        /// <summary>Завести запись ячейки в реестре (id идёт в Meta предмета-ячейки).</summary>
+        public CellStorage CreateCell(bool fluid, long capacity)
+        {
+            var cell = new CellStorage { Id = _nextCellId++, Fluid = fluid, Capacity = capacity };
+            _cells[cell.Id] = cell;
+            return cell;
+        }
+
+        /// <summary>Ячейка с этим Meta что-то хранит (её нельзя уничтожать крафтом).</summary>
+        public bool CellHasContents(int meta) => meta > 0 && _cells.TryGetValue(meta, out var c) && c.Used > 0;
+
+        /// <summary>
+        /// Сборка мусора реестра ячеек: записи, на которые не ссылается ни один предмет-ячейка в мире
+        /// (инвентари, машины, ленты, лежащие предметы), удаляются. referenced — все Meta предметов-ячеек.
+        /// </summary>
+        public int CollectGarbage(HashSet<int> referenced)
+        {
+            var dead = new List<int>();
+            foreach (var kv in _cells)
+                if (!referenced.Contains(kv.Key)) dead.Add(kv.Key);
+            foreach (var id in dead) _cells.Remove(id);
+            return dead.Count;
+        }
+
+        /// <summary>Предмет-ячейка уничтожен — освободить запись реестра (только пустую).</summary>
+        public void ReleaseCell(int meta)
+        {
+            if (meta > 0 && _cells.TryGetValue(meta, out var c) && c.Used <= 0) _cells.Remove(meta);
+        }
+
         // ============================================================ Беспроводной доступ
 
         /// <summary>Номер привязки к контроллеру (для Meta беспроводного терминала), начиная с 1.</summary>
@@ -447,6 +477,7 @@ namespace Genesis.Simulation
                     if ((t + (bus.Pos.GetHashCode() & 7)) % 8 == 0) TickExport(net, bus);
                 foreach (var p in net.Providers) CollectOutputs(net, p);
                 TickJobs(net);
+                if (t % 40 == 7) ReconcileInFlight(net);
                 if (t % 40 == 11) TickStock(net);
             }
         }
@@ -502,6 +533,7 @@ namespace Genesis.Simulation
                 for (int i = conv.Items.Count - 1; i >= 0; i--)
                 {
                     int item = conv.Items[i].Item;
+                    if (conv.Items[i].Meta != 0) continue; // ME хранит предметы без Meta — ячейку/инструмент не берём
                     if (!bus.FilterAllows(item) || Insert(net, item, 1, true) < 1) continue;
                     Insert(net, item, 1);
                     conv.Items.RemoveAt(i);
@@ -728,7 +760,7 @@ namespace Genesis.Simulation
                     if (!p.Patterns.Contains(job.Recipe)) continue;
                     var m = _f.MachineAt(TargetOf(p));
                     if (m == null || m.Def.IsMeDevice || busy.Contains(m)) continue;
-                    if (!m.Input.IsEmpty || m.CurrentRecipe != null) continue;
+                    if (!m.Input.IsEmpty || m.CurrentRecipe != null || m.QueuedRuns > 0) continue;
                     int k = BatchThatFits(net, m, recipe, Math.Min(job.RunsLeft, MaxBatch));
                     if (k <= 0) continue;
                     Dispatch(net, m, recipe, k);
@@ -779,6 +811,40 @@ namespace Genesis.Simulation
                 long got = ExtractFluid(net, fi.FluidId, (long)fi.Amount * k);
                 _f.FillMachine(m, fi.FluidId, (int)got, false);
             }
+            // Машина обязана сделать именно этот рецепт k раз (а не другой из тех же входов)
+            m.QueuedRecipe = r;
+            m.QueuedRuns = k;
+        }
+
+        /// <summary>
+        /// Сверка «в пути» с реальностью: сколько каждого предмета действительно ещё придёт в сеть —
+        /// заказанные запуски в машинах провайдеров, текущий цикл и готовое в выходе. Ошибочный учёт
+        /// (машину сломали, заказ потерян, загрузка сохранения) больше не останавливает автозапас навсегда.
+        /// </summary>
+        private void ReconcileInFlight(MeNetwork net)
+        {
+            var data = net.Data;
+            if (data == null) return;
+            var real = new Dictionary<int, long>();
+            void Add(int item, long n)
+            {
+                if (item < 0 || n <= 0) return;
+                real[item] = (real.TryGetValue(item, out long v) ? v : 0) + n;
+            }
+            var seen = new HashSet<MachineInstance>();
+            foreach (var p in net.Providers)
+            {
+                if (p.Patterns.Count == 0) continue;
+                var m = _f.MachineAt(TargetOf(p));
+                if (m == null || m.Def.IsMeDevice || !seen.Add(m)) continue;
+                if (m.CurrentRecipe != null)
+                    foreach (var s in m.PendingOutputs) Add(s.Item, s.Count);
+                if (m.QueuedRecipe != null && m.QueuedRuns > 0)
+                    foreach (var o in m.QueuedRecipe.Outputs) Add(o.ItemId, (long)o.Count * m.QueuedRuns);
+                foreach (var s in m.Output.NonEmpty()) Add(s.Item, s.Count);
+            }
+            data.InFlight.Clear();
+            foreach (var kv in real) data.InFlight[kv.Key] = kv.Value;
         }
 
         private void TickStock(MeNetwork net)

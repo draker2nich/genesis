@@ -195,6 +195,45 @@ namespace Genesis.Client.UI
         }
 
         /// <summary>Полоса заполнения с «делениями» в пиксельном стиле.</summary>
+        /// <summary>Флажок с подписью; возвращает новое значение.</summary>
+        public static bool Check(Rect r, bool value, string label)
+        {
+            bool hover = r.Contains(Event.current.mousePosition);
+            var box = new Rect(r.x, r.y + (r.height - 18) / 2f, 18, 18);
+            Fill(box, PanelDark);
+            Fill(new Rect(box.x + 1, box.y + 1, 16, 16), hover ? SlotHover : Slot);
+            if (value) Fill(new Rect(box.x + 4, box.y + 4, 10, 10), Accent);
+            GUI.Label(new Rect(r.x + 26, r.y, r.width - 26, r.height), label, Small);
+            if (hover && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            {
+                Event.current.Use();
+                return !value;
+            }
+            return value;
+        }
+
+        /// <summary>Флажки настроек мира (меню создания мира и пауза хоста). Возвращает высоту блока.</summary>
+        public static float WorldSettingsEditor(float x, float y, float w, Genesis.Gameplay.WorldSettings s, Genesis.Data.Localization loc)
+        {
+            float y0 = y;
+            s.Creative = Check(new Rect(x, y, w, 22), s.Creative, loc.Get("ws.creative"));
+            y += 24;
+            if (s.Creative)
+            {
+                s.CreativeForGuests = Check(new Rect(x + 20, y, w - 20, 22), s.CreativeForGuests, loc.Get("ws.creative_guests"));
+                y += 24;
+            }
+            s.SurfaceEnemies = Check(new Rect(x, y, w, 22), s.SurfaceEnemies, loc.Get("ws.surface_enemies"));
+            y += 24;
+            s.KeepInventory = Check(new Rect(x, y, w, 22), s.KeepInventory, loc.Get("ws.keep_inventory"));
+            y += 24;
+            string diff = s.Difficulty < 0.75f ? "ws.easy" : (s.Difficulty > 1.25f ? "ws.hard" : "ws.normal");
+            if (GUI.Button(new Rect(x, y, w, 26), loc.Get("ws.difficulty") + ": " + loc.Get(diff), Button))
+                s.Difficulty = s.Difficulty < 0.75f ? 1f : (s.Difficulty > 1.25f ? 0.5f : 1.5f);
+            y += 30;
+            return y - y0;
+        }
+
         public static void Bar(Rect r, float t, Color c)
         {
             Fill(r, PanelDark);

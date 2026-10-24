@@ -963,5 +963,20 @@
     "pattern": "item_jar",
     "color": "#c84a7a",
     "accent": "#f0a0c0"
+  },
+  "genesis:solder": {
+    "pattern": "item_rod",
+    "color": "#c8ccd2",
+    "accent": "#7a8088"
+  },
+  "genesis:leather": {
+    "pattern": "item_hide",
+    "color": "#6a4228",
+    "accent": "#a0703e"
+  },
+  "genesis:flux_brush": {
+    "pattern": "item_feather",
+    "color": "#e8dcc0",
+    "accent": "#7a5030"
   }
 }

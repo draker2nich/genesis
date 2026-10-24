@@ -43,6 +43,9 @@ namespace Genesis.Gameplay
         private Random64 _rng = new Random64(0x17E35);
         private int _next = 1;
 
+        /// <summary>Предметы, которые не исчезают со временем (например, заполненная ячейка ME).</summary>
+        public Func<ItemStack, bool> NeverDespawn;
+
         /// <summary>Игрок подобрал: кто, что.</summary>
         public event Action<PlayerState, ItemStack> PickedUp;
 
@@ -71,6 +74,8 @@ namespace Genesis.Gameplay
 
         public void Remove(int id) => _items.Remove(id);
 
+        public void Clear() => _items.Clear();
+
         // ============================================================ Тик
 
         public void Tick(IEnumerable<PlayerState> players, long tick)
@@ -80,6 +85,7 @@ namespace Genesis.Gameplay
             foreach (var d in _items.Values)
             {
                 d.Age++;
+                if (d.Age > DespawnTicks - 20 && NeverDespawn != null && NeverDespawn(d.Stack)) d.Age = 0;
                 if (d.PickupDelay > 0) d.PickupDelay--;
                 if (d.Age > DespawnTicks || d.Stack.IsEmpty || d.Position.Y < WorldConstants.MinY - 8)
                 {

@@ -144,6 +144,7 @@ namespace Genesis.Client.Rendering
 
         private void OnGUI()
         {
+            GUI.matrix = Matrix4x4.identity; // подписи над головами — в экранных координатах
             var cam = Camera.main;
             if (cam == null || _session == null) return;
             if (_nameStyle == null)

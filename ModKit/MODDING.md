@@ -8,7 +8,7 @@
 - Подписки Steam Workshop — подхватываются автоматически, если установлен Steamworks.NET и запущен Steam.
 
 Если мод с тем же `id` есть и локально, и в Workshop, побеждает локальная копия (удобно при разработке).
-Моды включаются и выключаются в меню «Моды» → «Применить» (контент перезагружается без перезапуска игры).
+Моды включаются и выключаются в меню «Моды» → «Применить» (JSON-контент перезагружается без перезапуска игры; код-моды — DLL — подхватываются только после перезапуска: .NET не выгружает загруженные сборки).
 
 ## Структура мода
 
@@ -26,7 +26,7 @@ my_mod/
   textures.json       процедурные текстуры: имя → { pattern, color, accent }
   textures/*.png      PNG 32×32 или 64×64 (переопределяют процедурные)
   textures/<ns>/*.png PNG для чужого пространства имён (ретекстур игры)
-  models/*.bbmodel    модели Blockbench (блоки, машины, предметы, существа) — см. CONTENT.md
+  models/*.bbmodel    модели Blockbench (блоки, машины, предметы, существа) — см. [CONTENT.md](../CONTENT.md)
   models/<ns>/*.bbmodel  замена моделей игры
   lang/en.json, lang/ru.json   строки: ключ → текст
   assemblies/*.dll    код (необязательно)
@@ -58,13 +58,13 @@ my_mod/
 
 **Блок**: `render` (opaque/cutout/translucent/invisible), `solid`, `hardness`, `tool` (pickaxe/axe/shovel), `harvest_tier`, `drop`, `drop_count`, `textures` (all/top/bottom/side/front), `light` (0–15), `shape` (cube/cross/torch), `model` (модель Blockbench), `tint` (grass/foliage — окраска по биому), `drop: "none"` — ничего не выпадает, `transport` ({type: conveyor/pipe/wire/me, speed, capacity}), `deposit_of` + `purity` (залежь для бура).
 
-**Рецепт сетки** (`crafts/`): `pattern` + `key` (ингредиенты `id`, `#тег`, `id*N`, `~катализатор`) или `shapeless` + `inputs`; `outputs`; `minigame`. Подробно — `CONTENT.md`.
+**Рецепт сетки** (`crafts/`): `pattern` + `key` (ингредиенты `id`, `#тег`, `id*N`, `~катализатор`) или `shapeless` + `inputs`; `outputs`; `minigame`. Подробно — [CONTENT.md](../CONTENT.md).
 
 **Существо** (`enemies/`): `kind`, `spawn`, `biomes`, `time`, `group`, `attack`, `range`, `cooldown`, `windup`, `poison`, `flee_health`, `armor`, `weak_to`, `pack`, `death_cloud`, `curl`, `food`, `lays`, `model`.
 
-**Предмет**: `model` (модель в руке), `max_stack`, `places` (какой блок ставит), `fuel_ticks`, `food`, `tool` ({type, tier, speed, durability, damage}), `storage_cell` ({kind: item/fluid, capacity})., `light` (0–15 — свет в руке; по умолчанию как у ставимого блока)
+**Предмет**: `model` (модель в руке), `max_stack`, `places` (какой блок ставит), `fuel_ticks`, `food`, `tool` ({type, tier, speed, durability, damage}), `storage_cell` ({kind: item/fluid, capacity}), `light` (0–15 — свет в руке; по умолчанию как у ставимого блока).
 
-**Машина**: `behavior` (processor, boiler, pump, storage, station, drill, inserter, tank, generator, battery, me_* или своя из кода), `energy` ({type: none/fuel/steam/fe, per_tick, buffer, rate}), `input_slots`, `output_slots`, `fuel_slots`, `tanks`, `sides`, `default_faces`, `speed`, `params`, `anim` (spin/piston/drill/arm/rotor/none), `orient` (toward/away), `recipes_of` (взять рецепты другой машины), `crafts_of` (выполнять ручные крафты станции автоматически).
+**Машина**: `behavior` (processor, boiler, pump, storage, station, drill, inserter, tank, generator, battery, me_* или своя из кода), `energy` ({type: none/fuel/steam/fe, per_tick, buffer, rate}), `input_slots`, `output_slots`, `fuel_slots`, `tanks`, `sides`, `default_faces`, `speed`, `params`, `anim` (spin/piston/drill/arm/rotor/none), `orient` (toward/away), `recipes_of` (взять рецепты другой машины), `crafts_of` (выполнять ручные крафты станции автоматически; крафты с катализатором `~` машине недоступны), `drop` (что выпадает при поломке: по умолчанию сама машина, `"none"` — ничего). Поля `tier`, `module_slots`, `kind: multiblock` и `unlock` у рецептов зарезервированы и пока не действуют. У выходов машинных рецептов, как и у побочки, работает `chance`.
 
 **Рецепт**: `machine`, `inputs`, `fluid_inputs`, `outputs`, `fluid_outputs`, `byproducts` (с `chance`), `time_ticks` (20 тиков = 1 с).
 

@@ -1,8 +1,0 @@
-{
-  "id": "genesis:oak_log",
-  "places": "genesis:oak_log",
-  "fuel_ticks": 300,
-  "tags": [
-    "fuel"
-  ]
-}

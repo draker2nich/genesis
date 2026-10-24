@@ -42,7 +42,7 @@ namespace Genesis.Client.UI
             float leftW = Cols * (Slot + Gap) - Gap;
             float rightW = 300;
             float w = leftW + rightW + 36;
-            float h = Mathf.Min(Screen.height - 40, 700);
+            float h = Mathf.Min(UiScale.H - 40, 700);
             var p = Panel(w, h, _ctx.Loc.Get("ui.me.terminal"));
             var snap = _ctx.Session.Me;
 
@@ -317,7 +317,7 @@ namespace Genesis.Client.UI
 
         private void DrawProviderWindow(MachineInstance m)
         {
-            float w = 460, h = Mathf.Min(Screen.height - 60, 520);
+            float w = 460, h = Mathf.Min(UiScale.H - 60, 520);
             var p = Panel(w, h, _ctx.Loc.Get(m.Def.NameKey));
             float x = p.x + 12, y = p.y + 40;
             GUI.Label(new Rect(x, y, w, 20), $"<color=#f5a623>{StatusText(m.Status)}</color>", _label);

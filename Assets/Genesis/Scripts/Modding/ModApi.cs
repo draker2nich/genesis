@@ -68,18 +68,26 @@ namespace Genesis.Modding
 
         internal void Attach(GameServer s)
         {
-            Safe(() => ServerStarted?.Invoke(s));
-            s.Ticked += server => Tick?.Invoke(server);
-            s.PlayerJoined += p => Safe(() => PlayerJoined?.Invoke(s, p));
-            s.BlockPlaced += (p, pos, b) => Safe(() => BlockPlaced?.Invoke(s, p, pos, b));
-            s.BlockBroken += (p, pos, b) => Safe(() => BlockBroken?.Invoke(s, p, pos, b));
-            s.Crafted += (p, c) => Safe(() => Crafted?.Invoke(s, p, c));
+            Each(ServerStarted, h => ((Action<GameServer>)h)(s));
+            s.Ticked += server => Each(Tick, h => ((Action<GameServer>)h)(server));
+            s.PlayerJoined += p => Each(PlayerJoined, h => ((Action<GameServer, PlayerState>)h)(s, p));
+            s.BlockPlaced += (p, pos, b) => Each(BlockPlaced, h => ((Action<GameServer, PlayerState, Genesis.Core.Int3, BlockDef>)h)(s, p, pos, b));
+            s.BlockBroken += (p, pos, b) => Each(BlockBroken, h => ((Action<GameServer, PlayerState, Genesis.Core.Int3, BlockDef>)h)(s, p, pos, b));
+            s.Crafted += (p, c) => Each(Crafted, h => ((Action<GameServer, PlayerState, CraftDef>)h)(s, p, c));
         }
 
-        private static void Safe(Action a)
+        /// <summary>
+        /// Вызвать каждого подписчика отдельно: исключение одного мода не мешает остальным
+        /// (раньше упавший обработчик Tick пропускал всех подписчиков после него в этом тике).
+        /// </summary>
+        private static void Each(Delegate evt, Action<Delegate> call)
         {
-            try { a(); }
-            catch (Exception e) { Genesis.Core.Log.Error("Mod event handler failed: " + e); }
+            if (evt == null) return;
+            foreach (var h in evt.GetInvocationList())
+            {
+                try { call(h); }
+                catch (Exception e) { Genesis.Core.Log.Error($"Mod event handler {h.Method.DeclaringType?.FullName}.{h.Method.Name} failed: {e}"); }
+            }
         }
     }
 }

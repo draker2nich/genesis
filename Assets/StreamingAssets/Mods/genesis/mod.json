@@ -1,8 +1,0 @@
-{
-  "id": "genesis",
-  "name": "Genesis",
-  "version": "0.5.0",
-  "author": "Genesis team",
-  "description": "Base game content: the home planet, eras from wood to electricity, machines, ME network.",
-  "dependencies": []
-}

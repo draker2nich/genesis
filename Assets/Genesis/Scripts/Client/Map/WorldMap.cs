@@ -261,7 +261,7 @@ namespace Genesis.Client.Map
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(_file));
                 using (var fs = File.Create(_file))
-                using (var gz = new GZipStream(fs, System.IO.Compression.CompressionLevel.Fastest))
+                using (var gz = Genesis.Core.SafeFile.CompressWriter(fs, false))
                 using (var w = new BinaryWriter(gz))
                 {
                     w.Write(1);
@@ -306,7 +306,7 @@ namespace Genesis.Client.Map
             try
             {
                 using (var fs = File.OpenRead(_file))
-                using (var gz = new GZipStream(fs, CompressionMode.Decompress))
+                using (var gz = Genesis.Core.SafeFile.DecompressReader(fs))
                 using (var r = new BinaryReader(gz))
                 {
                     r.ReadInt32();

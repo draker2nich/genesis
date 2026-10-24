@@ -217,17 +217,19 @@ namespace Genesis.Data
         [JsonProperty("id")] public string Id;
         [JsonProperty("name")] public string NameKey;
         [JsonProperty("era")] public string Era;
-        /// <summary>"single_block" | "multiblock"</summary>
+        /// <summary>"single_block" | "multiblock". Зарезервировано: мультиблоков пока нет.</summary>
         [JsonProperty("kind")] public string Kind = "single_block";
         /// <summary>Сетка крафта станции: 3 — верстак (3×3). 0 — нет.</summary>
         [JsonProperty("craft_grid")] public int CraftGrid;
         /// <summary>Логика машины: processor | furnace | boiler | pump | storage (расширяется модами).</summary>
         [JsonProperty("behavior")] public string Behavior = "processor";
+        /// <summary>Зарезервировано: тиры машин пока не влияют на работу.</summary>
         [JsonProperty("tier")] public int Tier = 1;
         [JsonProperty("energy")] public EnergySpec Energy = new EnergySpec();
         [JsonProperty("sides")] public List<string> Sides = new List<string>();
         /// <summary>Конфигурация сторон по умолчанию: {"back":"item_in","front":"item_out"}.</summary>
         [JsonProperty("default_faces")] public Dictionary<string, string> DefaultFaces = new Dictionary<string, string>();
+        /// <summary>Зарезервировано: модулей пока нет.</summary>
         [JsonProperty("module_slots")] public int ModuleSlots;
         [JsonProperty("input_slots")] public int InputSlots = 1;
         [JsonProperty("output_slots")] public int OutputSlots = 1;
@@ -243,6 +245,8 @@ namespace Genesis.Data
         [JsonProperty("model")] public string Model;
         /// <summary>Ориентация при установке: toward — лицом к игроку, away — туда, куда смотрит игрок.</summary>
         [JsonProperty("orient")] public string Orient = "toward";
+        /// <summary>Что выпадает при поломке блока машины (по умолчанию — сама машина; "none" — ничего).</summary>
+        [JsonProperty("drop")] public string Drop;
         /// <summary>Использовать рецепты другой машины (электрогорн = рецепты каменного горна).</summary>
         [JsonProperty("recipes_of")] public string RecipesOf;
         /// <summary>Роль в энергосети: consumer | generator | storage (по умолчанию из energy.type).</summary>
@@ -302,6 +306,7 @@ namespace Genesis.Data
         [JsonProperty("fluid_outputs")] public List<FluidAmount> FluidOutputs = new List<FluidAmount>();
         [JsonProperty("byproducts")] public List<ItemAmount> Byproducts = new List<ItemAmount>();
         [JsonProperty("time_ticks")] public int TimeTicks = 20;
+        /// <summary>Зарезервировано, сейчас не используется: машинные рецепты открываются деревом знаний (unlocks.recipes).</summary>
         [JsonProperty("unlock")] public UnlockSpec Unlock;
 
         [JsonIgnore] public int NumericId;

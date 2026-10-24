@@ -24,7 +24,10 @@ namespace Genesis.Gameplay
         /// <summary>Скорость в момент приземления (для урона от падения), 0 — не приземлялся в этом шаге.</summary>
         public float LandingSpeed;
         public int SelectedSlot;
-        public bool Creative = true; // dev-режим на время разработки MVP
+        /// <summary>Креатив разрешён этому игроку (настройки мира; выставляет сервер при входе).</summary>
+        public bool Creative;
+        /// <summary>Секрет клиента, которым игрок «владеет» своим сохранением на сервере.</summary>
+        public string Token = "";
         public readonly Inventory Inventory;
         /// <summary>Сетка крафта 3×3 (в инвентаре используется левый верхний угол 2×2). Индекс = y·3 + x.</summary>
         public readonly Inventory CraftGrid;
@@ -50,6 +53,8 @@ namespace Genesis.Gameplay
 
         /// <summary>Яд: осталось тиков (урон раз в 30 тиков).</summary>
         public int PoisonTicks;
+        /// <summary>Тик, раньше которого сервер не примет следующий удар (не сохраняется).</summary>
+        public long NextAttackTick;
         /// <summary>Отбрасывание от удара: клиент применяет, когда меняется версия.</summary>
         public Vec3 Knockback;
         public int KnockbackVersion;
@@ -104,6 +109,8 @@ namespace Genesis.Gameplay
                 w.Write(kv.Key);
                 w.Write(kv.Value);
             }
+            // v4
+            w.Write(Token ?? "");
         }
 
         /// <summary>Уровень мастерства рецепта: 0..3 (16, 64 и 256 крафтов).</summary>
@@ -136,6 +143,7 @@ namespace Genesis.Gameplay
                 Mastery.Clear();
                 for (int i = 0; i < n; i++) Mastery[r.ReadString()] = r.ReadInt32();
             }
+            if (version >= 4) Token = r.ReadString();
         }
     }
 

@@ -14,7 +14,7 @@ namespace Genesis.Client.UI
 
         private void DrawStatsWindow()
         {
-            float w = Mathf.Min(Screen.width - 40, 860), h = Mathf.Min(Screen.height - 60, 560);
+            float w = Mathf.Min(UiScale.W - 40, 860), h = Mathf.Min(UiScale.H - 60, 560);
             var p = Panel(w, h, _ctx.Loc.Get("ui.stats"));
             float colW = w * 0.52f;
             DrawStatsTable(new Rect(p.x + 12, p.y + 40, colW - 18, h - 52));

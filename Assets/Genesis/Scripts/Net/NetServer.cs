@@ -34,7 +34,12 @@ namespace Genesis.Net
             public ulong VitalsHash;
             public bool HadEnemies;
             public bool HadDrops;
+            /// <summary>Тик последнего пакета от клиента (обрыв без FIN — «полуоткрытое» соединение).</summary>
+            public long LastHeard;
         }
+
+        /// <summary>Клиент молчит дольше (тиков) — соединение считается мёртвым.</summary>
+        public const int TimeoutTicks = 20 * 30;
 
         private readonly Dictionary<int, Client> _clients = new Dictionary<int, Client>();
         private long _lastTick = -1;
@@ -106,10 +111,12 @@ namespace Genesis.Net
                     var type = (MsgType)r.ReadByte();
                     if (type == MsgType.Hello)
                     {
-                        HandleHello(conn, r);
+                        // Повторный Hello с того же соединения не создаёт второго игрока-«призрака»
+                        if (!_clients.ContainsKey(conn)) HandleHello(conn, r);
                         return;
                     }
                     if (!_clients.TryGetValue(conn, out var client)) return;
+                    client.LastHeard = _server.TickCount;
                     switch (type)
                     {
                         case MsgType.Command:
@@ -119,7 +126,11 @@ namespace Genesis.Net
                             break;
                         case MsgType.ChunkRequest:
                             int n = r.ReadUInt16();
-                            for (int i = 0; i < n; i++) SendChunk(client, Protocol.ReadPos(r));
+                            for (int i = 0; i < n; i++) SendChunk(client, Protocol.ReadPos(r), false);
+                            break;
+                        case MsgType.ChunkRequestFull:
+                            int nf = r.ReadUInt16();
+                            for (int i = 0; i < nf && i < 64; i++) SendChunk(client, Protocol.ReadPos(r), true);
                             break;
                     }
                 }
@@ -136,8 +147,15 @@ namespace Genesis.Net
             ulong contentHash = r.ReadUInt64();
             string mods = r.ReadString();
             string name = r.ReadString().Trim();
+            string token = r.ReadString();
+            int generator = r.ReadInt32();
 
             if (version != Protocol.Version) { Reject(conn, $"protocol {version} != {Protocol.Version}"); return; }
+            if (generator != WorldGenerator.Version)
+            {
+                Reject(conn, $"different world generator version (host {WorldGenerator.Version}, yours {generator}) — update the game");
+                return;
+            }
             if (contentHash != _server.Content.ContentHash)
             {
                 Reject(conn, mods != _server.ModList
@@ -150,8 +168,9 @@ namespace Genesis.Net
             foreach (var p in _server.Players)
                 if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) { Reject(conn, "name is taken"); return; }
 
-            var player = _server.Join(name);
-            var client = new Client { Connection = conn, Player = player };
+            var player = _server.Join(name, token);
+            if (player == null) { Reject(conn, "this name belongs to another player on this server"); return; }
+            var client = new Client { Connection = conn, Player = player, LastHeard = _server.TickCount };
             _clients[conn] = client;
 
             var w = Protocol.Begin(MsgType.Welcome, out var ms);
@@ -162,6 +181,7 @@ namespace Genesis.Net
             w.Write(player.Pitch);
             w.Write(player.Flying);
             w.Write(player.SelectedSlot);
+            w.Write(player.Creative);
             _transport.Send(conn, Protocol.End(w, ms), true);
 
             SendInventory(client, true);
@@ -173,34 +193,33 @@ namespace Genesis.Net
 
         // ============================================================ Чанки и блоки
 
-        private void SendChunk(Client client, Int3 coord)
+        /// <param name="full">Всегда слать данные (клиент сгенерировал другое, чем у хоста).</param>
+        private void SendChunk(Client client, Int3 coord, bool full)
         {
             if (!WorldConstants.ChunkInBounds(coord)) return;
             var world = _server.World;
             byte[] payload = null;
+            ulong hash = 0;
 
             if (world.TryGetChunk(coord, out var chunk))
             {
-                if (chunk.Modified)
-                {
-                    using (var cms = new MemoryStream())
-                    using (var cw = new BinaryWriter(cms))
-                    {
-                        ChunkCodec.Write(cw, chunk, _server.Content);
-                        cw.Flush();
-                        payload = cms.ToArray();
-                    }
-                }
+                if (chunk.Modified || full) payload = Encode(chunk);
+                else hash = chunk.ContentHash();
             }
             else if (world.Store.TryGetRaw(coord, out var raw))
             {
                 payload = raw;
+            }
+            else if (full)
+            {
+                payload = Encode(world.Generator.Generate(coord));
             }
 
             if (payload == null)
             {
                 var w = Protocol.Begin(MsgType.ChunkPristine, out var ms);
                 Protocol.WritePos(w, coord);
+                w.Write(hash); // 0 — чанк у хоста не загружен, сверки нет
                 _transport.Send(client.Connection, Protocol.End(w, ms), true);
             }
             else
@@ -210,6 +229,17 @@ namespace Genesis.Net
                 w.Write(payload.Length);
                 w.Write(payload);
                 _transport.Send(client.Connection, Protocol.End(w, ms), true);
+            }
+        }
+
+        private byte[] Encode(Chunk chunk)
+        {
+            using (var cms = new MemoryStream())
+            using (var cw = new BinaryWriter(cms))
+            {
+                ChunkCodec.Write(cw, chunk, _server.Content);
+                cw.Flush();
+                return cms.ToArray();
             }
         }
 
@@ -265,6 +295,22 @@ namespace Genesis.Net
             }
             _lastTick = tick;
 
+            // Мёртвые соединения (кабель выдернули, ПК уснул): без пакетов 30 с — отключаем
+            if (tick % 20 == 0)
+            {
+                List<int> dead = null;
+                foreach (var c in _clients.Values)
+                    if (tick - c.LastHeard > TimeoutTicks) (dead ?? (dead = new List<int>())).Add(c.Connection);
+                if (dead != null)
+                    foreach (var conn in dead)
+                    {
+                        Log?.Invoke($"connection {conn} timed out");
+                        _transport.Disconnect(conn);
+                        OnDisconnected(conn);
+                    }
+                if (_clients.Count == 0) return;
+            }
+
             SendPlayers();
             if (tick % 100 == 0) Broadcast(TimePacket());
             if (_knowledgeDirty)
@@ -279,7 +325,7 @@ namespace Genesis.Net
                 if (tick % 2 == 0) SendEnemies(c);
                 if (tick % 2 == 1) SendDrops(c);
                 if (tick % 2 == 0) SendInventory(c, false);
-                if (tick % 2 == 0) SendConveyors(c);
+                if (tick % 4 == 2) SendConveyors(c, tick % 40 == 2);
                 if (tick % 4 == 1) SendMachines(c);
             }
         }
@@ -358,6 +404,7 @@ namespace Genesis.Net
                 bw.Write((short)p.PoisonTicks);
                 bw.Write(p.KnockbackVersion);
                 Protocol.WriteVec(bw, p.Knockback);
+                bw.Write(p.Creative);
                 bw.Flush();
                 body = bms.ToArray();
             }
@@ -433,50 +480,99 @@ namespace Genesis.Net
             return dx * dx + dy * dy + dz * dz <= radius * radius;
         }
 
+        /// <summary>Не больше стольких байт состояний в одном пакете-пачке (остальное — в следующем проходе).</summary>
+        private const int MaxBatchBytes = 48 * 1024;
+
+        /// <summary>Изменившиеся машины рядом — одним пакетом за проход.</summary>
         private void SendMachines(Client c)
         {
             var pos = c.Player.Position;
+            var w = Protocol.Begin(MsgType.Machines, out var ms);
+            w.Write((ushort)0); // число записей — допишем в конце
+            int count = 0;
+            var scratch = new MemoryStream();
+            var bw = new BinaryWriter(scratch);
             foreach (var m in _server.Factory.Machines)
             {
                 if (!Near(m.Pos, pos, MachineRadius)) continue;
-                byte[] body;
-                using (var bms = new MemoryStream())
-                using (var bw = new BinaryWriter(bms))
-                {
-                    ReplicationCodec.WriteMachine(bw, m);
-                    bw.Flush();
-                    body = bms.ToArray();
-                }
+                scratch.SetLength(0);
+                ReplicationCodec.WriteMachine(bw, m);
+                bw.Flush();
+                var body = scratch.ToArray();
                 ulong h = Protocol.HashBytes(body);
                 if (c.SentMachines.TryGetValue(m.Pos, out var old) && old == h) continue;
+                if (ms.Length + body.Length > MaxBatchBytes || count >= ushort.MaxValue) break;
                 c.SentMachines[m.Pos] = h;
-                var w = Protocol.Begin(MsgType.Machine, out var ms);
                 w.Write(body);
-                _transport.Send(c.Connection, Protocol.End(w, ms), true);
+                count++;
             }
+            if (count == 0) return;
+            SendBatch(c, w, ms, count);
         }
 
-        private void SendConveyors(Client c)
+        /// <summary>
+        /// Ленты рядом — одним пакетом. Клиент сам двигает предметы между снимками, поэтому лента
+        /// пересылается, когда меняется её состав (какие предметы на ней) и раз в 2 с — для сверки позиций.
+        /// Раньше каждая лента уходила отдельным пакетом каждые 2 тика (500 лент ≈ 5000 пакетов/с).
+        /// </summary>
+        private void SendConveyors(Client c, bool resync)
         {
             var pos = c.Player.Position;
+            var w = Protocol.Begin(MsgType.Conveyors, out var ms);
+            w.Write((ushort)0);
+            int count = 0;
+            var scratch = new MemoryStream();
+            var bw = new BinaryWriter(scratch);
             foreach (var conv in _server.Factory.Conveyors)
             {
                 if (!Near(conv.Pos, pos, ConveyorRadius)) continue;
-                byte[] body;
-                using (var bms = new MemoryStream())
-                using (var bw = new BinaryWriter(bms))
+                ulong h = StructureHash(conv);
+                if (resync)
                 {
+                    scratch.SetLength(0);
                     ReplicationCodec.WriteConveyor(bw, conv);
                     bw.Flush();
-                    body = bms.ToArray();
+                    h = Protocol.HashBytes(scratch.ToArray());
                 }
-                ulong h = Protocol.HashBytes(body);
-                if (c.SentConveyors.TryGetValue(conv.Pos, out var old) && old == h) continue;
-                c.SentConveyors[conv.Pos] = h;
-                var w = Protocol.Begin(MsgType.Conveyor, out var ms);
+                if (c.SentConveyors.TryGetValue(conv.Pos, out var old) && (old == h || (!resync && old == ~h))) continue;
+                scratch.SetLength(0);
+                ReplicationCodec.WriteConveyor(bw, conv);
+                bw.Flush();
+                var body = scratch.ToArray();
+                if (ms.Length + body.Length > MaxBatchBytes || count >= ushort.MaxValue) break;
+                // Запоминаем структурный отпечаток (инверсия — помечает, что последняя отправка была сверкой)
+                c.SentConveyors[conv.Pos] = resync ? ~StructureHash(conv) : h;
                 w.Write(body);
-                _transport.Send(c.Connection, Protocol.End(w, ms), true);
+                count++;
             }
+            if (count == 0) return;
+            SendBatch(c, w, ms, count);
+        }
+
+        /// <summary>Отпечаток состава ленты без позиций предметов.</summary>
+        private static ulong StructureHash(Conveyor conv)
+        {
+            unchecked
+            {
+                ulong h = 14695981039346656037UL;
+                h = (h ^ (ulong)conv.Block.NumericId) * 1099511628211UL;
+                h = (h ^ (ulong)conv.Facing) * 1099511628211UL;
+                foreach (var it in conv.Items)
+                {
+                    h = (h ^ (ulong)(uint)it.Item) * 1099511628211UL;
+                    h = (h ^ (ulong)(uint)it.Meta) * 1099511628211UL;
+                }
+                return h ^ (ulong)conv.Items.Count;
+            }
+        }
+
+        private void SendBatch(Client c, BinaryWriter w, MemoryStream ms, int count)
+        {
+            w.Flush();
+            var data = ms.ToArray();
+            data[1] = (byte)(count & 0xFF);
+            data[2] = (byte)(count >> 8);
+            _transport.Send(c.Connection, data, true);
         }
     }
 }

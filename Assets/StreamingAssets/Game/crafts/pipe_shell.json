@@ -1,0 +1,17 @@
+{
+  "id": "genesis:pipe_shell",
+  "station": "hand",
+  "pattern": [
+    "S",
+    "S"
+  ],
+  "key": {
+    "S": "genesis:shell_plate"
+  },
+  "outputs": [
+    {
+      "item": "genesis:pipe",
+      "count": 6
+    }
+  ]
+}

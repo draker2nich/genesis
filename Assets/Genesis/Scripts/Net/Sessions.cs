@@ -83,7 +83,8 @@ namespace Genesis.Net
 
         void Send(GameCommand cmd);
         void Update(float dt, float time);
-        void Save();
+        /// <param name="background">Писать на диск в фоне (автосохранение без фриза).</param>
+        void Save(bool background = false);
     }
 
     // ================================================================ Локальная сессия
@@ -136,6 +137,8 @@ namespace Genesis.Net
         }
         public bool IsHosting => _net != null;
         private readonly List<EnemyView> _enemies = new List<EnemyView>();
+        private readonly List<EnemyView> _enemyPool = new List<EnemyView>();
+        private readonly List<ProjectileView> _fxPool = new List<ProjectileView>();
 
         public string StatusLine => _net != null ? $"Host: {_net.ClientCount} connected via {_hostTransportName}" : "Singleplayer";
         private string _hostTransportName;
@@ -143,10 +146,10 @@ namespace Genesis.Net
         public event Action<string> Toast;
         public event Action<string> NetLog;
 
-        public LocalSession(GameServer server, string playerName)
+        public LocalSession(GameServer server, string playerName, string token = null)
         {
             Server = server;
-            LocalPlayer = server.Join(playerName);
+            LocalPlayer = server.Join(playerName, token, true); // локальный игрок — хост
             server.Notify += (id, key) =>
             {
                 if (id == LocalPlayer.Id) Toast?.Invoke(key);
@@ -201,17 +204,54 @@ namespace Genesis.Net
                 else _me = Server.Factory.Me.Snapshot(_meAccess.Value);
             }
 
+            // Объекты представлений переиспользуются (раньше — новые каждый кадр, лишний мусор для GC)
+            var all = Server.Enemies.All;
+            while (_enemyPool.Count < all.Count) _enemyPool.Add(new EnemyView());
             _enemies.Clear();
-            foreach (var e in Server.Enemies.All)
-                _enemies.Add(new EnemyView { Id = e.Id, Def = e.Def, Position = e.Position, Yaw = e.Yaw, Health = e.Health, Hurt = e.HurtTicks, State = e.State });
+            for (int i = 0; i < all.Count; i++)
+            {
+                var e = all[i];
+                var v = _enemyPool[i];
+                v.Id = e.Id;
+                v.Def = e.Def;
+                v.Position = e.Position;
+                v.Yaw = e.Yaw;
+                v.Health = e.Health;
+                v.Hurt = e.HurtTicks;
+                v.State = e.State;
+                _enemies.Add(v);
+            }
+            int fx = Server.Enemies.Projectiles.Count + Server.Enemies.Clouds.Count;
+            while (_fxPool.Count < fx) _fxPool.Add(new ProjectileView());
             _projectiles.Clear();
-            foreach (var p in Server.Enemies.Projectiles) _projectiles.Add(new ProjectileView { Id = p.Id, Position = p.Position });
-            foreach (var c in Server.Enemies.Clouds) _projectiles.Add(new ProjectileView { Id = c.Id, Position = c.Position, Cloud = true, Radius = c.Radius });
+            int k = 0;
+            foreach (var p in Server.Enemies.Projectiles)
+            {
+                var v = _fxPool[k++];
+                v.Id = p.Id;
+                v.Position = p.Position;
+                v.Cloud = false;
+                v.Radius = 0;
+                _projectiles.Add(v);
+            }
+            foreach (var c in Server.Enemies.Clouds)
+            {
+                var v = _fxPool[k++];
+                v.Id = c.Id;
+                v.Position = c.Position;
+                v.Cloud = true;
+                v.Radius = c.Radius;
+                _projectiles.Add(v);
+            }
             _drops.Clear();
             _drops.AddRange(Server.Drops.All);
         }
 
-        public void Save() => Server.Save();
+        public void Save(bool background = false)
+        {
+            if (background) Server.SaveAsync();
+            else Server.Save();
+        }
 
         public void Dispose()
         {
@@ -235,6 +275,12 @@ namespace Genesis.Net
         private readonly List<RemotePlayerView> _others = new List<RemotePlayerView>();
         private readonly Dictionary<int, RemotePlayerView> _othersById = new Dictionary<int, RemotePlayerView>();
         private readonly List<Int3> _chunkRequests = new List<Int3>();
+        private readonly List<Int3> _chunkRequestsFull = new List<Int3>();
+        private readonly string _token;
+        private float _lastReceived;
+        private float _lastPing;
+        /// <summary>Хост молчит дольше (с) — соединение считается потерянным.</summary>
+        public const float HostTimeout = 30f;
         private readonly Dictionary<Int3, List<(Int3, ushort)>> _bufferedChanges = new Dictionary<Int3, List<(Int3, ushort)>>();
         private float _accumulator;
         private float _lastMoveSent = -1f;
@@ -287,8 +333,9 @@ namespace Genesis.Net
 
         public event Action<string> Toast;
 
-        public RemoteSession(ContentDatabase content, IClientTransport transport, string playerName, int workerThreads)
+        public RemoteSession(ContentDatabase content, IClientTransport transport, string playerName, int workerThreads, string token = "")
         {
+            _token = token ?? "";
             Content = content;
             Knowledge = new KnowledgeState(content);
             _transport = transport;
@@ -306,6 +353,8 @@ namespace Genesis.Net
             w.Write(Content.ContentHash);
             w.Write(ModList ?? "");
             w.Write(_name);
+            w.Write(_token);
+            w.Write(WorldGenerator.Version);
             _transport.Send(Protocol.End(w, ms), true);
         }
 
@@ -320,6 +369,7 @@ namespace Genesis.Net
 
         private void OnReceived(byte[] data)
         {
+            _lastReceived = _time;
             try
             {
                 using (var ms = new MemoryStream(data))
@@ -350,8 +400,11 @@ namespace Genesis.Net
             switch (type)
             {
                 case MsgType.ChunkPristine:
-                    World.ProvidePristine(Protocol.ReadPos(r));
+                {
+                    var coord = Protocol.ReadPos(r);
+                    World.ProvidePristine(coord, r.ReadUInt64());
                     break;
+                }
                 case MsgType.ChunkData:
                 {
                     var coord = Protocol.ReadPos(r);
@@ -381,6 +434,18 @@ namespace Genesis.Net
                 case MsgType.Conveyor:
                     ReplicationCodec.ReadConveyor(r, Factory);
                     break;
+                case MsgType.Machines:
+                {
+                    int n = r.ReadUInt16();
+                    for (int i = 0; i < n; i++) ReplicationCodec.ReadMachine(r, Factory);
+                    break;
+                }
+                case MsgType.Conveyors:
+                {
+                    int n = r.ReadUInt16();
+                    for (int i = 0; i < n; i++) ReplicationCodec.ReadConveyor(r, Factory);
+                    break;
+                }
                 case MsgType.EntityRemoved:
                     Factory.OnBlockRemoved(Protocol.ReadPos(r));
                     break;
@@ -415,6 +480,8 @@ namespace Genesis.Net
                     p.PoisonTicks = r.ReadInt16();
                     int kv = r.ReadInt32();
                     var kb = Protocol.ReadVec(r);
+                    p.Creative = r.ReadBoolean();
+                    if (!p.Creative) p.Flying = false;
                     if (kv != p.KnockbackVersion)
                     {
                         p.KnockbackVersion = kv;
@@ -483,9 +550,11 @@ namespace Genesis.Net
                 Yaw = r.ReadSingle(),
                 Pitch = r.ReadSingle(),
                 Flying = r.ReadBoolean(),
-                SelectedSlot = r.ReadInt32()
+                SelectedSlot = r.ReadInt32(),
+                Creative = r.ReadBoolean()
             };
             World.ChunkLoaded += OnChunkLoaded;
+            World.PendingCanceled += coord => _bufferedChanges.Remove(coord); // устаревший буфер не применится поверх свежих данных
 
             // Чанки вокруг точки появления — сразу
             var c = WorldConstants.ChunkOf(LocalPlayer.Position.Floor());
@@ -552,6 +621,8 @@ namespace Genesis.Net
 
         public void RequestChunk(Int3 coord) => _chunkRequests.Add(coord);
 
+        public void RequestChunkFull(Int3 coord) => _chunkRequestsFull.Add(coord);
+
         public void Send(GameCommand cmd)
         {
             if (State != SessionState.Playing) return;
@@ -590,6 +661,15 @@ namespace Genesis.Net
                 i += n;
             }
             _chunkRequests.Clear();
+            if (_chunkRequestsFull.Count > 0)
+            {
+                int n = Math.Min(64, _chunkRequestsFull.Count);
+                var w = Protocol.Begin(MsgType.ChunkRequestFull, out var ms);
+                w.Write((ushort)n);
+                for (int k = 0; k < n; k++) Protocol.WritePos(w, _chunkRequestsFull[k]);
+                _transport.Send(Protocol.End(w, ms), true);
+                _chunkRequestsFull.RemoveRange(0, n);
+            }
         }
 
         // ============================================================ Цикл
@@ -599,6 +679,18 @@ namespace Genesis.Net
             _time = time;
             _transport.Poll();
             if (State != SessionState.Playing) return;
+            if (_time - _lastReceived > HostTimeout)
+            {
+                Error = "Host is not responding";
+                State = SessionState.Failed;
+                return;
+            }
+            if (_time - _lastPing > 2f)
+            {
+                _lastPing = _time;
+                var pw = Protocol.Begin(MsgType.Ping, out var pms);
+                _transport.Send(Protocol.End(pw, pms), true);
+            }
 
             World.Pump();
 
@@ -615,7 +707,7 @@ namespace Genesis.Net
             FlushChunkRequests();
         }
 
-        public void Save()
+        public void Save(bool background = false)
         {
         }
 

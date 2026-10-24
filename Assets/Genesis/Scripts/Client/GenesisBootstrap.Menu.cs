@@ -45,13 +45,22 @@ namespace Genesis.Client
 
         private void OnGUI()
         {
+            UiScale.Begin();
+            if (!_contentReady)
+            {
+                // Браузер: контент ещё скачивается (своя заставка без чужих логотипов и ссылок)
+                UiSkin.Ensure();
+                UiSkin.Fill(new Rect(0, 0, UiScale.W, UiScale.H), UiSkin.Bg);
+                GUI.Label(new Rect(0, UiScale.H / 2f - 12, UiScale.W, 24), _loadingStatus, UiSkin.Center);
+                return;
+            }
             if (_mode == Mode.Playing)
             {
                 if (InGameSettings && _ctx != null && !_ctx.Paused) InGameSettings = false;
                 if (InGameSettings)
                 {
                     UiSkin.Ensure();
-                    UiSkin.Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, 0.45f));
+                    UiSkin.Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0, 0, 0, 0.45f));
                     DrawSettingsScreen();
                 }
                 return;
@@ -77,7 +86,7 @@ namespace Genesis.Client
                 case MenuScreen.Settings: DrawSettingsScreen(); break;
             }
 
-            GUI.Label(new Rect(12, Screen.height - 24, 400, 20), "Genesis MVP · stage 5 · crafting, life & maps", UiSkin.Tiny);
+            GUI.Label(new Rect(12, UiScale.H - 24, 400, 20), "Genesis MVP · stage 5 · crafting, life & maps", UiSkin.Tiny);
         }
 
         private static string Dots() => new string('.', 1 + (int)(Time.unscaledTime * 2) % 3);
@@ -88,12 +97,12 @@ namespace Genesis.Client
             if (_panoramaActive)
             {
                 // Виньетка поверх живой панорамы
-                UiSkin.Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.03f, 0.05f, 0.25f));
+                UiSkin.Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0.02f, 0.03f, 0.05f, 0.25f));
                 for (int i = 0; i < 24; i++)
                 {
                     float a = 0.35f * (1f - i / 24f);
-                    UiSkin.Fill(new Rect(0, i * 6, Screen.width, 6), new Color(0, 0, 0, a * 0.8f));
-                    UiSkin.Fill(new Rect(0, Screen.height - (i + 1) * 6, Screen.width, 6), new Color(0, 0, 0, a));
+                    UiSkin.Fill(new Rect(0, i * 6, UiScale.W, 6), new Color(0, 0, 0, a * 0.8f));
+                    UiSkin.Fill(new Rect(0, UiScale.H - (i + 1) * 6, UiScale.W, 6), new Color(0, 0, 0, a));
                 }
                 return;
             }
@@ -102,15 +111,15 @@ namespace Genesis.Client
             {
                 float t = i / (float)(bands - 1);
                 var c = Color.Lerp(new Color(0.16f, 0.2f, 0.27f), new Color(0.04f, 0.045f, 0.06f), t);
-                UiSkin.Fill(new Rect(0, Screen.height * i / (float)bands, Screen.width, Screen.height / (float)bands + 1), c);
+                UiSkin.Fill(new Rect(0, UiScale.H * i / (float)bands, UiScale.W, UiScale.H / (float)bands + 1), c);
             }
         }
 
         private static Rect CenterPanel(float w, float h, float yOffset = 0)
         {
-            w = Mathf.Min(w, Screen.width - 24);
-            h = Mathf.Min(h, Screen.height - 24);
-            var r = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f + yOffset, w, h);
+            w = Mathf.Min(w, UiScale.W - 24);
+            h = Mathf.Min(h, UiScale.H - 24);
+            var r = new Rect((UiScale.W - w) / 2f, (UiScale.H - h) / 2f + yOffset, w, h);
             UiSkin.DrawPanel(r);
             return r;
         }
@@ -128,20 +137,43 @@ namespace Genesis.Client
 
         private void DrawMainScreen()
         {
-            float px = Mathf.Clamp(Screen.width / 140f, 5f, 11f);
-            float logoY = Screen.height * 0.16f;
-            DrawLogo(Screen.width / 2f, logoY, px);
+            float px = Mathf.Clamp(UiScale.W / 140f, 5f, 11f);
+            float logoY = UiScale.H * 0.16f;
+            DrawLogo(UiScale.W / 2f, logoY, px);
             var tag = new GUIStyle(UiSkin.Center) { fontSize = 15 };
             tag.normal.textColor = UiSkin.TextDim;
-            GUI.Label(new Rect(0, logoY + px * 8 + 10, Screen.width, 24), _loc.Get("menu.tagline"), tag);
+            GUI.Label(new Rect(0, logoY + px * 8 + 10, UiScale.W, 24), _loc.Get("menu.tagline"), tag);
 
-            float w = 300, x = (Screen.width - w) / 2f, y = logoY + px * 8 + 60;
+            float w = 300, x = (UiScale.W - w) / 2f, y = logoY + px * 8 + 60;
+            if (WebPortal.QuickMenu)
+            {
+                // Poki и itch.io: минимум меню — «Играть» сразу продолжает последний мир (или создаёт новый)
+                if (GUI.Button(new Rect(x, y, w, 44), _loc.Get("menu.play"), UiSkin.AccentButton)) QuickPlay();
+                y += 52;
+                if (GUI.Button(new Rect(x, y, w / 2 - 4, 36), _loc.Get("menu.worlds"), UiSkin.Button))
+                {
+                    RefreshWorlds();
+                    _screen = MenuScreen.Play;
+                }
+                if (GUI.Button(new Rect(x + w / 2 + 4, y, w / 2 - 4, 36), _loc.Get("menu.settings"), UiSkin.Button)) _screen = MenuScreen.Settings;
+                y += 50;
+                DrawMenuError(x, y, w);
+                return;
+            }
             if (GUI.Button(new Rect(x, y, w, 40), _loc.Get("menu.play"), UiSkin.AccentButton))
             {
                 RefreshWorlds();
                 _screen = MenuScreen.Play;
             }
             y += 48;
+            if (YandexGames.IsWebGL)
+            {
+                // Браузер: без коопа (нет сокетов), модов и кнопки «Выход»
+                if (GUI.Button(new Rect(x, y, w, 36), _loc.Get("menu.settings"), UiSkin.Button)) _screen = MenuScreen.Settings;
+                y += 50;
+                DrawMenuError(x, y, w);
+                return;
+            }
             if (GUI.Button(new Rect(x, y, w, 36), _loc.Get("menu.join"), UiSkin.Button)) _screen = MenuScreen.Join;
             y += 44;
             if (GUI.Button(new Rect(x, y, w / 2 - 4, 36), _loc.Get("menu.mods") + $" ({_mods.LoadOrder.Count})", UiSkin.Button)) _screen = MenuScreen.Mods;
@@ -157,6 +189,19 @@ namespace Genesis.Client
             }
             y += 50;
             DrawMenuError(x, y, w);
+        }
+
+        /// <summary>Сразу в игру: последний мир или новый со случайным seed и настройками по умолчанию.</summary>
+        private void QuickPlay()
+        {
+            RefreshWorlds();
+            if (_worlds != null && _worlds.Count > 0) _worldName = _worlds[0].Name;
+            else
+            {
+                _worldName = "world1";
+                _seedText = UnityEngine.Random.Range(1, int.MaxValue).ToString();
+            }
+            StartLocal(false);
         }
 
         private void DrawMenuError(float x, float y, float w)
@@ -189,7 +234,8 @@ namespace Genesis.Client
 
         private void DrawPlayScreen()
         {
-            var p = CenterPanel(720, 520);
+            bool existsNow = _worlds != null && _worlds.Exists(w => w.Name == _worldName);
+            var p = CenterPanel(720, existsNow ? 520 : 640);
             UiSkin.PanelTitle(p, _loc.Get("menu.play"));
             float x = p.x + 16, y = p.y + 48;
             float listW = 340;
@@ -236,17 +282,28 @@ namespace Genesis.Client
             _seedText = GUI.TextField(new Rect(rx, ry, rw - 40, 30), _seedText ?? "", 20, UiSkin.Field);
             if (GUI.Button(new Rect(rx + rw - 34, ry, 34, 30), "?", UiSkin.Button))
                 _seedText = UnityEngine.Random.Range(1, int.MaxValue).ToString();
-            ry += 48;
+            ry += 40;
 
-            bool exists = _worlds != null && _worlds.Exists(w => w.Name == _worldName);
+            bool exists = existsNow;
+            if (!exists)
+            {
+                // Настройки нового мира (у существующего хранятся в нём; хост меняет их в меню паузы)
+                GUI.Label(new Rect(rx, ry, rw, 22), _loc.Get("ws.title"), UiSkin.Label);
+                ry += 24;
+                ry += UiSkin.WorldSettingsEditor(rx, ry, rw, _newWorldSettings, _loc) + 6;
+            }
+            else ry += 8;
             if (GUI.Button(new Rect(rx, ry, rw, 40), exists ? _loc.Get("menu.continue") : _loc.Get("menu.create"), UiSkin.AccentButton))
                 StartLocal(false);
             ry += 48;
-            if (GUI.Button(new Rect(rx, ry, rw, 34), _loc.Get("menu.host"), UiSkin.Button)) StartLocal(true);
-            ry += 40;
-            GUI.Label(new Rect(rx, ry, rw, 34), $"<size=11><color=#969aa0>{_loc.Get("menu.host_hint")} {TransportName()} · {_loc.Get("menu.port")} {_portText}</color></size>",
-                new GUIStyle(UiSkin.Small) { wordWrap = true });
-            ry += 40;
+            if (!YandexGames.IsWebGL)
+            {
+                if (GUI.Button(new Rect(rx, ry, rw, 34), _loc.Get("menu.host"), UiSkin.Button)) StartLocal(true);
+                ry += 40;
+                GUI.Label(new Rect(rx, ry, rw, 34), $"<size=11><color=#969aa0>{_loc.Get("menu.host_hint")} {TransportName()} · {_loc.Get("menu.port")} {_portText}</color></size>",
+                    new GUIStyle(UiSkin.Small) { wordWrap = true });
+                ry += 40;
+            }
 
             if (exists)
             {

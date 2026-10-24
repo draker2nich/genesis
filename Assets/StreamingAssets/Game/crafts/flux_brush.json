@@ -1,0 +1,21 @@
+{
+  "id": "genesis:flux_brush",
+  "station": "hand",
+  "shapeless": true,
+  "inputs": [
+    {
+      "item": "genesis:feather",
+      "count": 1
+    },
+    {
+      "item": "genesis:stick",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:flux_brush",
+      "count": 1
+    }
+  ]
+}

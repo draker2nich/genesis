@@ -1,0 +1,17 @@
+{
+  "id": "genesis:solder",
+  "station": "hand",
+  "shapeless": true,
+  "inputs": [
+    {
+      "item": "genesis:tin_ingot",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:solder",
+      "count": 4
+    }
+  ]
+}
