@@ -20,3 +20,6 @@
 # Временная копия контента во время браузерной сборки
 /GenesisGameBackup/
 /GenesisGameBackup.meta
+
+# Промо-скриншоты (меню Genesis → Скриншоты)
+/[Ss]creenshots/

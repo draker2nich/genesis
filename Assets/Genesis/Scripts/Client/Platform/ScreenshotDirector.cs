@@ -11,12 +11,12 @@ using UnityEngine;
 namespace Genesis.Client
 {
     /// <summary>
-    /// Автоматическая съёмка скриншотов для страниц площадок (Poki, Яндекс Игры) — настоящий кадр движка,
+    /// Автоматическая съёмка промо-скриншотов — настоящий кадр движка,
     /// а не рисунок. Создаёт мир с фиксированным seed, сам находит красивый вид и ровную площадку, строит линию
     /// завода (бур на руде → лента → печь, лампы), ставит время суток, ждёт прогрузки чанков и снимает камерой
     /// в 1920×1080 без интерфейса и предмета в руке. Три кадра: пейзаж на рассвете, завод днём, завод в сумерках.
-    /// Запуск: меню Genesis → Скриншоты для площадок (редактор сам войдёт в Play Mode).
-    /// Результат: PokiPage/screenshots/*.png и *.jpg (JPEG — если площадке нужен файл поменьше).
+    /// Запуск: меню Genesis → Скриншоты (редактор сам войдёт в Play Mode).
+    /// Результат: Screenshots/*.png и *.jpg (рядом с Assets).
     /// </summary>
     public sealed class ScreenshotDirector : MonoBehaviour
     {
@@ -26,7 +26,7 @@ namespace Genesis.Client
         /// <summary>Фаза суток для «ночного» кадра: солнце чуть ниже горизонта (0.5 — закат, 0.75 — полночь).</summary>
         public const float NightPhase = 0.515f;
 
-        public static string OutputDir => Path.Combine(Path.GetDirectoryName(Application.dataPath), "PokiPage", "screenshots");
+        public static string OutputDir => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Screenshots");
 
         public static void Begin()
         {

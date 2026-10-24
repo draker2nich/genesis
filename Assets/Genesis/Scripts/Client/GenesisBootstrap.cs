@@ -42,7 +42,7 @@ namespace Genesis.Client
         private float _nextAutosave;
         private Camera _cam;
 
-        // ---- Для автоматической съёмки скриншотов (Editor → Genesis → Скриншоты для площадок)
+        // ---- Для автоматической съёмки скриншотов (Editor → Genesis → Скриншоты)
         public bool ContentReady => _contentReady;
 
         /// <summary>Сколько блоков загружено (1 = только воздух: контент игры не найден).</summary>
@@ -52,7 +52,7 @@ namespace Genesis.Client
         public Camera GameCamera => _cam;
         public bool InWorld => _mode == Mode.Playing && _ctx != null;
 
-        /// <summary>Открыть (заново) мир для съёмки: без рекламы, с креативом (свободный полёт камеры).</summary>
+        /// <summary>Открыть (заново) мир для съёмки: с креативом (свободный полёт камеры).</summary>
         public void StartCaptureWorld(string worldName, long seed)
         {
             if (_session != null) ReturnToMenu(null);
@@ -61,7 +61,7 @@ namespace Genesis.Client
             _worldName = worldName;
             _seedText = seed.ToString();
             _newWorldSettings = new WorldSettings { Creative = true, SurfaceEnemies = false };
-            StartLocalNow(false);
+            StartLocal(false);
         }
         private EnvironmentRenderer _env;
 
@@ -116,14 +116,13 @@ namespace Genesis.Client
             Genesis.Core.Log.InfoSink = Debug.Log;
             Genesis.Core.Log.WarnSink = Debug.LogWarning;
             Genesis.Core.Log.ErrorSink = Debug.LogError;
-            if (WebPortal.IsWebGL)
+            if (WebPlatform.IsWebGL)
             {
-                WebPortal.Init(); // Poki: PokiSDK.init() как можно раньше
                 // Браузер: нет потоков, zlib и DLL; сохранения нужно явно сбрасывать в IndexedDB
                 Genesis.Core.Platform.Threads = false;
                 Genesis.Core.Platform.Compression = false;
                 Genesis.Core.Platform.CodeMods = false;
-                Genesis.Core.Platform.AfterSave = WebPortal.SyncFileSystem;
+                Genesis.Core.Platform.AfterSave = WebPlatform.SyncFileSystem;
                 Application.targetFrameRate = -1; // частоту задаёт браузер (requestAnimationFrame)
                 AutosaveMinutes = 2f;
                 StartCoroutine(WebContent.Prepare(this, root => FinishStartup(root), s => _loadingStatus = s));
@@ -137,10 +136,10 @@ namespace Genesis.Client
         private void FinishStartup(string coreRoot)
         {
             GameSettings.Load();
-            if (WebPortal.IsWebGL && !GameSettings.HasSavedLanguage)
+            if (WebPlatform.IsWebGL && !GameSettings.HasSavedLanguage)
             {
-                // Первый запуск в браузере: язык площадки (Яндекс) или браузера (Poki)
-                string lang = WebPortal.GameLanguageFor(WebPortal.Language);
+                // Первый запуск в браузере: язык браузера
+                string lang = WebPlatform.GameLanguageFor(WebPlatform.Language);
                 if (lang != null) GameSettings.Language = lang;
             }
             ViewRadius = GameSettings.ViewRadius;
@@ -156,7 +155,6 @@ namespace Genesis.Client
             PlayerController.LockCursor(false);
             StartPanorama();
             _contentReady = true;
-            WebPortal.Ready(); // меню доступно — LoadingAPI.ready() / gameLoadingFinished()
         }
 
         /// <summary>
@@ -196,13 +194,7 @@ namespace Genesis.Client
 
         // ============================================================ Запуск сессий
 
-        /// <summary>Вход в мир — логическая пауза: в Яндекс Играх перед ним может быть полноэкранная реклама.</summary>
         private void StartLocal(bool host)
-        {
-            WebPortal.BreakBeforeGameplay(() => StartLocalNow(host));
-        }
-
-        private void StartLocalNow(bool host)
         {
             _menuError = null;
             StopPanorama();
@@ -304,34 +296,9 @@ namespace Genesis.Client
             _mode = Mode.Menu;
             PlayerController.LockCursor(false);
             StartPanorama();
-            if (error == null) WebPortal.BreakOnMenu(); // выход в меню — логическая пауза (на Яндексе — реклама)
         }
 
-        // ============================================================ Яндекс Игры (вызовы из JS по имени объекта «Genesis»)
-
-        private void OnYandexAdOpened()
-        {
-            YandexGames.SetGameplay(false);
-        }
-
-        private void OnYandexAdClosed(string shown)
-        {
-            YandexGames.OnAdClosed();
-        }
-
-        /// <summary>Площадка просит паузу (вкладка скрыта, открыт оверлей): мир и звук замирают.</summary>
-        private void OnYandexPause()
-        {
-            YandexGames.PlatformPaused = true;
-            AudioListener.pause = true;
-            if (_ctx != null && _mode == Mode.Playing) _ctx.Paused = true;
-        }
-
-        private void OnYandexResume()
-        {
-            YandexGames.PlatformPaused = false;
-            AudioListener.pause = YandexGames.AdShowing;
-        }
+        // ============================================================ Браузер (вызовы из JS по имени объекта «Genesis»)
 
         /// <summary>Страницу скрыли или закрывают — сохраняемся (прогресс не должен теряться).</summary>
         private void OnPageHidden()
@@ -339,25 +306,16 @@ namespace Genesis.Client
             if (_mode == Mode.Playing) SaveNow();
         }
 
-        /// <summary>Геймплей идёт: мир открыт, нет паузы, рекламы и потери фокуса.</summary>
-        private bool GameplayActive =>
-            _mode == Mode.Playing && _ctx != null && !_ctx.Paused && !WebPortal.AdShowing &&
-            !WebPortal.PlatformPaused && Application.isFocused;
-
         // ============================================================ Цикл
 
         private void Update()
         {
-            if (_mode == Mode.Playing && (Input.anyKeyDown || Input.touchCount > 0)) WebPortal.NoteInput();
-            WebPortal.SetGameplay(GameplayActive);
             TouchControls.Detect();
             if (!_contentReady) return;
             ModLoader.Workshop?.Update();
             UpdatePanorama();
             if (_session == null) return;
-            // Реклама или пауза площадки: одиночный мир замирает (в коопе время у хоста идёт)
-            bool frozen = (WebPortal.AdShowing || WebPortal.PlatformPaused) && !(_session is LocalSession ls && ls.IsHosting);
-            if (!frozen) _session.Update(Time.deltaTime, Time.time);
+            _session.Update(Time.deltaTime, Time.time);
 
             if (_session.State == SessionState.Failed)
             {

@@ -152,7 +152,6 @@ namespace Genesis.Client
 
             _nextAutosave = Time.time + AutosaveMinutes * 60f;
             _mode = Mode.Playing;
-            WebPortal.WorldOpened(); // Poki: gameplayStart — по первому действию игрока в мире
         }
 
         /// <summary>Настройки изменились в игре (меню паузы) — применить к камере и окружению.</summary>

@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Genesis.Client.Editor
 {
     /// <summary>
-    /// Меню Genesis → Скриншоты для площадок: входит в Play Mode и запускает ScreenshotDirector,
-    /// который сам строит сцены и снимает 3 кадра 1920×1080 в PokiPage/screenshots.
+    /// Меню Genesis → Скриншоты: входит в Play Mode и запускает ScreenshotDirector,
+    /// который сам строит сцены и снимает 3 кадра 1920×1080 в Screenshots/.
     /// </summary>
     [InitializeOnLoad]
     public static class ScreenshotMenu
@@ -22,7 +22,7 @@ namespace Genesis.Client.Editor
             };
         }
 
-        [MenuItem("Genesis/Скриншоты для площадок")]
+        [MenuItem("Genesis/Скриншоты")]
         public static void Capture()
         {
             if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL &&

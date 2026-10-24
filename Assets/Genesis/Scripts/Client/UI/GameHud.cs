@@ -141,7 +141,7 @@ namespace Genesis.Client.UI
             var p = Panel(w, h, _ctx.Loc.Get("menu.pause"));
             float y = p.y + 48;
             if (GUI.Button(new Rect(p.x + 16, y, w - 32, 32), _ctx.Loc.Get("menu.resume"), UiSkin.AccentButton))
-                WebPortal.BreakOnResume(() => { if (_ctx != null) _ctx.Paused = false; });
+                _ctx.Paused = false;
             y += 40;
             if (boot != null && GUI.Button(new Rect(p.x + 16, y, w - 32, 32), _ctx.Loc.Get("menu.settings")))
                 boot.InGameSettings = true;

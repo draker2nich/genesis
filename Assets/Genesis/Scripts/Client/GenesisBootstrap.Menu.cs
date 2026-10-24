@@ -145,28 +145,13 @@ namespace Genesis.Client
             GUI.Label(new Rect(0, logoY + px * 8 + 10, UiScale.W, 24), _loc.Get("menu.tagline"), tag);
 
             float w = 300, x = (UiScale.W - w) / 2f, y = logoY + px * 8 + 60;
-            if (WebPortal.QuickMenu)
-            {
-                // Poki и itch.io: минимум меню — «Играть» сразу продолжает последний мир (или создаёт новый)
-                if (GUI.Button(new Rect(x, y, w, 44), _loc.Get("menu.play"), UiSkin.AccentButton)) QuickPlay();
-                y += 52;
-                if (GUI.Button(new Rect(x, y, w / 2 - 4, 36), _loc.Get("menu.worlds"), UiSkin.Button))
-                {
-                    RefreshWorlds();
-                    _screen = MenuScreen.Play;
-                }
-                if (GUI.Button(new Rect(x + w / 2 + 4, y, w / 2 - 4, 36), _loc.Get("menu.settings"), UiSkin.Button)) _screen = MenuScreen.Settings;
-                y += 50;
-                DrawMenuError(x, y, w);
-                return;
-            }
             if (GUI.Button(new Rect(x, y, w, 40), _loc.Get("menu.play"), UiSkin.AccentButton))
             {
                 RefreshWorlds();
                 _screen = MenuScreen.Play;
             }
             y += 48;
-            if (YandexGames.IsWebGL)
+            if (WebPlatform.IsWebGL)
             {
                 // Браузер: без коопа (нет сокетов), модов и кнопки «Выход»
                 if (GUI.Button(new Rect(x, y, w, 36), _loc.Get("menu.settings"), UiSkin.Button)) _screen = MenuScreen.Settings;
@@ -189,19 +174,6 @@ namespace Genesis.Client
             }
             y += 50;
             DrawMenuError(x, y, w);
-        }
-
-        /// <summary>Сразу в игру: последний мир или новый со случайным seed и настройками по умолчанию.</summary>
-        private void QuickPlay()
-        {
-            RefreshWorlds();
-            if (_worlds != null && _worlds.Count > 0) _worldName = _worlds[0].Name;
-            else
-            {
-                _worldName = "world1";
-                _seedText = UnityEngine.Random.Range(1, int.MaxValue).ToString();
-            }
-            StartLocal(false);
         }
 
         private void DrawMenuError(float x, float y, float w)
@@ -296,7 +268,7 @@ namespace Genesis.Client
             if (GUI.Button(new Rect(rx, ry, rw, 40), exists ? _loc.Get("menu.continue") : _loc.Get("menu.create"), UiSkin.AccentButton))
                 StartLocal(false);
             ry += 48;
-            if (!YandexGames.IsWebGL)
+            if (!WebPlatform.IsWebGL)
             {
                 if (GUI.Button(new Rect(rx, ry, rw, 34), _loc.Get("menu.host"), UiSkin.Button)) StartLocal(true);
                 ry += 40;

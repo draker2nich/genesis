@@ -32,7 +32,7 @@ namespace Genesis.Client
             s.Jump = Input.GetKey(KeyCode.Space);
             // В браузере Ctrl+W закрывает вкладку, Ctrl+Q — браузер, F5 — перезагрузка: бег на Shift,
             // «выбросить стак» — Shift+Q, сохранение — автоматически (и в меню паузы)
-            bool web = YandexGames.IsWebGL;
+            bool web = WebPlatform.IsWebGL;
             s.Sprint = web ? Input.GetKey(KeyCode.LeftShift) : Input.GetKey(KeyCode.LeftControl);
             s.Descend = Input.GetKey(KeyCode.LeftShift);
             s.Sneak = Input.GetKey(KeyCode.LeftShift);
@@ -46,7 +46,7 @@ namespace Genesis.Client
             s.Creative = Input.GetKeyDown(KeyCode.C);
             s.Save = !web && Input.GetKeyDown(KeyCode.F5);
             s.Escape = Input.GetKeyDown(KeyCode.Escape);
-            s.Debug = !WebPortal.IsPoki && Input.GetKeyDown(KeyCode.F3); // Poki: без отладочных инструментов
+            s.Debug = Input.GetKeyDown(KeyCode.F3);
             s.Knowledge = Input.GetKeyDown(KeyCode.K);
             s.Stats = Input.GetKeyDown(KeyCode.P);
             s.Recipes = Input.GetKeyDown(KeyCode.J);

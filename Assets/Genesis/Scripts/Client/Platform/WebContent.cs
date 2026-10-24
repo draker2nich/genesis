@@ -8,8 +8,8 @@ namespace Genesis.Client
 {
     /// <summary>
     /// Контент игры в браузере. В WebGL StreamingAssets — это адрес на сервере, а не папка: читать JSON и PNG
-    /// через System.IO нельзя. Поэтому сборка для Яндекс Игр упаковывает StreamingAssets/Game в один файл
-    /// game.pak (см. Editor/YandexBuild.cs), а здесь он скачивается и распаковывается в файловую систему
+    /// через System.IO нельзя. Поэтому WebGL-сборка упаковывает StreamingAssets/Game в один файл
+    /// game.pak (см. Editor/WebBuild.cs), а здесь он скачивается и распаковывается в файловую систему
     /// браузера (в памяти) — дальше обычный загрузчик контента работает без изменений.
     /// </summary>
     public static class WebContent
@@ -48,9 +48,6 @@ namespace Genesis.Client
                     yield break;
                 }
             }
-            // Язык площадки нужен до загрузки строк: даём SDK до 3 секунд на инициализацию
-            float t0 = Time.realtimeSinceStartup;
-            while (!WebPortal.SdkReady && Time.realtimeSinceStartup - t0 < 3f) yield return null;
             done(root);
         }
 

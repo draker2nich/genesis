@@ -16,7 +16,7 @@ namespace Genesis.Client
 
         private const string Prefix = "genesis.settings.";
 
-        /// <summary>Игрок уже выбирал язык (иначе в Яндекс Играх берётся язык площадки).</summary>
+        /// <summary>Игрок уже выбирал язык (иначе в браузере берётся язык браузера).</summary>
         public static bool HasSavedLanguage => PlayerPrefs.HasKey(Prefix + "lang");
 
         public static void Load()
@@ -28,9 +28,8 @@ namespace Genesis.Client
             MouseSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(Prefix + "mouse", 2.2f), 0.3f, 8f);
             Fov = Mathf.Clamp(PlayerPrefs.GetFloat(Prefix + "fov", 75f), 55f, 100f);
             Shadows = PlayerPrefs.GetInt(Prefix + "shadows", web ? 0 : 1) == 1;
-            // Poki просит отключать постобработку URP в браузере (дорого на слабых устройствах); игрок может включить
-            bool mobile = Application.isMobilePlatform;
-            PostProcessing = PlayerPrefs.GetInt(Prefix + "post", web && (WebPortal.IsPoki || mobile) ? 0 : 1) == 1;
+            // Постобработка URP на мобильных браузерах дорогая — по умолчанию выключена; игрок может включить
+            PostProcessing = PlayerPrefs.GetInt(Prefix + "post", web && Application.isMobilePlatform ? 0 : 1) == 1;
             ViewBobbing = PlayerPrefs.GetInt(Prefix + "bob", 1) == 1;
             Clouds = PlayerPrefs.GetInt(Prefix + "clouds", 1) == 1;
             InputReader.MouseSensitivity = MouseSensitivity;

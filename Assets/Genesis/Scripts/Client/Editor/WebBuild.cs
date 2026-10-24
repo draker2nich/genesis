@@ -5,24 +5,72 @@ using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Genesis.Client.Editor
 {
     /// <summary>
-    /// Общая часть браузерных сборок (Яндекс Игры, Poki): переключение на WebGL, упаковка StreamingAssets/Game
+    /// Браузерная сборка: меню Genesis → Build → WebGL. Переключение на WebGL, упаковка StreamingAssets/Game
     /// в game.pak (в браузере нельзя читать папки), временный вынос исходной папки, сборка и ZIP.
+    /// Шаблон — Assets/WebGLTemplates/Genesis. Без сжатия: не каждый хостинг отдаёт Content-Encoding для .gz/.br.
+    /// Результат — Builds/WebGL и Builds/genesis_webgl.zip (index.html в корне архива).
     /// </summary>
-    internal static class WebBuild
+    public static class WebBuild
     {
         private const string SceneDir = "Assets/Genesis/Scenes";
         private const string ScenePath = SceneDir + "/Main.unity";
+        private const string Label = "WebGL";
 
-        /// <param name="label">Метка в логе ([Yandex], [Poki]).</param>
+        [MenuItem("Genesis/Build/WebGL")]
+        public static void BuildWebGL()
+        {
+            Build("WebGL", "genesis_webgl.zip");
+        }
+
+        private static void ConfigurePlayer()
+        {
+            PlayerSettings.productName = "Genesis";
+            if (string.IsNullOrEmpty(PlayerSettings.companyName) || PlayerSettings.companyName == "DefaultCompany")
+                PlayerSettings.companyName = "Genesis";
+            PlayerSettings.runInBackground = false;
+            PlayerSettings.WebGL.template = "PROJECT:Genesis";          // Assets/WebGLTemplates/Genesis
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            PlayerSettings.WebGL.decompressionFallback = false;
+            PlayerSettings.WebGL.dataCaching = true;
+            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
+            PlayerSettings.WebGL.linkerTarget = WebGLLinkerTarget.Wasm;
+            // Свойства, которые есть не во всех версиях 2022.3, — через рефлексию (нет свойства — пропускаем)
+            SetWebGL("nameFilesAsHashes", true);
+            SetWebGL("showDiagnostics", false);
+            SetWebGL("initialMemorySize", 256);
+            SetWebGL("maximumMemorySize", 2048);
+            PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, false);
+            PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, new[] { GraphicsDeviceType.OpenGLES3 }); // WebGL 2
+            PlayerSettings.SetScriptingBackend(BuildTargetGroup.WebGL, ScriptingImplementation.IL2CPP);
+            PlayerSettings.stripEngineCode = true;
+            // Newtonsoft и контент защищены Assets/link.xml; если в браузере пустой контент — поставьте Low
+            PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.Medium);
+            PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.WebGL, Il2CppCompilerConfiguration.Master);
+            PlayerSettings.defaultWebScreenWidth = 1280;
+            PlayerSettings.defaultWebScreenHeight = 720;
+        }
+
+        private static bool Check(string outDir, string zipPath)
+        {
+            if (!File.Exists(Path.Combine(outDir, "index.html")))
+            {
+                Debug.LogError($"[{Label}] В корне сборки нет index.html.");
+                return false;
+            }
+            float mb = 1024f * 1024f;
+            Debug.Log($"[{Label}] Build: {SizeOf(outDir, "Build") / mb:0.0} МБ; контент (game.pak): {SizeOf(outDir, "StreamingAssets") / mb:0.0} МБ; " +
+                      $"ZIP: {new FileInfo(zipPath).Length / mb:0.0} МБ.");
+            return true;
+        }
+
         /// <param name="folder">Папка сборки внутри Builds/.</param>
         /// <param name="zipName">Имя архива в Builds/.</param>
-        /// <param name="configure">Настройка Player Settings под площадку.</param>
-        /// <param name="check">Проверки площадки после сборки (папка, архив) → всё ли в порядке.</param>
-        public static void Build(string label, string folder, string zipName, Action configure, Func<string, string, bool> check)
+        private static void Build(string folder, string zipName)
         {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
             {
@@ -30,7 +78,7 @@ namespace Genesis.Client.Editor
                     return;
                 if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL))
                 {
-                    Debug.LogError($"[{label}] WebGL Build Support не установлен (Unity Hub → Installs → Add modules).");
+                    Debug.LogError($"[{Label}] WebGL Build Support не установлен (Unity Hub → Installs → Add modules).");
                     return;
                 }
             }
@@ -39,7 +87,7 @@ namespace Genesis.Client.Editor
             string outDir = Path.Combine(project, "Builds", folder);
             string zipPath = Path.Combine(project, "Builds", zipName);
 
-            configure();
+            ConfigurePlayer();
             string scene = EnsureScene();
 
             string streaming = Path.Combine(Application.dataPath, "StreamingAssets");
@@ -49,13 +97,13 @@ namespace Genesis.Client.Editor
             string backup = Path.Combine(project, "GenesisGameBackup");
             if (!Directory.Exists(game) || !Directory.Exists(Path.Combine(game, "blocks")))
             {
-                Debug.LogError($"[{label}] Папка StreamingAssets/Game отсутствует или пуста" +
+                Debug.LogError($"[{Label}] Папка StreamingAssets/Game отсутствует или пуста" +
                                (Directory.Exists(backup) ? " — её копия лежит в GenesisGameBackup (рядом с Assets), верните её." : "."));
                 return;
             }
 
             File.WriteAllBytes(pak, WebContent.Pack(game));
-            Debug.Log($"[{label}] game.pak: {new FileInfo(pak).Length / 1024} КБ");
+            Debug.Log($"[{Label}] game.pak: {new FileInfo(pak).Length / 1024} КБ");
 
             if (Directory.Exists(backup)) Directory.Delete(backup, true);
             Directory.Move(game, backup);
@@ -79,7 +127,7 @@ namespace Genesis.Client.Editor
                 if (Directory.Exists(game))
                 {
                     // Кто-то (импорт ассетов) успел создать папку заново — не затираем, кладём контент рядом
-                    Debug.LogError($"[{label}] StreamingAssets/Game появилась во время сборки; контент возвращён в Game_restored — проверьте и переименуйте.");
+                    Debug.LogError($"[{Label}] StreamingAssets/Game появилась во время сборки; контент возвращён в Game_restored — проверьте и переименуйте.");
                     game += "_restored";
                 }
                 Directory.Move(backup, game);
@@ -91,20 +139,20 @@ namespace Genesis.Client.Editor
 
             if (report.summary.result != BuildResult.Succeeded)
             {
-                Debug.LogError($"[{label}] Сборка не удалась: {report.summary.result}, ошибок: {report.summary.totalErrors}");
+                Debug.LogError($"[{Label}] Сборка не удалась: {report.summary.result}, ошибок: {report.summary.totalErrors}");
                 return;
             }
 
             if (File.Exists(zipPath)) File.Delete(zipPath);
             CreateZip(outDir, zipPath);
-            bool ok = check(outDir, zipPath);
+            bool ok = Check(outDir, zipPath);
             EditorUtility.RevealInFinder(zipPath);
             Debug.Log(ok
-                ? $"[{label}] Готово: {zipPath}"
-                : $"[{label}] Архив собран, но есть замечания — см. сообщения выше.");
+                ? $"[{Label}] Готово: {zipPath}"
+                : $"[{Label}] Архив собран, но есть замечания — см. сообщения выше.");
         }
 
-        public static void SetWebGL(string label, string property, object value)
+        private static void SetWebGL(string property, object value)
         {
             try
             {
@@ -113,7 +161,7 @@ namespace Genesis.Client.Editor
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[{label}] PlayerSettings.WebGL.{property}: {e.Message}");
+                Debug.LogWarning($"[{Label}] PlayerSettings.WebGL.{property}: {e.Message}");
             }
         }
 

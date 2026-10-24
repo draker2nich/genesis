@@ -80,7 +80,7 @@ namespace Genesis.Client
             if (_lockApplied && !locked && !Application.isFocused && _ctx.WantsCursorLock) _ctx.Paused = true;
             // В браузере Esc снимает захват мыши сам (и до игры может не дойти) — тоже пауза. Захват браузер даёт
             // не сразу, а по следующему клику, поэтому считаем потерей только то, что уже было захвачено.
-            if (YandexGames.IsWebGL)
+            if (WebPlatform.IsWebGL)
             {
                 if (locked) _sawLocked = true;
                 else if (_sawLocked && _ctx.WantsCursorLock)
@@ -106,7 +106,6 @@ namespace Genesis.Client
         private void Update()
         {
             if (_ctx == null) return;
-            if (WebPortal.AdShowing) return; // во время рекламы ввод выключен (требование площадок)
             var world = _ctx.Session.World;
             var input = InputReader.Read();
 
@@ -242,8 +241,7 @@ namespace Genesis.Client
                 var boot = GetComponent<GenesisBootstrap>();
                 if (_ctx.Window != UiWindow.None) _ctx.Window = UiWindow.None;
                 else if (_ctx.Paused && boot != null && boot.InGameSettings) boot.InGameSettings = false; // из настроек — назад в меню паузы
-                else if (!_ctx.Paused) _ctx.Paused = true;
-                else WebPortal.BreakOnResume(() => { if (_ctx != null) _ctx.Paused = false; }); // Poki: реклама — при возвращении в игру
+                else _ctx.Paused = !_ctx.Paused;
             }
             if (input.Inventory) ToggleWindow(UiWindow.Inventory);
             if (input.Creative && _ctx.Player.Creative) ToggleWindow(UiWindow.Creative);
