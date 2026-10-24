@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.fiber",
+  "era": "primitive",
+  "order": 10,
+  "requires": [],
+  "trigger": {
+    "type": "handcraft",
+    "target": "genesis:plant_fiber"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:plant_fiber"
+}

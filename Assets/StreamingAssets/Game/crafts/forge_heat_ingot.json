@@ -1,0 +1,20 @@
+{
+  "id": "genesis:forge_heat_ingot",
+  "station": "genesis:forge",
+  "inputs": [
+    {
+      "item": "genesis:iron_ingot",
+      "count": 1
+    },
+    {
+      "item": "genesis:charcoal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:hot_iron_ingot",
+      "count": 1
+    }
+  ]
+}

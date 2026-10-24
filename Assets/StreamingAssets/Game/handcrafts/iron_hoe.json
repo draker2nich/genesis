@@ -1,0 +1,11 @@
+{
+  "id": "genesis:iron_hoe",
+  "a": "genesis:hoe_head",
+  "b": "genesis:stick",
+  "action": "assemble",
+  "seconds": 2.0,
+  "output": {
+    "item": "genesis:iron_hoe",
+    "count": 1
+  }
+}

@@ -44,7 +44,7 @@ namespace Genesis.Client
         private static bool _stickActive;
         private static float _lookX, _lookY;
         private static bool _tap, _hold, _jump, _sneak;
-        private static bool _pause, _inventory, _recipes, _map;
+        private static bool _pause, _inventory, _handbook, _map, _create, _swap;
         private static int _hotbar = -1;
         private static int _lastFrame = -1;
 
@@ -52,7 +52,7 @@ namespace Genesis.Client
         private const float TapTime = 0.25f, HoldTime = 0.35f, TapSlop = 14f;
 
         // Кнопки (координаты GUI считаются от текущего размера экрана)
-        private const int BtnJump = 0, BtnSneak = 1, BtnPause = 2, BtnInv = 3, BtnRecipes = 4, BtnMap = 5;
+        private const int BtnJump = 0, BtnSneak = 1, BtnPause = 2, BtnInv = 3, BtnHandbook = 4, BtnMap = 5, BtnCreate = 6, BtnSwap = 7;
 
         private static Rect ButtonRect(int b)
         {
@@ -64,13 +64,15 @@ namespace Genesis.Client
                 case BtnSneak: return new Rect(w - big * 2 - m * 2 - 6, h - big * 0.8f - 96, big * 0.8f, big * 0.8f);
                 case BtnPause: return new Rect(m, m, small, small);
                 case BtnInv: return new Rect(m + (small + 8), m, small, small);
-                case BtnRecipes: return new Rect(m + (small + 8) * 2, m, small, small);
+                case BtnHandbook: return new Rect(m + (small + 8) * 2, m, small, small);
                 case BtnMap: return new Rect(m + (small + 8) * 3, m, small, small);
+                case BtnCreate: return new Rect(w - big - m - 6, h - big * 2 - 110, big * 0.8f, big * 0.8f);
+                case BtnSwap: return new Rect(w - big * 2 - m * 2 - 6, h - big * 2 - 110, big * 0.8f, big * 0.8f);
             }
             return Rect.zero;
         }
 
-        private const int ButtonCount = 6;
+        private const int ButtonCount = 8;
 
         /// <summary>Включить на сенсорных устройствах (вызывать каждый кадр — дёшево).</summary>
         public static void Detect()
@@ -90,7 +92,7 @@ namespace Genesis.Client
             if (_lastFrame == Time.frameCount) return;
             _lastFrame = Time.frameCount;
             _lookX = _lookY = 0;
-            _tap = _pause = _inventory = _recipes = _map = false;
+            _tap = _pause = _inventory = _handbook = _map = _create = _swap = false;
             _hotbar = -1;
             _jump = _sneak = false;
             if (!Enabled) return;
@@ -110,8 +112,10 @@ namespace Genesis.Client
                         f.Button = b;
                         if (b == BtnPause) _pause = true;
                         else if (b == BtnInv) _inventory = true;
-                        else if (b == BtnRecipes) _recipes = true;
+                        else if (b == BtnHandbook) _handbook = true;
                         else if (b == BtnMap) _map = true;
+                        else if (b == BtnCreate) _create = true;
+                        else if (b == BtnSwap) _swap = true;
                     }
                     else if (HotbarRect.width > 0 && HotbarRect.Contains(p))
                     {
@@ -214,8 +218,12 @@ namespace Genesis.Client
             s.Descend |= _sneak;
             s.Escape |= _pause;
             s.Inventory |= _inventory;
-            s.Recipes |= _recipes;
+            s.Handbook |= _handbook;
             s.Map |= _map;
+            // Режим создания: касание — как нажатие R (колесо открывается «залипающим», выбор — касанием)
+            s.Create |= _create;
+            s.CreateHeld |= _create;
+            s.SwapHands |= _swap;
             if (_hotbar >= 0) s.HotbarKey = _hotbar;
             s.Scroll = 0;
         }
@@ -269,7 +277,8 @@ namespace Genesis.Client
 
             string[] labels =
             {
-                loc.Get("touch.jump"), loc.Get("touch.sneak"), "II", loc.Get("touch.inventory"), loc.Get("touch.recipes"), loc.Get("touch.map")
+                loc.Get("touch.jump"), loc.Get("touch.sneak"), "II", loc.Get("touch.inventory"), loc.Get("touch.handbook"), loc.Get("touch.map"),
+                loc.Get("touch.create"), loc.Get("touch.swap")
             };
             var style = new GUIStyle(UiSkin.Small) { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontSize = 12 };
             for (int b = 0; b < ButtonCount; b++)

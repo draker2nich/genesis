@@ -1,0 +1,15 @@
+{
+  "id": "genesis:stone_anvil",
+  "era": "primitive",
+  "behavior": "station",
+  "surface": true,
+  "input_slots": 2,
+  "output_slots": 0,
+  "hardness": 2.5,
+  "textures": {
+    "all": "genesis:stone_anvil",
+    "top": "genesis:stone_anvil"
+  },
+  "anim": "none",
+  "model": "genesis:stone_anvil"
+}

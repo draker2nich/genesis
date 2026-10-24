@@ -6,5 +6,6 @@
     "top": "genesis:birch_log_top",
     "bottom": "genesis:birch_log_top",
     "side": "genesis:birch_log"
-  }
+  },
+  "fellable": true
 }

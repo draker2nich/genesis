@@ -1,0 +1,11 @@
+{
+  "id": "genesis:iron_shovel",
+  "a": "genesis:shovel_head",
+  "b": "genesis:stick",
+  "action": "assemble",
+  "seconds": 2.0,
+  "output": {
+    "item": "genesis:iron_shovel",
+    "count": 1
+  }
+}

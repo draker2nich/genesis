@@ -1,0 +1,21 @@
+{
+  "id": "genesis:primitive.iron",
+  "era": "primitive",
+  "order": 120,
+  "requires": [],
+  "trigger": {
+    "type": "shape",
+    "target": "genesis:bloom_to_ingot"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": [
+      "genesis:smelt_iron_ore",
+      "genesis:smelt_iron_scrap",
+      "genesis:smelt_purified_iron_ore"
+    ]
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:iron_ingot"
+}

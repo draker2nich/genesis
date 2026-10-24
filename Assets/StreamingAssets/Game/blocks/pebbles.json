@@ -1,0 +1,22 @@
+{
+  "id": "genesis:pebbles",
+  "render": "cutout",
+  "solid": false,
+  "replaceable": true,
+  "hardness": 0,
+  "model": "genesis:pebbles",
+  "drops": [
+    {
+      "item": "genesis:pebble",
+      "count": 1
+    },
+    {
+      "item": "genesis:pebble",
+      "count": 1,
+      "chance": 0.5
+    }
+  ],
+  "textures": {
+    "all": "genesis:pebbles_icon"
+  }
+}

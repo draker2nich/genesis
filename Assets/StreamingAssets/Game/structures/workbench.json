@@ -1,0 +1,22 @@
+{
+  "id": "genesis:workbench",
+  "layers": [
+    [
+      "FF"
+    ],
+    [
+      "SS"
+    ]
+  ],
+  "key": {
+    "F": "genesis:fence",
+    "S": "genesis:plank_slab"
+  },
+  "result": "genesis:workbench",
+  "result_at": [
+    0,
+    0,
+    0
+  ],
+  "result_facing": "north"
+}

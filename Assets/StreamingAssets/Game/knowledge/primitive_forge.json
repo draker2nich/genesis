@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.forge",
+  "era": "primitive",
+  "order": 113,
+  "requires": [],
+  "trigger": {
+    "type": "build",
+    "target": "genesis:forge"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:forge"
+}

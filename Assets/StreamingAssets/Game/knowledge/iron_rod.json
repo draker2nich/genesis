@@ -1,6 +1,6 @@
 {
   "id": "genesis:iron.rod",
-  "era": "iron",
+  "era": "primitive",
   "requires": [
     "genesis:iron.anvil"
   ],
@@ -16,5 +16,6 @@
   },
   "milestone": false,
   "row": 1,
-  "icon": "genesis:iron_rod"
+  "icon": "genesis:iron_rod",
+  "order": 162
 }

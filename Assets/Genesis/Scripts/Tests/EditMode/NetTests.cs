@@ -119,7 +119,7 @@ namespace Genesis.Tests
         {
             _client = Connect("Friend");
             Step(_client, 5);
-            _server.Knowledge.ForceUnlock("genesis:stone.smelt_iron"); // автоматизация плавки открыта
+            _server.Knowledge.ForceUnlock("genesis:primitive.iron"); // автоматизация плавки открыта
             var pos = _server.World.Generator.SpawnPoint + new Int3(3, 0, -3);
             _server.World.SetBlock(pos, Db.BlockId("genesis:stone_furnace"));
             _server.Factory.OnBlockPlaced(pos, Db.Blocks.Get("genesis:stone_furnace"), Direction.West);
@@ -190,12 +190,12 @@ namespace Genesis.Tests
         {
             _client = Connect("Friend");
             Step(_client, 3);
-            _server.Knowledge.ForceUnlock("genesis:wood.milestone");
+            _server.Knowledge.ForceUnlock("genesis:iron.milestone");
             var sp = ServerSideOf(_client);
             sp.Health = 9;
             Step(_client, 3);
             Assert.AreEqual(1, _client.Knowledge.Era);
-            Assert.IsTrue(_client.Knowledge.IsUnlocked("genesis:stone.tools"));
+            Assert.IsTrue(_client.Knowledge.IsUnlocked("genesis:steam.machines"));
             Assert.AreEqual(9f, _client.LocalPlayer.Health);
 
             _server.Kill(sp);

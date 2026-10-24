@@ -1,0 +1,11 @@
+{
+  "id": "genesis:plant_fiber",
+  "a": "genesis:grass_tuft",
+  "b": "genesis:grass_tuft",
+  "action": "twist",
+  "seconds": 1.2,
+  "output": {
+    "item": "genesis:plant_fiber",
+    "count": 1
+  }
+}

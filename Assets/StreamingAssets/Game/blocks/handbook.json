@@ -1,0 +1,11 @@
+{
+  "id": "genesis:handbook",
+  "render": "cutout",
+  "solid": false,
+  "unbreakable": true,
+  "action": "handbook",
+  "model": "genesis:handbook",
+  "textures": {
+    "all": "genesis:book"
+  }
+}

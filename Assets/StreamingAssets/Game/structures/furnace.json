@@ -1,0 +1,26 @@
+{
+  "id": "genesis:furnace",
+  "layers": [
+    [
+      "*C*",
+      "C*C",
+      "*C*"
+    ],
+    [
+      "*C*",
+      "C*C",
+      "*C*"
+    ]
+  ],
+  "key": {
+    "C": "genesis:cobblestone",
+    "*": "*"
+  },
+  "result": "genesis:stone_furnace",
+  "result_at": [
+    1,
+    0,
+    1
+  ],
+  "result_facing": "north"
+}

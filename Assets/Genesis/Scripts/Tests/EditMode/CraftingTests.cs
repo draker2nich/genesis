@@ -35,62 +35,60 @@ namespace Genesis.Tests
         [Test]
         public void ShapedRecipeMatchesAnywhereAndMirrored()
         {
-            // Верстак 2×2 из досок — в инвентаре и в любом углу сетки 3×3
-            Put(0, "planks", 1); Put(1, "planks", 1); Put(3, "planks", 1); Put(4, "planks", 1);
-            Assert.AreEqual("genesis:workbench", GridCrafting.Match(Db, _p.CraftGrid, 2)?.Craft.Id);
+            // Труба из двух медных пластин — в инвентаре и в любом углу сетки 3×3
+            Put(0, "copper_plate", 1); Put(3, "copper_plate", 1);
+            Assert.AreEqual("genesis:pipe", GridCrafting.Match(Db, _p.CraftGrid, 2)?.Craft.Id);
             _p.CraftGrid.Clear();
-            Put(4, "planks", 1); Put(5, "planks", 1); Put(7, "planks", 1); Put(8, "planks", 1);
-            Assert.AreEqual("genesis:workbench", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id);
+            Put(5, "copper_plate", 1); Put(8, "copper_plate", 1);
+            Assert.AreEqual("genesis:pipe", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id);
             Assert.IsNull(GridCrafting.Match(Db, _p.CraftGrid, 2), "outside the 2x2 area");
 
-            // Топор: шаблон и его зеркальное отражение
+            // Несимметричный шаблон и его зеркальное отражение
             _p.CraftGrid.Clear();
-            Put(0, "planks", 1); Put(1, "planks", 1); Put(3, "planks", 1); Put(4, "stick", 1); Put(7, "stick", 1);
-            Assert.AreEqual("genesis:wooden_axe", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id);
+            Put(0, "cell_16k", 1); Put(1, "logic_processor", 1); Put(2, "cell_16k", 1); Put(3, "logic_processor", 1); Put(4, "cell_16k", 1);
+            Assert.AreEqual("genesis:cell_64k", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id);
             _p.CraftGrid.Clear();
-            Put(0, "planks", 1); Put(1, "planks", 1); Put(4, "planks", 1); Put(3, "stick", 1); Put(6, "stick", 1);
-            Assert.AreEqual("genesis:wooden_axe", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id, "mirrored");
+            Put(0, "cell_16k", 1); Put(1, "logic_processor", 1); Put(2, "cell_16k", 1); Put(4, "cell_16k", 1); Put(5, "logic_processor", 1);
+            Assert.AreEqual("genesis:cell_64k", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id, "mirrored");
         }
 
         [Test]
         public void WorkbenchRecipesNeedTheWorkbenchButInventoryRecipesWorkThere()
         {
-            var pick = Db.Crafts.Get("genesis:wooden_pickaxe");
-            Assert.AreEqual(3, pick.GridSize);
-            var planks = Db.Crafts.Get("genesis:planks");
-            Assert.AreEqual(2, planks.GridSize);
+            Assert.AreEqual(3, Db.Crafts.Get("genesis:chest").GridSize);
+            Assert.AreEqual(2, Db.Crafts.Get("genesis:pipe").GridSize);
             // Рецепт инвентаря работает и в сетке верстака
-            Put(4, "birch_log", 1);
-            Assert.AreEqual("genesis:planks", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id, "tag #logs in a 3x3 grid");
+            Put(4, "hide", 1);
+            Assert.AreEqual("genesis:leather", GridCrafting.Match(Db, _p.CraftGrid, 3)?.Craft.Id);
         }
 
         [Test]
         public void CraftToCursorAndShiftCraftAll()
         {
-            Put(0, "oak_log", 5);
+            Put(0, "hide", 5);
             Assert.AreEqual(1, _server.CraftFromGrid(_p, false, false, -1));
-            Assert.AreEqual(S("planks", 4), _p.Cursor[0]);
+            Assert.AreEqual(S("leather", 1), _p.Cursor[0]);
             Assert.AreEqual(4, _p.CraftGrid[0].Count);
             Assert.AreEqual(1, _server.CraftFromGrid(_p, false, false, -1), "stacks onto the cursor");
-            Assert.AreEqual(8, _p.Cursor[0].Count);
+            Assert.AreEqual(2, _p.Cursor[0].Count);
 
-            Assert.AreEqual(3, _server.CraftFromGrid(_p, true, false, -1), "shift: all remaining logs");
-            Assert.AreEqual(12, _p.Inventory.CountOf(S("planks", 1).Item));
+            Assert.AreEqual(3, _server.CraftFromGrid(_p, true, false, -1), "shift: all remaining hides");
+            Assert.AreEqual(3, _p.Inventory.CountOf(S("leather", 1).Item));
             Assert.IsTrue(_p.CraftGrid[0].IsEmpty);
-            Assert.Greater(_p.Mastery["genesis:planks"], 4);
+            Assert.AreEqual(5, _p.Mastery["genesis:leather"]);
         }
 
         [Test]
-        public void CatalystToolIsNotConsumedButWears()
+        public void CatalystToolIsNotConsumed()
         {
-            Put(0, "stone_axe", 1);
-            Put(3, "oak_log", 2);
-            var m = GridCrafting.Match(Db, _p.CraftGrid, 2);
-            Assert.AreEqual("genesis:planks_axe", m?.Craft.Id);
-            _server.CraftFromGrid(_p, true, false, -1);
-            Assert.AreEqual(12, _p.Inventory.CountOf(S("planks", 1).Item), "6 planks per log with an axe");
-            Assert.AreEqual(Db.ItemId("genesis:stone_axe"), _p.CraftGrid[0].Item, "axe stays in the grid");
-            Assert.AreEqual(2, _p.CraftGrid[0].Meta, "and wears by one per craft");
+            _server.OpenGrid(_p, 3, default);
+            _p.GridSize = 3; // без станции рядом — проверяем только саму сетку
+            Put(0, "copper_wire", 1); Put(1, "quartz", 1); Put(2, "copper_wire", 1);
+            Put(3, "solder", 1); Put(4, "iron_plate", 1); Put(5, "solder", 1);
+            Put(6, "flux_brush", 1); Put(7, "copper_wire", 1);
+            var m = GridCrafting.Match(Db, _p.CraftGrid, 3);
+            Assert.AreEqual("genesis:solder_circuit_fine", m?.Craft.Id);
+            Assert.IsTrue(m.Slots[6].Keep);
         }
 
         [Test]
@@ -125,19 +123,19 @@ namespace Genesis.Tests
         [Test]
         public void FillGridFromRecipeBookAndReturnOnClose()
         {
-            _p.Inventory.Insert(S("planks", 10));
-            var c = Db.Crafts.Get("genesis:workbench");
+            _p.Inventory.Insert(S("copper_plate", 10));
+            var c = Db.Crafts.Get("genesis:pipe");
             Assert.IsTrue(_server.FillGrid(_p, c.NumericId, false));
             Assert.AreEqual(1, _p.CraftGrid[0].Count);
-            Assert.AreEqual(1, _p.CraftGrid[4].Count);
-            Assert.AreEqual(6, _p.Inventory.CountOf(S("planks", 1).Item));
+            Assert.AreEqual(1, _p.CraftGrid[3].Count);
+            Assert.AreEqual(8, _p.Inventory.CountOf(S("copper_plate", 1).Item));
             Assert.IsTrue(_server.FillGrid(_p, c.NumericId, true), "shift: as many as possible");
-            Assert.AreEqual(2, _p.CraftGrid[0].Count);
-            Assert.AreEqual(2, _p.Inventory.CountOf(S("planks", 1).Item));
+            Assert.AreEqual(5, _p.CraftGrid[0].Count);
+            Assert.AreEqual(0, _p.Inventory.CountOf(S("copper_plate", 1).Item));
 
             _p.Cursor[0] = S("stick", 3);
             _server.CloseGrid(_p);
-            Assert.AreEqual(10, _p.Inventory.CountOf(S("planks", 1).Item));
+            Assert.AreEqual(10, _p.Inventory.CountOf(S("copper_plate", 1).Item));
             Assert.AreEqual(3, _p.Inventory.CountOf(S("stick", 1).Item));
             Assert.IsTrue(_p.Cursor[0].IsEmpty);
         }
@@ -155,6 +153,9 @@ namespace Genesis.Tests
             for (int i = 0; i < 80; i++) _server.Update(0.05f);
             Assert.AreEqual(5, _p.Inventory.CountOf(S("cobblestone", 1).Item));
             Assert.AreEqual(0, _server.Drops.Count);
+            // Выброшенное игроком не исчезает со временем
+            _server.DropSlot(_p, 0, true);
+            foreach (var d in _server.Drops.All) Assert.IsTrue(d.Persistent);
         }
 
         [Test]

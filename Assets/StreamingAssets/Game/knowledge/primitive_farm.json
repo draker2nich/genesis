@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.farm",
+  "era": "primitive",
+  "order": 140,
+  "requires": [],
+  "trigger": {
+    "type": "use",
+    "target": "genesis:till"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:iron_hoe"
+}

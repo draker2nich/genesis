@@ -1,5 +1,16 @@
 {
   "id": "genesis:gravel",
   "hardness": 0.6,
-  "tool": "shovel"
+  "tool": "shovel",
+  "drops": [
+    {
+      "item": "genesis:pebble",
+      "count": 1
+    },
+    {
+      "item": "genesis:pebble",
+      "count": 1,
+      "chance": 0.5
+    }
+  ]
 }

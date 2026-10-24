@@ -1,0 +1,11 @@
+{
+  "id": "genesis:rope",
+  "a": "genesis:plant_fiber",
+  "b": "genesis:plant_fiber",
+  "action": "braid",
+  "seconds": 1.5,
+  "output": {
+    "item": "genesis:rope",
+    "count": 1
+  }
+}

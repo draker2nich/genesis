@@ -1,0 +1,23 @@
+{
+  "id": "genesis:forge",
+  "era": "primitive",
+  "behavior": "station",
+  "input_slots": 0,
+  "output_slots": 0,
+  "hardness": 3,
+  "textures": {
+    "all": "genesis:forge_side",
+    "front": "genesis:forge_front",
+    "top": "genesis:furnace_top"
+  },
+  "anim": "none",
+  "size": [
+    1,
+    2,
+    1
+  ],
+  "part_textures": {
+    "all": "genesis:furnace_chimney",
+    "top": "genesis:furnace_top"
+  }
+}

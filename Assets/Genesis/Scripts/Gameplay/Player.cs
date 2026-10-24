@@ -29,6 +29,12 @@ namespace Genesis.Gameplay
         /// <summary>Секрет клиента, которым игрок «владеет» своим сохранением на сервере.</summary>
         public string Token = "";
         public readonly Inventory Inventory;
+        /// <summary>Левая рука — отдельный слот, как в Minecraft (F — поменять руки местами).</summary>
+        public readonly Inventory Offhand;
+        /// <summary>Игрок взял справочник со стола в лаборатории (без него Q не открывает квесты).</summary>
+        public bool HasHandbook;
+        /// <summary>Точка возрождения (лежанка); null — лаборатория.</summary>
+        public Int3? SpawnPoint;
         /// <summary>Сетка крафта 3×3 (в инвентаре используется левый верхний угол 2×2). Индекс = y·3 + x.</summary>
         public readonly Inventory CraftGrid;
         /// <summary>Предмет «в руке курсора» при работе с окнами (как в Minecraft).</summary>
@@ -61,12 +67,22 @@ namespace Genesis.Gameplay
 
         // серверные таймеры (тики)
         internal int HungerTimer, RegenTimer, StarveTimer;
+        /// <summary>Раньше этого тика сервер не примет следующий крафт в руках (защита от спама команд).</summary>
+        internal long NextHandCraftTick;
+        /// <summary>Тик, когда игрок лёг на лежанку ночью (−1 — не спит).</summary>
+        internal long SleepTick = -1;
+        /// <summary>Текущая обработка в режиме создания (сервер).</summary>
+        internal ShapeSession Shaping;
+        /// <summary>Многоразовое применение предмета к блоку (обмазка печи глиной): позиция, операция, сколько раз.</summary>
+        internal Int3 UsePos;
+        internal int UseId = -1, UseCount;
 
         public PlayerState(int id, string name, ContentDatabase content)
         {
             Id = id;
             Name = name;
             Inventory = new Inventory(content, InventorySize);
+            Offhand = new Inventory(content, 1);
             CraftGrid = new Inventory(content, 9);
             Cursor = new Inventory(content, 1);
         }
@@ -111,6 +127,16 @@ namespace Genesis.Gameplay
             }
             // v4
             w.Write(Token ?? "");
+            // v5: левая рука, справочник, точка возрождения
+            Offhand.Write(w);
+            w.Write(HasHandbook);
+            w.Write(SpawnPoint.HasValue);
+            if (SpawnPoint.HasValue)
+            {
+                w.Write(SpawnPoint.Value.X);
+                w.Write(SpawnPoint.Value.Y);
+                w.Write(SpawnPoint.Value.Z);
+            }
         }
 
         /// <summary>Уровень мастерства рецепта: 0..3 (16, 64 и 256 крафтов).</summary>
@@ -144,7 +170,24 @@ namespace Genesis.Gameplay
                 for (int i = 0; i < n; i++) Mastery[r.ReadString()] = r.ReadInt32();
             }
             if (version >= 4) Token = r.ReadString();
+            if (version >= 5)
+            {
+                Offhand.Read(r);
+                HasHandbook = r.ReadBoolean();
+                SpawnPoint = r.ReadBoolean() ? new Int3(r.ReadInt32(), r.ReadInt32(), r.ReadInt32()) : (Int3?)null;
+            }
         }
+
+        public ItemStack OffhandStack => Offhand[0];
+    }
+
+    /// <summary>Состояние обработки блока в режиме создания (на сервере).</summary>
+    internal sealed class ShapeSession
+    {
+        public Int3 Pos;
+        public int ShapingId;
+        public int Hits;
+        public long LastHitTick;
     }
 
     public struct MoveInput

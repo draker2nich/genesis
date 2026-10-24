@@ -138,7 +138,7 @@ namespace Genesis.Gameplay
         }
     }
 
-    /// <summary>Выбросить предмет из слота в мир (Q — один, Ctrl+Q — весь стак).</summary>
+    /// <summary>Выбросить предмет из слота в мир (Z — один, Shift+Z — весь стак).</summary>
     public sealed class DropSlotCommand : GameCommand
     {
         public int Slot;
@@ -323,5 +323,76 @@ namespace Genesis.Gameplay
     {
         public Int3 Controller;
         public override void Apply(GameServer s, PlayerState p) => s.MeLink(p, Controller);
+    }
+}
+
+namespace Genesis.Gameplay
+{
+    // ================================================================ Первобытная эпоха
+
+    /// <summary>F — поменять местами правую и левую руку.</summary>
+    public sealed class SwapHandsCommand : GameCommand
+    {
+        public override void Apply(GameServer s, PlayerState p) => s.SwapHands(p);
+    }
+
+    /// <summary>Крафт в двух руках (ПКМ удерживался нужное время).</summary>
+    public sealed class HandCraftCommand : GameCommand
+    {
+        public int CraftId;
+        public override void Apply(GameServer s, PlayerState p) => s.HandCraft(p, CraftId);
+    }
+
+    /// <summary>Удар в режиме создания (или «тик» удержания ПКМ).</summary>
+    public sealed class ShapeHitCommand : GameCommand
+    {
+        public Int3 Pos;
+        public int ShapingId;
+        public override void Apply(GameServer s, PlayerState p) => s.ShapeHitAt(p, Pos, ShapingId);
+    }
+
+    /// <summary>Собрать конструкцию ударом инструмента в режиме создания.</summary>
+    public sealed class BuildStructureCommand : GameCommand
+    {
+        public Int3 Pos;
+        public int StructureId = -1;
+        public override void Apply(GameServer s, PlayerState p) => s.BuildStructure(p, Pos, StructureId);
+    }
+
+    /// <summary>ПКМ предметом по блоку (уголёк по хворосту, глина по печке, мотыга по земле).</summary>
+    public sealed class UseOnBlockCommand : GameCommand
+    {
+        public Int3 Pos;
+        public override void Apply(GameServer s, PlayerState p) => s.UseOnBlock(p, Pos);
+    }
+
+    /// <summary>ПКМ по блоку с действием (справочник, лежанка).</summary>
+    public sealed class UseBlockCommand : GameCommand
+    {
+        public Int3 Pos;
+        public override void Apply(GameServer s, PlayerState p) => s.UseBlockAction(p, Pos);
+    }
+
+    /// <summary>Положить предмет на рабочую поверхность (Put) или забрать с неё.</summary>
+    public sealed class SurfaceCommand : GameCommand
+    {
+        public Int3 Pos;
+        public bool Put;
+        public override void Apply(GameServer s, PlayerState p) => s.UseSurface(p, Pos, Put);
+    }
+
+    /// <summary>Положить предмет из руки на пол (на верх блока Pos).</summary>
+    public sealed class PlaceOnFloorCommand : GameCommand
+    {
+        public Int3 Pos;
+        public bool All;
+        public override void Apply(GameServer s, PlayerState p) => s.PlaceOnFloor(p, Pos, All);
+    }
+
+    /// <summary>Подобрать лежащий предмет.</summary>
+    public sealed class PickupDropCommand : GameCommand
+    {
+        public int DropId;
+        public override void Apply(GameServer s, PlayerState p) => s.PickupDrop(p, DropId);
     }
 }

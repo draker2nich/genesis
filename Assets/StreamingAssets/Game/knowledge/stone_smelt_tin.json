@@ -1,6 +1,6 @@
 {
   "id": "genesis:stone.smelt_tin",
-  "era": "stone",
+  "era": "primitive",
   "requires": [],
   "trigger": {
     "type": "craft",
@@ -15,5 +15,6 @@
   },
   "milestone": false,
   "row": 2,
-  "icon": "genesis:tin_ingot"
+  "icon": "genesis:tin_ingot",
+  "order": 151
 }

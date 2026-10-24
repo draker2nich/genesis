@@ -4,7 +4,12 @@
   "solid": false,
   "replaceable": true,
   "hardness": 0,
-  "drop": "none",
   "shape": "cross",
-  "tint": "foliage"
+  "tint": "foliage",
+  "drops": [
+    {
+      "item": "genesis:grass_tuft",
+      "count": 1
+    }
+  ]
 }

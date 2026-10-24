@@ -38,6 +38,13 @@ namespace Genesis.Client.Rendering
         /// <summary>Фаза шага (радианы) и сила покачивания — задаёт контроллер.</summary>
         public float BobPhase, BobAmount;
         public bool Hidden;
+        /// <summary>Левая рука: показывает предмет из слота левой руки, зеркально справа налево.</summary>
+        public bool LeftHand;
+        /// <summary>Идёт крафт в руках: руки сходятся к центру и «работают».</summary>
+        public bool Crafting;
+        private float _craft;
+        /// <summary>Свет предмета в левой руке (правая рука выставляет общий свет руки как максимум из двух).</summary>
+        private static float _offhandLight;
 
         public void Init(ClientContext ctx, Material opaque, Camera cam)
         {
@@ -73,7 +80,7 @@ namespace Genesis.Client.Rendering
         private void LateUpdate()
         {
             if (_ctx == null) return;
-            var stack = _ctx.Player.SelectedStack;
+            var stack = LeftHand ? _ctx.Player.OffhandStack : _ctx.Player.SelectedStack;
             _wantedItem = stack.IsEmpty ? -1 : stack.Item;
 
             // Смена предмета: опустить старый, поднять новый
@@ -84,8 +91,10 @@ namespace Genesis.Client.Rendering
             }
             else _equip = Mathf.MoveTowards(_equip, 1f, Time.deltaTime * 6f);
             _swing = Mathf.Min(1f, _swing + Time.deltaTime * 3.6f);
+            _craft = Mathf.MoveTowards(_craft, Crafting ? 1f : 0f, Time.deltaTime * 5f);
 
-            UpdateHandLight();
+            if (LeftHand) _offhandLight = _shownItem >= 0 ? _lightLevel * _equip : 0f;
+            else UpdateHandLight();
 
             bool hide = Hidden || _shownItem < 0 || _ctx.Window != UiWindow.None;
             GetComponent<MeshRenderer>().enabled = !hide && _model == null;
@@ -113,6 +122,20 @@ namespace Genesis.Client.Rendering
                 ? Quaternion.Euler(0f, 45f, 0f)
                 : Quaternion.Euler(0f, -100f, 25f);
             rot = Quaternion.Euler(-70f * s, -20f * s2, 0f) * rot;
+            if (_craft > 0f)
+            {
+                // Крафт в руках: обе руки ближе к центру, мелкие движения «скрутить, сплести»
+                float wobble = Mathf.Sin(Time.time * 11f) * 0.025f;
+                var craftPos = new Vector3(0.2f + wobble, -0.34f + Mathf.Abs(wobble), 0.62f);
+                pos = Vector3.Lerp(pos, craftPos, _craft);
+                rot = Quaternion.Slerp(rot, Quaternion.Euler(-25f, -35f + wobble * 400f, 10f) * (_isBlock ? Quaternion.identity : Quaternion.Euler(0f, -100f, 25f)), _craft);
+            }
+            if (LeftHand)
+            {
+                // Зеркально: левая рука в левом нижнем углу
+                pos.x = -pos.x;
+                rot = new Quaternion(rot.x, -rot.y, -rot.z, rot.w);
+            }
             transform.localPosition = pos;
             transform.localRotation = rot;
             transform.localScale = Vector3.one * (_isBlock ? 0.38f : 0.62f);
@@ -145,7 +168,7 @@ namespace Genesis.Client.Rendering
         /// </summary>
         private void UpdateHandLight()
         {
-            float target = _ctx.Player.Health > 0 ? _lightLevel * _equip : 0f;
+            float target = _ctx.Player.Health > 0 ? Mathf.Max(_lightLevel * _equip, _offhandLight) : 0f;
             _lightNow = Mathf.MoveTowards(_lightNow, target, Time.deltaTime * 40f);
             _flicker = Mathf.Lerp(_flicker, (Mathf.PerlinNoise(Time.time * 7f, 0.37f) - 0.5f) * 0.9f, Time.deltaTime * 12f);
             float level = _lightNow > 0.01f ? Mathf.Max(0f, _lightNow + _flicker) : 0f;
@@ -156,7 +179,8 @@ namespace Genesis.Client.Rendering
 
         private void OnDisable()
         {
-            Shader.SetGlobalVector(HandLightId, Vector4.zero);
+            if (LeftHand) _offhandLight = 0f;
+            else Shader.SetGlobalVector(HandLightId, Vector4.zero);
         }
 
         private void Rebuild(int itemId)

@@ -7,5 +7,6 @@
     "top": "genesis:oak_log_top",
     "bottom": "genesis:oak_log_top",
     "side": "genesis:oak_log"
-  }
+  },
+  "fellable": true
 }

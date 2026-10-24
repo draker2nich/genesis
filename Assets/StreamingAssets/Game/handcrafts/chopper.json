@@ -1,0 +1,11 @@
+{
+  "id": "genesis:chopper",
+  "a": "genesis:wrapped_handle",
+  "b": "genesis:sharp_stone",
+  "action": "haft",
+  "seconds": 2.0,
+  "output": {
+    "item": "genesis:chopper",
+    "count": 1
+  }
+}

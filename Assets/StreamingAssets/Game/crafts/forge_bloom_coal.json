@@ -1,0 +1,24 @@
+{
+  "id": "genesis:forge_bloom_coal",
+  "station": "genesis:forge",
+  "inputs": [
+    {
+      "item": "genesis:iron_ore",
+      "count": 2
+    },
+    {
+      "item": "genesis:coal",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "genesis:iron_bloom",
+      "count": 1
+    }
+  ],
+  "minigame": {
+    "template": "smelting",
+    "difficulty": 1
+  }
+}

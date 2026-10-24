@@ -1,0 +1,11 @@
+{
+  "id": "genesis:iron_axe",
+  "a": "genesis:axe_head",
+  "b": "genesis:stick",
+  "action": "assemble",
+  "seconds": 2.0,
+  "output": {
+    "item": "genesis:iron_axe",
+    "count": 1
+  }
+}

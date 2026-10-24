@@ -1,6 +1,6 @@
 {
   "id": "genesis:grave",
-  "era": "wood",
+  "era": "primitive",
   "behavior": "storage",
   "input_slots": 40,
   "output_slots": 0,
@@ -14,6 +14,8 @@
   },
   "anim": "none",
   "drop": "none",
-  "params": { "remove_when_empty": 1 },
+  "params": {
+    "remove_when_empty": 1
+  },
   "model": "genesis:grave"
 }

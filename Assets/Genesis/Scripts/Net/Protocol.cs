@@ -45,7 +45,7 @@ namespace Genesis.Net
     public static class Protocol
     {
         /// <summary>Меняется при несовместимых изменениях формата пакетов.</summary>
-        public const int Version = 6;
+        public const int Version = 7; // 7: левая рука, справочник, первобытные механики
         public const int DefaultPort = 27015;
 
         public static BinaryWriter Begin(MsgType type, out MemoryStream ms)
@@ -276,6 +276,45 @@ namespace Genesis.Net
                     w.Write((byte)27);
                     Protocol.WritePos(w, c.Controller);
                     break;
+                case SwapHandsCommand _:
+                    w.Write((byte)35);
+                    break;
+                case HandCraftCommand c:
+                    w.Write((byte)36);
+                    w.Write(c.CraftId);
+                    break;
+                case ShapeHitCommand c:
+                    w.Write((byte)37);
+                    Protocol.WritePos(w, c.Pos);
+                    w.Write(c.ShapingId);
+                    break;
+                case BuildStructureCommand c:
+                    w.Write((byte)38);
+                    Protocol.WritePos(w, c.Pos);
+                    w.Write(c.StructureId);
+                    break;
+                case UseOnBlockCommand c:
+                    w.Write((byte)39);
+                    Protocol.WritePos(w, c.Pos);
+                    break;
+                case UseBlockCommand c:
+                    w.Write((byte)40);
+                    Protocol.WritePos(w, c.Pos);
+                    break;
+                case SurfaceCommand c:
+                    w.Write((byte)41);
+                    Protocol.WritePos(w, c.Pos);
+                    w.Write(c.Put);
+                    break;
+                case PlaceOnFloorCommand c:
+                    w.Write((byte)42);
+                    Protocol.WritePos(w, c.Pos);
+                    w.Write(c.All);
+                    break;
+                case PickupDropCommand c:
+                    w.Write((byte)43);
+                    w.Write(c.DropId);
+                    break;
                 default:
                     throw new NotSupportedException("Command not serializable: " + cmd.GetType().Name);
             }
@@ -339,6 +378,15 @@ namespace Genesis.Net
                 case 25: return new MeFluidFilterCommand { Pos = Protocol.ReadPos(r), Fluid = r.ReadInt32() };
                 case 26: return new MePatternCommand { Pos = Protocol.ReadPos(r), Recipe = r.ReadInt32(), Enabled = r.ReadBoolean() };
                 case 27: return new MeLinkCommand { Controller = Protocol.ReadPos(r) };
+                case 35: return new SwapHandsCommand();
+                case 36: return new HandCraftCommand { CraftId = r.ReadInt32() };
+                case 37: return new ShapeHitCommand { Pos = Protocol.ReadPos(r), ShapingId = r.ReadInt32() };
+                case 38: return new BuildStructureCommand { Pos = Protocol.ReadPos(r), StructureId = r.ReadInt32() };
+                case 39: return new UseOnBlockCommand { Pos = Protocol.ReadPos(r) };
+                case 40: return new UseBlockCommand { Pos = Protocol.ReadPos(r) };
+                case 41: return new SurfaceCommand { Pos = Protocol.ReadPos(r), Put = r.ReadBoolean() };
+                case 42: return new PlaceOnFloorCommand { Pos = Protocol.ReadPos(r), All = r.ReadBoolean() };
+                case 43: return new PickupDropCommand { DropId = r.ReadInt32() };
                 default: throw new InvalidDataException("Unknown command type " + type);
             }
         }
@@ -349,12 +397,14 @@ namespace Genesis.Net
     /// <summary>Сериализация состояния машин, лент и инвентарей (числовые ID — контент сверен по хешу).</summary>
     public static class ReplicationCodec
     {
-        /// <summary>Инвентарь, сетка крафта, курсор и мастерство игрока.</summary>
+        /// <summary>Инвентарь, сетка крафта, курсор, левая рука, справочник и мастерство игрока.</summary>
         public static void WritePlayerItems(BinaryWriter w, PlayerState p)
         {
             WriteInventory(w, p.Inventory);
             WriteInventory(w, p.CraftGrid);
             WriteInventory(w, p.Cursor);
+            WriteInventory(w, p.Offhand);
+            w.Write(p.HasHandbook);
             w.Write((byte)p.GridSize);
             w.Write((ushort)p.Mastery.Count);
             foreach (var kv in p.Mastery)
@@ -369,6 +419,8 @@ namespace Genesis.Net
             ReadInventory(r, p.Inventory);
             ReadInventory(r, p.CraftGrid);
             ReadInventory(r, p.Cursor);
+            ReadInventory(r, p.Offhand);
+            p.HasHandbook = r.ReadBoolean();
             p.GridSize = r.ReadByte();
             int n = r.ReadUInt16();
             p.Mastery.Clear();

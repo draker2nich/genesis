@@ -1,0 +1,111 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "java_block",
+  "box_uv": false
+ },
+ "name": "plank_slab",
+ "resolution": {
+  "width": 128,
+  "height": 128
+ },
+ "elements": [
+  {
+   "name": "plank_slab_0",
+   "type": "cube",
+   "uuid": "f077328c-e4e6-e62b-0321-36e4103430c3",
+   "from": [
+    0,
+    0,
+    0
+   ],
+   "to": [
+    16,
+    8,
+    16
+   ],
+   "origin": [
+    0,
+    0,
+    0
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  }
+ ],
+ "outliner": [
+  "f077328c-e4e6-e62b-0321-36e4103430c3"
+ ],
+ "textures": [
+  {
+   "name": "plank_slab.png",
+   "uuid": "de2c7f6d-4e95-dc04-756e-8ede1724a675",
+   "width": 128,
+   "height": 128,
+   "uv_width": 128,
+   "uv_height": 128,
+   "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACs0lEQVR4nO3Zz4odRRSA8e9UV/edO4luTDRLRUUGUUSy8XF8ERd5ER/HjQsXCooooogSA0L0zr09XX9c9DWgiBhHnMzw/Zbd1U1BdZ1z6nR88P57naPnb214vJt5Gg8+/Cie6gE9U/L9s3sEcH4ofPfwF+6f3YMO+3lhM2WW0ojjEvcO05horTMvlc04XOnkdXl5KZVSGidTBuD8sBBARLCfCxGwGQd6h6U26Os9t/3NkIIgIjifCwCnm5F2TApTTqQIpjyQUpAStN7pvRMRlNr/5tW6DvInXz78w4WPP//xLwf+m/pAz7781qt3aK1zazux2y/03pmmgSGC1vu68yP44tufefeNl9gfI8VzpxPzRbni6euyckQQAaU28hAstROsoR5gfygMQwLgYqmcbtZaYbdfsBC4/nLrnTwkUgqW0tlu1sq/906pndOTTDsWBbV15lLheBpYarvi6euy8qdfPfrH+d0a4ObJb792l29+eMybr9xhzGskaK0zjQPzUhhS4mKpnEyZ1ju1NYaUWEqjNiPAdZeGtCby05NMSkHv/clCj3lgPxe2m8zusHCYC6V25ovKyTQQYRFw3aWLsu7ipTSWUmlt/QBSBEMEt7cjERwXfG0KpQTnc7ETeAPkz75+BMCf+wG/8/x/s+Wzl18gRTCOa15f277rCaDUxvc//co7r7+4poXaiAiGYe0OmgKuv3R7OzKOid7X8J6HxJCCKSemMT0ZWGpju1kLwSDowO6wXN3M9Z9IHai1MaRgHBK9d3aHwmGp5LR+ABHrP4LdoRz7BGutsD02hSRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkv5PvwFKdhNjBhl3kwAAAABJRU5ErkJggg=="
+  }
+ ],
+ "animations": []
+}

@@ -1,8 +1,8 @@
 {
   "id": "genesis:anvil",
-  "era": "iron",
+  "era": "primitive",
   "behavior": "station",
-  "input_slots": 0,
+  "input_slots": 2,
   "output_slots": 0,
   "hardness": 3,
   "textures": {
@@ -10,5 +10,6 @@
     "top": "genesis:anvil_top",
     "front": "genesis:anvil_side"
   },
-  "anim": "none"
+  "anim": "none",
+  "surface": true
 }

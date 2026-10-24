@@ -1,0 +1,11 @@
+{
+  "id": "genesis:kindling",
+  "a": "genesis:stick",
+  "b": "genesis:stick",
+  "action": "stack",
+  "seconds": 1.0,
+  "output": {
+    "item": "genesis:kindling",
+    "count": 1
+  }
+}

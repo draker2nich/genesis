@@ -231,12 +231,15 @@ namespace Genesis.Tests
             var r = Db.Recipes.Get("genesis:auto_assembler.genesis.chest");
             Assert.IsNotNull(r, "workbench crafts become assembler recipes");
             Assert.AreEqual("genesis:chest", r.SourceCraft);
-            Assert.IsNull(Db.Recipes.Get("genesis:auto_assembler.genesis.planks"), "hand crafts are not included");
+            Assert.IsNull(Db.Recipes.Get("genesis:auto_assembler.genesis.leather"), "hand crafts are not included");
 
+            // Рецепт автосборщика закрыт вместе с ручным крафтом
+            var boiler = Db.Recipes.Get("genesis:auto_assembler.genesis.steam_boiler");
             var k = new KnowledgeState(Db);
-            Assert.IsFalse(k.IsRecipeUnlocked(r), "locked together with the hand craft");
-            k.ForceUnlock("genesis:wood.workbench");
-            Assert.IsTrue(k.IsRecipeUnlocked(r));
+            Assert.IsFalse(k.IsRecipeUnlocked(boiler), "locked together with the hand craft");
+            k.ForceUnlock("genesis:iron.boiler");
+            Assert.IsTrue(k.IsRecipeUnlocked(boiler));
+            Assert.IsTrue(k.IsRecipeUnlocked(r), "the chest is not gated");
 
             // Автосборщик реально делает сундук из досок
             var assembler = Place("auto_assembler", new Int3(5, 5, 5));

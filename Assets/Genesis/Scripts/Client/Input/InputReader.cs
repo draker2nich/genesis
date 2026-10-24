@@ -10,9 +10,16 @@ namespace Genesis.Client
     {
         public float Forward, Strafe;
         public float LookX, LookY;
-        public bool Jump, Sprint, Descend, Sneak;
+        public bool Jump, JumpDown, Sprint, Descend, Sneak;
         public bool Attack, AttackDown, Use, UseDown;
-        public bool Rotate, ToggleFly, Inventory, Creative, Save, Escape, Debug, Knowledge, Stats, Recipes;
+        /// <summary>R: нажата (режим создания), удерживается (колесо выбора), отпущена (выбор в колесе).</summary>
+        public bool Create, CreateHeld, CreateUp;
+        /// <summary>F — поменять руки местами.</summary>
+        public bool SwapHands;
+        /// <summary>Q — справочник (квесты).</summary>
+        public bool Handbook;
+        public bool Inventory, Creative, Save, Escape, Debug, Stats;
+        /// <summary>Z — выбросить предмет, Shift+Z — весь стак.</summary>
         public bool Drop, DropAll, Map, MapZoomIn, MapZoomOut;
         public int HotbarKey;   // -1 нет, иначе 0..8
         public int Scroll;      // -1, 0, +1
@@ -30,30 +37,27 @@ namespace Genesis.Client
             s.LookX = Input.GetAxisRaw("Mouse X") * MouseSensitivity;
             s.LookY = Input.GetAxisRaw("Mouse Y") * MouseSensitivity;
             s.Jump = Input.GetKey(KeyCode.Space);
-            // В браузере Ctrl+W закрывает вкладку, Ctrl+Q — браузер, F5 — перезагрузка: бег на Shift,
-            // «выбросить стак» — Shift+Q, сохранение — автоматически (и в меню паузы)
-            bool web = WebPlatform.IsWebGL;
-            s.Sprint = web ? Input.GetKey(KeyCode.LeftShift) : Input.GetKey(KeyCode.LeftControl);
+            s.JumpDown = Input.GetKeyDown(KeyCode.Space); // двойной пробел — полёт в креативе
+            s.Sprint = Input.GetKey(KeyCode.LeftControl);
             s.Descend = Input.GetKey(KeyCode.LeftShift);
             s.Sneak = Input.GetKey(KeyCode.LeftShift);
             s.Attack = Input.GetMouseButton(0);
             s.AttackDown = Input.GetMouseButtonDown(0);
             s.Use = Input.GetMouseButton(1);
             s.UseDown = Input.GetMouseButtonDown(1);
-            s.Rotate = Input.GetKeyDown(KeyCode.R);
-            s.ToggleFly = Input.GetKeyDown(KeyCode.F);
+            s.Create = Input.GetKeyDown(KeyCode.R);
+            s.CreateHeld = Input.GetKey(KeyCode.R);
+            s.CreateUp = Input.GetKeyUp(KeyCode.R);
+            s.SwapHands = Input.GetKeyDown(KeyCode.F);
+            s.Handbook = Input.GetKeyDown(KeyCode.Q);
             s.Inventory = Input.GetKeyDown(KeyCode.E);
             s.Creative = Input.GetKeyDown(KeyCode.C);
-            s.Save = !web && Input.GetKeyDown(KeyCode.F5);
+            s.Save = Input.GetKeyDown(KeyCode.F5);
             s.Escape = Input.GetKeyDown(KeyCode.Escape);
             s.Debug = Input.GetKeyDown(KeyCode.F3);
-            s.Knowledge = Input.GetKeyDown(KeyCode.K);
             s.Stats = Input.GetKeyDown(KeyCode.P);
-            s.Recipes = Input.GetKeyDown(KeyCode.J);
-            s.Drop = Input.GetKeyDown(KeyCode.Q);
-            s.DropAll = s.Drop && (web
-                ? Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)
-                : Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl));
+            s.Drop = Input.GetKeyDown(KeyCode.Z);
+            s.DropAll = s.Drop && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
             s.Map = Input.GetKeyDown(KeyCode.M);
             s.MapZoomIn = Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus);
             s.MapZoomOut = Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus);
@@ -63,7 +67,7 @@ namespace Genesis.Client
             // Печатают в поле ввода (поиск в справочнике, ME) — горячие клавиши не срабатывают
             if (GUIUtility.keyboardControl != 0)
             {
-                s.Rotate = s.ToggleFly = s.Inventory = s.Creative = s.Knowledge = s.Stats = s.Recipes = false;
+                s.Create = s.CreateHeld = s.CreateUp = s.SwapHands = s.Handbook = s.Inventory = s.Creative = s.Stats = false;
                 s.Drop = s.DropAll = s.Map = s.MapZoomIn = s.MapZoomOut = false;
                 s.HotbarKey = -1;
             }

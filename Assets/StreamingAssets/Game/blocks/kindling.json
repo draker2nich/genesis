@@ -1,0 +1,10 @@
+{
+  "id": "genesis:kindling",
+  "render": "cutout",
+  "solid": false,
+  "hardness": 0.2,
+  "model": "genesis:kindling",
+  "textures": {
+    "all": "genesis:kindling_icon"
+  }
+}

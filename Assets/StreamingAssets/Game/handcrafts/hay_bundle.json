@@ -1,0 +1,12 @@
+{
+  "id": "genesis:hay_bundle",
+  "a": "genesis:rope",
+  "b": "genesis:grass_tuft",
+  "action": "tie",
+  "seconds": 2.0,
+  "output": {
+    "item": "genesis:hay_bundle",
+    "count": 1
+  },
+  "b_count": 4
+}

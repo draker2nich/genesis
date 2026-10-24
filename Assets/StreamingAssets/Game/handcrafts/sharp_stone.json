@@ -1,0 +1,11 @@
+{
+  "id": "genesis:sharp_stone",
+  "a": "genesis:pebble",
+  "b": "genesis:pebble",
+  "action": "knap",
+  "seconds": 1.8,
+  "output": {
+    "item": "genesis:sharp_stone",
+    "count": 1
+  }
+}

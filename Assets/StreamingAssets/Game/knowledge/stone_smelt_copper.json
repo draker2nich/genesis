@@ -1,6 +1,6 @@
 {
   "id": "genesis:stone.smelt_copper",
-  "era": "stone",
+  "era": "primitive",
   "requires": [],
   "trigger": {
     "type": "craft",
@@ -15,5 +15,6 @@
   },
   "milestone": false,
   "row": 1,
-  "icon": "genesis:copper_ingot"
+  "icon": "genesis:copper_ingot",
+  "order": 150
 }

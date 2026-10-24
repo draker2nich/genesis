@@ -1,0 +1,11 @@
+{
+  "id": "genesis:iron_pickaxe",
+  "a": "genesis:pickaxe_head",
+  "b": "genesis:stick",
+  "action": "assemble",
+  "seconds": 2.0,
+  "output": {
+    "item": "genesis:iron_pickaxe",
+    "count": 1
+  }
+}

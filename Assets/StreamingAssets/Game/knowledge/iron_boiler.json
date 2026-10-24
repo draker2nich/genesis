@@ -1,6 +1,6 @@
 {
   "id": "genesis:iron.boiler",
-  "era": "iron",
+  "era": "primitive",
   "requires": [
     "genesis:iron.plate",
     "genesis:iron.rod"
@@ -16,5 +16,6 @@
   },
   "milestone": false,
   "row": 3,
-  "icon": "genesis:iron_plate"
+  "icon": "genesis:iron_plate",
+  "order": 170
 }

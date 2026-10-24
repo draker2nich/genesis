@@ -20,8 +20,8 @@ namespace Genesis.Gameplay
         private const int SaveVersion = 3;
         /// <summary>Длина суток в тиках: 24000 = 20 минут.</summary>
         public const int DayLength = 24000;
-        // 4: токен игрока
-        private const int PlayersVersion = 4;
+        // 4: токен игрока; 5: левая рука, справочник, точка возрождения
+        private const int PlayersVersion = 5;
 
         /// <summary>Файлы состояния, которые пишутся одной транзакцией (и попадают в резервные копии).</summary>
         private static readonly string[] StateFiles = { "world.dat", "factory.dat", "knowledge.dat", "items.dat", "players.dat", "creatures.dat" };
@@ -216,6 +216,9 @@ namespace Genesis.Gameplay
             for (int i = 0; i < from.Inventory.Size && i < to.Inventory.Size; i++) to.Inventory[i] = from.Inventory[i];
             for (int i = 0; i < 9; i++) to.CraftGrid[i] = from.CraftGrid[i];
             to.Cursor[0] = from.Cursor[0];
+            to.Offhand[0] = from.Offhand[0];
+            to.HasHandbook = from.HasHandbook;
+            to.SpawnPoint = from.SpawnPoint;
             to.Token = from.Token;
             foreach (var kv in from.Mastery) to.Mastery[kv.Key] = kv.Value;
         }
@@ -314,16 +317,30 @@ namespace Genesis.Gameplay
             if (def.Render == RenderLayer.Invisible || def.Unbreakable || def.Liquid) return false;
 
             var tool = Mining.ToolOf(Content, p.SelectedStack);
-            var drops = new List<ItemStack>(); // выпадают в мир (подбираются, подлетая к игроку)
-            if (def.Drop != null && Mining.CanHarvest(def, tool))
+
+            // Многоблочная машина ломается целиком; оторванное продолжение — просто исчезает
+            var owner = MultiBlock.OwnerOf(Factory, pos);
+            if (owner != null && owner.Def.IsMultiBlock)
             {
-                int item = Content.Items.IndexOf(def.Drop);
-                if (item >= 0) drops.Add(new ItemStack(item, Math.Max(1, def.DropCount)));
+                BreakMachine(p, owner, tool);
+                return true;
             }
-            else if (def.Drop != null)
+            if (def.PartOf != null)
             {
+                World.SetBlock(pos, Content.AirNumeric);
+                return true;
+            }
+
+            // Топор или рубило валит дерево целиком
+            if (def.Fellable && tool != null && tool.CanFell && Mining.IsCorrectTool(def, tool))
+            {
+                FellTree(p, pos, tool);
+                return true;
+            }
+
+            var drops = RollDrops(def, tool); // выпадают в мир (подбираются, подлетая к игроку)
+            if ((def.Drop != null || def.Drops != null) && !Mining.CanHarvest(def, tool))
                 Notify?.Invoke(p.Id, "ui.wrong_tool");
-            }
             drops.AddRange(PeekFactoryDrops(pos));
 
             Factory.OnBlockRemoved(pos);
@@ -379,8 +396,21 @@ namespace Genesis.Gameplay
             var mdef = block.MachineId != null ? Content.Machines.Get(block.MachineId) : null;
             var facing = mdef != null && mdef.Orient != "away" ? horizontal.Opposite() : horizontal;
 
-            if (!World.SetBlock(pos, block.NumericId)) return false;
-            Factory.OnBlockPlaced(pos, block, facing);
+            if (mdef != null && mdef.IsMultiBlock)
+            {
+                // Верстак, печка: все клетки должны быть свободны
+                if (!CanPlaceCells(p, MultiBlock.Cells(mdef, pos, facing), block.Solid))
+                {
+                    Notify?.Invoke(p.Id, "ui.structure.no_room");
+                    return false;
+                }
+                PlaceBlockAt(pos, block, facing, p);
+            }
+            else
+            {
+                if (!World.SetBlock(pos, block.NumericId)) return false;
+                Factory.OnBlockPlaced(pos, block, facing);
+            }
             p.Inventory.ExtractFromSlot(p.SelectedSlot, 1);
             Knowledge.Notify("place", block.Id);
             BlockPlaced?.Invoke(p, pos, block);
@@ -435,9 +465,11 @@ namespace Genesis.Gameplay
                 catch (Exception e) { Log.Error("Mod tick hook failed: " + e); }
             }
             long t = Factory.TickCount;
+            if (t % 20 == 7) TickDecay();
 
             foreach (var p in _players.Values)
             {
+                if (p.SleepTick >= 0 && t - p.SleepTick > 60) p.SleepTick = -1;
                 if (p.PoisonTicks > 0)
                 {
                     p.PoisonTicks--;
@@ -477,7 +509,7 @@ namespace Genesis.Gameplay
                 {
                     int item = Content.Items.IndexOf(node.Trigger.Target);
                     foreach (var p in _players.Values)
-                        if (p.Inventory.CountOf(item) > 0) { hits.Add(node.Trigger.Target); break; }
+                        if (p.Inventory.CountOf(item) > 0 || p.Offhand.CountOf(item) > 0) { hits.Add(node.Trigger.Target); break; }
                 }
                 foreach (var h in hits) Knowledge.Notify("obtain", h);
             }
@@ -497,10 +529,13 @@ namespace Genesis.Gameplay
         public void Kill(PlayerState p)
         {
             CloseGrid(p); // сетка крафта и курсор — в инвентарь (раньше переживали смерть)
-            if (!Settings.KeepInventory && !p.Inventory.IsEmpty)
+            p.Shaping = null;
+            if (!Settings.KeepInventory && (!p.Inventory.IsEmpty || !p.Offhand.IsEmpty))
             {
                 var items = new List<ItemStack>(p.Inventory.NonEmpty());
+                items.AddRange(p.Offhand.NonEmpty());
                 p.Inventory.Clear();
+                p.Offhand.Clear();
                 var grave = PlaceGrave(p.Position.Floor());
                 var deathPos = new Vec3(p.Position.X, p.Position.Y + 0.5f, p.Position.Z);
                 foreach (var st in items)
@@ -518,6 +553,16 @@ namespace Genesis.Gameplay
             }
 
             var sp = World.Generator.SpawnPoint;
+            // Лежанка цела — возрождение на ней, иначе — в лаборатории
+            if (p.SpawnPoint.HasValue)
+            {
+                var bed = p.SpawnPoint.Value;
+                if (World.IsLoaded(bed.X, bed.Y, bed.Z) || World.LoadNow(WorldConstants.ChunkOf(bed)) != null)
+                {
+                    if (World.GetBlockDef(bed).Action == "sleep") sp = bed + Int3.Up;
+                    else p.SpawnPoint = null;
+                }
+            }
             p.Position = new Vec3(sp.X + 0.5f, sp.Y + 0.01f, sp.Z + 0.5f);
             p.Velocity = Vec3.Zero;
             p.Health = PlayerState.MaxHealth;

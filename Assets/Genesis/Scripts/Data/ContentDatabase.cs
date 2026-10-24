@@ -24,6 +24,14 @@ namespace Genesis.Data
         public readonly Registry<CraftDef> Crafts = new Registry<CraftDef>();
         public readonly Registry<KnowledgeNode> Knowledge = new Registry<KnowledgeNode>();
         public readonly Registry<EnemyDef> Enemies = new Registry<EnemyDef>();
+        /// <summary>Крафт в двух руках (первобытная эпоха).</summary>
+        public readonly Registry<HandCraftDef> HandCrafts = new Registry<HandCraftDef>();
+        /// <summary>Обработка блоков в режиме создания (R).</summary>
+        public readonly Registry<ShapingDef> Shapings = new Registry<ShapingDef>();
+        /// <summary>Конструкции из блоков, превращающиеся в машины.</summary>
+        public readonly Registry<StructureDef> Structures = new Registry<StructureDef>();
+        /// <summary>ПКМ предметом по блоку.</summary>
+        public readonly Registry<InteractionDef> Interactions = new Registry<InteractionDef>();
         public readonly Dictionary<string, TextureSpec> TextureSpecs = new Dictionary<string, TextureSpec>();
 
         /// <summary>Список имён текстур, индекс = слой в Texture2DArray.</summary>
@@ -84,6 +92,10 @@ namespace Genesis.Data
             foreach (var f in Files(root, "crafts")) AddCraft(Parse<CraftDef>(f), f);
             foreach (var f in Files(root, "knowledge")) AddKnowledge(Parse<KnowledgeNode>(f), f);
             foreach (var f in Files(root, "enemies")) AddEnemy(Parse<EnemyDef>(f), f);
+            foreach (var f in Files(root, "handcrafts")) AddHandCraft(Parse<HandCraftDef>(f), f);
+            foreach (var f in Files(root, "shaping")) AddShaping(Parse<ShapingDef>(f), f);
+            foreach (var f in Files(root, "structures")) AddStructure(Parse<StructureDef>(f), f);
+            foreach (var f in Files(root, "interactions")) AddInteraction(Parse<InteractionDef>(f), f);
 
             string tex = Path.Combine(root, "textures.json");
             if (File.Exists(tex))
@@ -126,6 +138,10 @@ namespace Genesis.Data
         public void AddRecipeJson(string json) => AddRecipe(SafeDeserialize<RecipeDef>(json, "<json>"), "<json>");
         public void AddCraftJson(string json) => AddCraft(SafeDeserialize<CraftDef>(json, "<json>"), "<json>");
         public void AddKnowledgeJson(string json) => AddKnowledge(SafeDeserialize<KnowledgeNode>(json, "<json>"), "<json>");
+        public void AddHandCraftJson(string json) => AddHandCraft(SafeDeserialize<HandCraftDef>(json, "<json>"), "<json>");
+        public void AddShapingJson(string json) => AddShaping(SafeDeserialize<ShapingDef>(json, "<json>"), "<json>");
+        public void AddStructureJson(string json) => AddStructure(SafeDeserialize<StructureDef>(json, "<json>"), "<json>");
+        public void AddInteractionJson(string json) => AddInteraction(SafeDeserialize<InteractionDef>(json, "<json>"), "<json>");
 
         private bool CheckId(string id, string src)
         {
@@ -199,6 +215,32 @@ namespace Genesis.Data
             def.NumericId = Enemies.RegisterOrReplace(def.Id, def);
         }
 
+        public void AddHandCraft(HandCraftDef def, string src)
+        {
+            if (def == null || !CheckId(def.Id, src)) return;
+            def.NumericId = HandCrafts.RegisterOrReplace(def.Id, def);
+        }
+
+        public void AddShaping(ShapingDef def, string src)
+        {
+            if (def == null || !CheckId(def.Id, src)) return;
+            if (def.NameKey == null) def.NameKey = "shape." + def.Id.Replace(':', '.');
+            def.NumericId = Shapings.RegisterOrReplace(def.Id, def);
+        }
+
+        public void AddStructure(StructureDef def, string src)
+        {
+            if (def == null || !CheckId(def.Id, src)) return;
+            if (def.NameKey == null) def.NameKey = "structure." + def.Id.Replace(':', '.');
+            def.NumericId = Structures.RegisterOrReplace(def.Id, def);
+        }
+
+        public void AddInteraction(InteractionDef def, string src)
+        {
+            if (def == null || !CheckId(def.Id, src)) return;
+            def.NumericId = Interactions.RegisterOrReplace(def.Id, def);
+        }
+
         // ------------------------------------------------------------ Финализация
 
         /// <summary>
@@ -228,6 +270,31 @@ namespace Genesis.Data
                 Blocks.Get(m.Id).MachineId = m.Id;
                 Blocks.Get(m.Id).Orientable = true;
                 if (m.Model != null && Blocks.Get(m.Id).Model == null) Blocks.Get(m.Id).Model = m.Model;
+                if (m.Action != null && Blocks.Get(m.Id).Action == null) Blocks.Get(m.Id).Action = m.Action;
+
+                // Многоблочная машина: блок-продолжение для остальных клеток (ломается вместе с машиной)
+                if (m.IsMultiBlock)
+                {
+                    string partId = m.Id + "_part";
+                    if (!Blocks.Contains(partId))
+                    {
+                        var main = Blocks.Get(m.Id);
+                        AddBlock(new BlockDef
+                        {
+                            Id = partId,
+                            NameKey = m.NameKey,
+                            Hardness = m.Hardness,
+                            Tool = main.Tool,
+                            Render = main.Render,
+                            Drop = "none",
+                            Action = main.Action,
+                            Model = m.PartModel,
+                            Textures = m.PartTextures ?? main.Textures
+                        }, m.Id);
+                    }
+                    m.PartBlock = partId;
+                    Blocks.Get(partId).PartOf = m.Id;
+                }
 
                 if (!Items.Contains(m.Id))
                     AddItem(new ItemDef { Id = m.Id, NameKey = m.NameKey, PlacesBlock = m.Id }, m.Id);
@@ -240,6 +307,12 @@ namespace Genesis.Data
             foreach (var b in Blocks.Items)
             {
                 if (b == Air || b.Liquid || b.Unbreakable) continue;
+                // Продолжение многоблочной машины — своего предмета нет, выпадает сама машина
+                if (b.PartOf != null)
+                {
+                    b.Drop = null;
+                    continue;
+                }
                 // "drop": "none" — ничего не выпадает (трава, папоротник), но предмет для креатива есть
                 if (b.Drop == "none")
                 {
@@ -264,12 +337,21 @@ namespace Genesis.Data
                 }
                 if (b.DepositOf != null && !Items.Contains(b.DepositOf))
                     Errors.Add($"block {b.Id}: deposit_of '{b.DepositOf}' not found");
+                if (b.Drops != null) ResolveItems(b.Drops, b.Id);
+                if (b.Action != null && b.Action != "sleep" && b.Action != "handbook")
+                    Errors.Add($"block {b.Id}: unknown action '{b.Action}'");
             }
             foreach (var b in noDrop) b.Drop = null;
             foreach (var it in Items.Items)
             {
                 if (it.PlacesBlock != null && !Blocks.Contains(it.PlacesBlock))
                     Errors.Add($"item {it.Id}: places '{it.PlacesBlock}' not found");
+                if (it.DecayTo != null)
+                {
+                    it.DecayToId = Items.IndexOf(it.DecayTo);
+                    if (it.DecayToId < 0) Errors.Add($"item {it.Id}: decay_to '{it.DecayTo}' not found");
+                }
+                if (it.Decays && it.Tool != null) Errors.Add($"item {it.Id}: a tool can not decay (both use the stack meta)");
             }
             foreach (var f in Fluids.Items)
             {
@@ -365,6 +447,11 @@ namespace Genesis.Data
                     case "craft": if (!Crafts.Contains(t.Target)) Errors.Add($"knowledge {n.Id}: trigger craft '{t.Target}' not found"); break;
                     case "place": if (!Blocks.Contains(t.Target)) Errors.Add($"knowledge {n.Id}: trigger block '{t.Target}' not found"); break;
                     case "obtain": if (!Items.Contains(t.Target)) Errors.Add($"knowledge {n.Id}: trigger item '{t.Target}' not found"); break;
+                    case "handcraft": if (!HandCrafts.Contains(t.Target)) Errors.Add($"knowledge {n.Id}: trigger hand craft '{t.Target}' not found"); break;
+                    case "shape": if (!Shapings.Contains(t.Target)) Errors.Add($"knowledge {n.Id}: trigger shaping '{t.Target}' not found"); break;
+                    case "build": if (!Structures.Contains(t.Target)) Errors.Add($"knowledge {n.Id}: trigger structure '{t.Target}' not found"); break;
+                    case "use": if (!Interactions.Contains(t.Target)) Errors.Add($"knowledge {n.Id}: trigger interaction '{t.Target}' not found"); break;
+                    case "event": if (string.IsNullOrEmpty(t.Target)) Errors.Add($"knowledge {n.Id}: event trigger without target"); break;
                     default: Errors.Add($"knowledge {n.Id}: unknown trigger '{t.Type}'"); break;
                 }
                 if (n.Icon != null && !Items.Contains(n.Icon)) Errors.Add($"knowledge {n.Id}: icon '{n.Icon}' not found");
@@ -401,6 +488,8 @@ namespace Genesis.Data
                     foreach (var r in own) if (!combined.Contains(r)) combined.Add(r);
                 _recipesByMachine[m.NumericId] = combined;
             }
+
+            FreezePrimitive();
 
             BuildTextureTable();
             ContentHash = ComputeHash();
@@ -532,6 +621,10 @@ namespace Genesis.Data
             Section(Crafts);
             Section(Knowledge);
             Section(Enemies);
+            Section(HandCrafts);
+            Section(Shapings);
+            Section(Structures);
+            Section(Interactions);
             return Hash.String(sb.ToString());
         }
 
@@ -674,6 +767,149 @@ namespace Genesis.Data
             }
             g.Matches = matches.ToArray();
             return g;
+        }
+
+        // ------------------------------------------------------------ Первобытные механики
+
+        private void FreezePrimitive()
+        {
+            foreach (var h in HandCrafts.Items)
+            {
+                h.AMatches = ParseIngredient(h.A, h.Id).Matches;
+                h.BMatches = ParseIngredient(h.B, h.Id).Matches;
+                if (h.ACount <= 0) h.ACount = 1;
+                if (h.BCount <= 0) h.BCount = 1;
+                if (h.Output != null) ResolveItems(new List<ItemAmount> { h.Output }, h.Id);
+                else if (!h.Repair) Errors.Add($"hand craft {h.Id}: no output");
+                if (h.Repair && !h.KeepA && !h.KeepB) Errors.Add($"hand craft {h.Id}: repair needs keep_a or keep_b");
+            }
+
+            foreach (var sh in Shapings.Items)
+            {
+                var targets = new List<ushort>();
+                foreach (var t in sh.Targets)
+                {
+                    int b = Blocks.IndexOf(t);
+                    if (b < 0) Errors.Add($"shaping {sh.Id}: target block '{t}' not found");
+                    else targets.Add((ushort)b);
+                }
+                if (targets.Count == 0) Errors.Add($"shaping {sh.Id}: no targets");
+                sh.TargetBlocks = targets.ToArray();
+                ResolveItems(sh.Inputs, sh.Id);
+                ResolveItems(sh.Outputs, sh.Id);
+                if (sh.Item != null)
+                {
+                    sh.ItemId = Items.IndexOf(sh.Item);
+                    if (sh.ItemId < 0) Errors.Add($"shaping {sh.Id}: item '{sh.Item}' not found");
+                }
+                if (sh.ResultBlock != null && !Blocks.Contains(sh.ResultBlock))
+                    Errors.Add($"shaping {sh.Id}: result_block '{sh.ResultBlock}' not found");
+                if (sh.Hits <= 0) sh.Hits = 1;
+                if (sh.Mode != "strike" && sh.Mode != "hold") Errors.Add($"shaping {sh.Id}: unknown mode '{sh.Mode}'");
+                sh.IconItem = sh.Icon != null ? Items.IndexOf(sh.Icon) : (sh.Outputs.Count > 0 ? sh.Outputs[0].ItemId : -1);
+                if (sh.IconItem < 0 && sh.ResultBlock != null) sh.IconItem = Items.IndexOf(sh.ResultBlock);
+                if (sh.IsStation)
+                    foreach (var tb in sh.TargetBlocks)
+                    {
+                        var mid = Blocks.Get(tb).MachineId;
+                        var md = mid != null ? Machines.Get(mid) : null;
+                        if (md == null || !md.Surface)
+                            Errors.Add($"shaping {sh.Id}: inputs need a surface machine, '{Blocks.IdOf(tb)}' is not");
+                    }
+            }
+
+            foreach (var st in Structures.Items) BuildStructure(st);
+
+            foreach (var it in Interactions.Items)
+            {
+                it.HeldMatches = ParseIngredient(it.Held, it.Id).Matches;
+                var targets = new List<ushort>();
+                foreach (var t in it.Targets)
+                {
+                    int b = Blocks.IndexOf(t);
+                    if (b < 0) Errors.Add($"interaction {it.Id}: target block '{t}' not found");
+                    else targets.Add((ushort)b);
+                }
+                it.TargetBlocks = targets.ToArray();
+                if (it.ResultBlock != null)
+                {
+                    int b = Blocks.IndexOf(it.ResultBlock);
+                    if (b < 0) Errors.Add($"interaction {it.Id}: result_block '{it.ResultBlock}' not found");
+                    else it.ResultBlockId = (ushort)b;
+                }
+                if (it.Give != null) ResolveItems(new List<ItemAmount> { it.Give }, it.Id);
+                if (it.Uses <= 0) it.Uses = 1;
+                if (it.Consume < 0) it.Consume = 0;
+            }
+        }
+
+        private void BuildStructure(StructureDef st)
+        {
+            int sy = st.Layers.Count, sz = 0, sx = 0;
+            foreach (var layer in st.Layers)
+            {
+                sz = Math.Max(sz, layer.Count);
+                foreach (var row in layer) sx = Math.Max(sx, (row ?? "").Length);
+            }
+            if (sx == 0 || sy == 0 || sz == 0)
+            {
+                Errors.Add($"structure {st.Id}: empty pattern");
+                st.Cells = new ushort[0];
+                return;
+            }
+            st.SizeX = sx;
+            st.SizeY = sy;
+            st.SizeZ = sz;
+            st.Cells = new ushort[sx * sy * sz];
+            for (int i = 0; i < st.Cells.Length; i++) st.Cells[i] = StructureDef.Ignore;
+            var resolved = new Dictionary<char, ushort>();
+            for (int y = 0; y < sy; y++)
+            for (int z = 0; z < st.Layers[y].Count; z++)
+            {
+                string row = st.Layers[y][z] ?? "";
+                for (int x = 0; x < row.Length; x++)
+                {
+                    char ch = row[x];
+                    if (ch == ' ') continue;
+                    if (!resolved.TryGetValue(ch, out var id))
+                    {
+                        if (st.Key == null || !st.Key.TryGetValue(ch.ToString(), out var spec))
+                        {
+                            Errors.Add($"structure {st.Id}: symbol '{ch}' is not in key");
+                            continue;
+                        }
+                        if (spec == "*") id = StructureDef.Any;
+                        else
+                        {
+                            int b = Blocks.IndexOf(spec);
+                            if (b < 0)
+                            {
+                                Errors.Add($"structure {st.Id}: block '{spec}' not found");
+                                continue;
+                            }
+                            id = (ushort)b;
+                        }
+                        resolved[ch] = id;
+                    }
+                    st.Cells[st.CellIndex(x, y, z)] = id;
+                }
+            }
+            int rb = Blocks.IndexOf(st.Result ?? "");
+            if (rb < 0) Errors.Add($"structure {st.Id}: result '{st.Result}' not found");
+            else st.ResultBlock = (ushort)rb;
+            if (st.ResultAt == null || st.ResultAt.Length < 3 || st.ResultAt[0] < 0 || st.ResultAt[0] >= sx ||
+                st.ResultAt[1] < 0 || st.ResultAt[1] >= sy || st.ResultAt[2] < 0 || st.ResultAt[2] >= sz)
+            {
+                Errors.Add($"structure {st.Id}: result_at is outside the pattern");
+                st.ResultAt = new[] { 0, 0, 0 };
+            }
+            switch (st.ResultFacing)
+            {
+                case "south": st.Facing = Direction.South; break;
+                case "east": st.Facing = Direction.East; break;
+                case "west": st.Facing = Direction.West; break;
+                default: st.Facing = Direction.North; break;
+            }
         }
 
         public BlockDef Block(ushort id) => Blocks.Get(id) ?? Air;

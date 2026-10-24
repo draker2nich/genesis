@@ -10,7 +10,7 @@ namespace Genesis.Client.Rendering
     /// (тени холоднее, блики теплее), тайлящийся value-noise, «рукотворные» детали — камни, доски,
     /// заклёпки, контуры у предметов. Строка 0 — низ текстуры.
     /// </summary>
-    public static class PixelArt
+    public static partial class PixelArt
     {
         public const int Size = 32;
         private static readonly Color32 Clear = new Color32(0, 0, 0, 0);
@@ -100,8 +100,12 @@ namespace Genesis.Client.Rendering
                     for (int i = 0; i < px.Length; i++) px[i] = ((i % Size) / 4 + (i / Size) / 4) % 2 == 0 ? c : a;
                     break;
                 default:
-                    Lump(ctx);
-                    Outline(px);
+                    // Первобытные предметы и блоки (PixelArt.Primitive.cs), иначе — комок
+                    if (!Primitive(ctx, spec.Pattern))
+                    {
+                        Lump(ctx);
+                        Outline(px);
+                    }
                     break;
             }
             Stylize(px, spec.Pattern);

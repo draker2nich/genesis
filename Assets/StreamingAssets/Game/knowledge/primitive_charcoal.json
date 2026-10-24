@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.charcoal",
+  "era": "primitive",
+  "order": 90,
+  "requires": [],
+  "trigger": {
+    "type": "obtain",
+    "target": "genesis:charcoal"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:charcoal"
+}

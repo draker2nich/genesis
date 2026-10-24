@@ -1,6 +1,6 @@
 {
   "id": "genesis:chest",
-  "era": "wood",
+  "era": "primitive",
   "behavior": "storage",
   "input_slots": 27,
   "output_slots": 0,

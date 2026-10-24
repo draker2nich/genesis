@@ -379,46 +379,6 @@
     "color": "#b07050",
     "accent": "#e8d8c0"
   },
-  "genesis:wooden_pickaxe": {
-    "pattern": "tool_pickaxe",
-    "color": "#a07840",
-    "accent": "#6b4e2e"
-  },
-  "genesis:wooden_axe": {
-    "pattern": "tool_axe",
-    "color": "#a07840",
-    "accent": "#6b4e2e"
-  },
-  "genesis:wooden_shovel": {
-    "pattern": "tool_shovel",
-    "color": "#a07840",
-    "accent": "#6b4e2e"
-  },
-  "genesis:wooden_sword": {
-    "pattern": "tool_sword",
-    "color": "#a07840",
-    "accent": "#6b4e2e"
-  },
-  "genesis:stone_pickaxe": {
-    "pattern": "tool_pickaxe",
-    "color": "#8a8a8a",
-    "accent": "#6b4e2e"
-  },
-  "genesis:stone_axe": {
-    "pattern": "tool_axe",
-    "color": "#8a8a8a",
-    "accent": "#6b4e2e"
-  },
-  "genesis:stone_shovel": {
-    "pattern": "tool_shovel",
-    "color": "#8a8a8a",
-    "accent": "#6b4e2e"
-  },
-  "genesis:stone_sword": {
-    "pattern": "tool_sword",
-    "color": "#8a8a8a",
-    "accent": "#6b4e2e"
-  },
   "genesis:iron_pickaxe": {
     "pattern": "tool_pickaxe",
     "color": "#d8d8d8",
@@ -978,5 +938,190 @@
     "pattern": "item_feather",
     "color": "#e8dcc0",
     "accent": "#7a5030"
+  },
+  "genesis:grass_tuft": {
+    "pattern": "item_grass",
+    "color": "#6a9a3a",
+    "accent": "#3e6a22"
+  },
+  "genesis:plant_fiber": {
+    "pattern": "item_fiber",
+    "color": "#a8b06a",
+    "accent": "#6e7440"
+  },
+  "genesis:rope": {
+    "pattern": "item_rope",
+    "color": "#b89a62",
+    "accent": "#7a6034"
+  },
+  "genesis:pebble": {
+    "pattern": "item_pebble",
+    "color": "#8a8a86",
+    "accent": "#5a5a58"
+  },
+  "genesis:sharp_stone": {
+    "pattern": "item_blade",
+    "color": "#9a9a96",
+    "accent": "#4e4e4c"
+  },
+  "genesis:wrapped_handle": {
+    "pattern": "item_handle",
+    "color": "#8a6a3c",
+    "accent": "#c4a46a"
+  },
+  "genesis:chopper": {
+    "pattern": "tool_chopper",
+    "color": "#8e8e8a",
+    "accent": "#8a6a3c"
+  },
+  "genesis:ember": {
+    "pattern": "item_ember",
+    "color": "#ff8a2a",
+    "accent": "#5a1e08"
+  },
+  "genesis:iron_bloom": {
+    "pattern": "item_bloom",
+    "color": "#7a6a62",
+    "accent": "#c86a2a"
+  },
+  "genesis:hot_iron_ingot": {
+    "pattern": "item_ingot",
+    "color": "#ff9a3a",
+    "accent": "#ffe0a0"
+  },
+  "genesis:pickaxe_head": {
+    "pattern": "item_head_pickaxe",
+    "color": "#c8c8cc",
+    "accent": "#5a5a60"
+  },
+  "genesis:axe_head": {
+    "pattern": "item_head_axe",
+    "color": "#c8c8cc",
+    "accent": "#5a5a60"
+  },
+  "genesis:shovel_head": {
+    "pattern": "item_head_shovel",
+    "color": "#c8c8cc",
+    "accent": "#5a5a60"
+  },
+  "genesis:hoe_head": {
+    "pattern": "item_head_hoe",
+    "color": "#c8c8cc",
+    "accent": "#5a5a60"
+  },
+  "genesis:iron_hoe": {
+    "pattern": "tool_hoe",
+    "color": "#d8d8d8",
+    "accent": "#6b4e2e"
+  },
+  "genesis:straw": {
+    "pattern": "straw",
+    "color": "#d8b85a",
+    "accent": "#a07e30"
+  },
+  "genesis:straw_side": {
+    "pattern": "straw",
+    "color": "#c8a84a",
+    "accent": "#8e6c26"
+  },
+  "genesis:farmland_top": {
+    "pattern": "farmland",
+    "color": "#5a3c24",
+    "accent": "#3e2816"
+  },
+  "genesis:furnace_chimney": {
+    "pattern": "brick",
+    "color": "#5e5e5e",
+    "accent": "#3a3a3a"
+  },
+  "genesis:clay_furnace_side": {
+    "pattern": "clay",
+    "color": "#a0785a",
+    "accent": "#7a5a42"
+  },
+  "genesis:clay_furnace_front": {
+    "pattern": "machine_front",
+    "color": "#8a6a52",
+    "accent": "#ff8a2a"
+  },
+  "genesis:forge_side": {
+    "pattern": "brick",
+    "color": "#7a5a46",
+    "accent": "#4a3428"
+  },
+  "genesis:forge_front": {
+    "pattern": "machine_front",
+    "color": "#6a4a3a",
+    "accent": "#ffaa3a"
+  },
+  "genesis:stone_anvil": {
+    "pattern": "cobble",
+    "color": "#7e7e7a",
+    "accent": "#5a5a56"
+  },
+  "genesis:cryo_glass": {
+    "pattern": "glass",
+    "color": "#a8e0f0",
+    "accent": "#5aa0c0"
+  },
+  "genesis:cryo_metal": {
+    "pattern": "machine",
+    "color": "#c0c6cc",
+    "accent": "#7a8088"
+  },
+  "genesis:lab_terminal_front": {
+    "pattern": "screen",
+    "color": "#1a2a3a",
+    "accent": "#4ad08a"
+  },
+  "genesis:lab_metal": {
+    "pattern": "machine",
+    "color": "#8a9098",
+    "accent": "#5a6068"
+  },
+  "genesis:book": {
+    "pattern": "item_book",
+    "color": "#7a2a2a",
+    "accent": "#e8d8a8"
+  },
+  "genesis:kindling_icon": {
+    "pattern": "item_kindling",
+    "color": "#8a6a3c",
+    "accent": "#5a4020"
+  },
+  "genesis:campfire_icon": {
+    "pattern": "item_kindling",
+    "color": "#8a6a3c",
+    "accent": "#ff8a2a"
+  },
+  "genesis:fence_icon": {
+    "pattern": "item_fence",
+    "color": "#b08850",
+    "accent": "#8a6a3c"
+  },
+  "genesis:slab_icon": {
+    "pattern": "item_slab",
+    "color": "#b08850",
+    "accent": "#8a6a3c"
+  },
+  "genesis:bellows_icon": {
+    "pattern": "item_bellows",
+    "color": "#8a6040",
+    "accent": "#9a7040"
+  },
+  "genesis:bed_icon": {
+    "pattern": "item_bed",
+    "color": "#d8b85a",
+    "accent": "#8a6a3c"
+  },
+  "genesis:pebbles_icon": {
+    "pattern": "item_pebble",
+    "color": "#8a8a86",
+    "accent": "#5a5a58"
+  },
+  "genesis:anvil_icon": {
+    "pattern": "item_anvil",
+    "color": "#7e7e7a",
+    "accent": "#4a4a48"
   }
 }

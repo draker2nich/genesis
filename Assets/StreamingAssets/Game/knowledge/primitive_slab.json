@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.slab",
+  "era": "primitive",
+  "order": 61,
+  "requires": [],
+  "trigger": {
+    "type": "shape",
+    "target": "genesis:plank_slab"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:plank_slab"
+}

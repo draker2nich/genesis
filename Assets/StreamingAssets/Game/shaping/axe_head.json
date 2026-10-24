@@ -1,0 +1,24 @@
+{
+  "id": "genesis:axe_head",
+  "targets": [
+    "genesis:stone_anvil",
+    "genesis:anvil"
+  ],
+  "hits": 5,
+  "outputs": [
+    {
+      "item": "genesis:axe_head",
+      "count": 1
+    }
+  ],
+  "tools": [
+    "any"
+  ],
+  "inputs": [
+    {
+      "item": "genesis:hot_iron_ingot",
+      "count": 1
+    }
+  ],
+  "rotate": false
+}

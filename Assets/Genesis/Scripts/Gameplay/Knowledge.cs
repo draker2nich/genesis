@@ -44,6 +44,22 @@ namespace Genesis.Gameplay
 
         public string EraName => Era < Eras.All.Length ? Eras.All[Era] : Eras.All[Eras.All.Length - 1];
 
+        /// <summary>Номер текущей эпохи (1 — первобытная, 2 — промышленная, 3 — мега-эпоха).</summary>
+        public int Epoch => Eras.EpochOf(Era);
+
+        /// <summary>
+        /// Квесты справочника в порядке прохождения: по эпохе, затем по order. Служебные узлы (quest: false) не входят.
+        /// </summary>
+        public List<KnowledgeNode> Quests(int epoch)
+        {
+            var list = new List<KnowledgeNode>();
+            foreach (var n in _content.Knowledge.Items)
+                if (n.Quest && Eras.EpochOf(n.EraIndex) == epoch) list.Add(n);
+            list.Sort((a, b) => a.EraIndex != b.EraIndex ? a.EraIndex.CompareTo(b.EraIndex)
+                : a.Order != b.Order ? a.Order.CompareTo(b.Order) : a.NumericId.CompareTo(b.NumericId));
+            return list;
+        }
+
         public bool IsUnlocked(KnowledgeNode n) => _unlocked.Contains(n.Id);
         public bool IsUnlocked(string nodeId) => _unlocked.Contains(nodeId);
         public IEnumerable<string> UnlockedIds => _unlocked;
@@ -156,7 +172,7 @@ namespace Genesis.Gameplay
 
         public void Write(BinaryWriter w)
         {
-            w.Write(1);
+            w.Write(2); // 2: века новой схемы эпох (первобытная, паровой, электрический, космический, квантовый)
             w.Write(Era);
             w.Write(_unlocked.Count);
             foreach (var id in _unlocked) w.Write(id);
@@ -165,8 +181,11 @@ namespace Genesis.Gameplay
         public void Read(BinaryReader r)
         {
             int ver = r.ReadInt32();
-            if (ver > 1) throw new InvalidDataException("knowledge version " + ver);
+            if (ver > 2) throw new InvalidDataException("knowledge version " + ver);
             Era = r.ReadInt32();
+            // Сохранения до эпох: дерево/камень/железо → первобытная эпоха, дальше — со сдвигом
+            if (ver < 2) Era = Eras.FromLegacyIndex(Era);
+            if (Era < 0 || Era >= Eras.All.Length) Era = 0;
             _unlocked.Clear();
             int n = r.ReadInt32();
             for (int i = 0; i < n; i++)

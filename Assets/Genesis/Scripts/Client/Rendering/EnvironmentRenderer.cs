@@ -48,6 +48,7 @@ namespace Genesis.Client.Rendering
         private static readonly int BlockLightId = Shader.PropertyToID("_GenesisBlockLight");
         private static readonly int SunDirId = Shader.PropertyToID("_GenesisSunDir");
         private static readonly int ShadowStrengthId = Shader.PropertyToID("_GenesisShadowStrength");
+        private static readonly int MinLightId = Shader.PropertyToID("_GenesisMinLight");
 
         public void Init(IGameSession session, Camera cam, long seed)
         {
@@ -208,6 +209,8 @@ namespace Genesis.Client.Rendering
             Shader.SetGlobalVector(SunDirId, sunDir);
             float shadowStrength = GameSettings.Shadows ? 0.55f * Mathf.Clamp01(sunHeight * 5f) : 0f;
             Shader.SetGlobalFloat(ShadowStrengthId, shadowStrength);
+            // Яркость из настроек: нижняя граница освещённости (ночью и в пещерах)
+            Shader.SetGlobalFloat(MinLightId, GameSettings.Brightness * 0.32f);
 
             // Атмосфера биома: туманные болота, жаркое марево пустынь, морозная дымка тундры
             UpdateBiomeAtmosphere();

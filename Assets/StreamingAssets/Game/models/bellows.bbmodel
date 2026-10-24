@@ -1,0 +1,526 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "java_block",
+  "box_uv": false
+ },
+ "name": "bellows",
+ "resolution": {
+  "width": 128,
+  "height": 128
+ },
+ "elements": [
+  {
+   "name": "bellows_0",
+   "type": "cube",
+   "uuid": "ada1d305-43d4-783a-f828-eae878d2f21a",
+   "from": [
+    1,
+    0,
+    2
+   ],
+   "to": [
+    15,
+    1,
+    14
+   ],
+   "origin": [
+    1,
+    0,
+    2
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "bellows_1",
+   "type": "cube",
+   "uuid": "759d59d9-fcea-1614-1c49-f84ed38c38db",
+   "from": [
+    2,
+    1,
+    3
+   ],
+   "to": [
+    14,
+    5,
+    13
+   ],
+   "origin": [
+    2,
+    1,
+    3
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "bellows_2",
+   "type": "cube",
+   "uuid": "1d09780b-9b76-c554-f52e-fab4ee915228",
+   "from": [
+    1,
+    5,
+    2
+   ],
+   "to": [
+    15,
+    6,
+    14
+   ],
+   "origin": [
+    1,
+    5,
+    2
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "bellows_3",
+   "type": "cube",
+   "uuid": "d3975d9c-77a2-77e9-5f45-83ab56c2d0cf",
+   "from": [
+    14,
+    2,
+    7
+   ],
+   "to": [
+    16,
+    4,
+    9
+   ],
+   "origin": [
+    14,
+    2,
+    7
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      48,
+      0,
+      64,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      48,
+      0,
+      64,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      48,
+      0,
+      64,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      48,
+      0,
+      64,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      48,
+      0,
+      64,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      48,
+      0,
+      64,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "bellows_4",
+   "type": "cube",
+   "uuid": "1f8a09d8-ec08-5d0c-ca93-97f6dc3cb358",
+   "from": [
+    0,
+    5,
+    7
+   ],
+   "to": [
+    2,
+    6,
+    9
+   ],
+   "origin": [
+    0,
+    5,
+    7
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      64,
+      0,
+      80,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      64,
+      0,
+      80,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      64,
+      0,
+      80,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      64,
+      0,
+      80,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      64,
+      0,
+      80,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      64,
+      0,
+      80,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "bellows_5",
+   "type": "cube",
+   "uuid": "10c3b4b6-0130-7efe-8465-dff1f5071edc",
+   "from": [
+    0,
+    0,
+    7
+   ],
+   "to": [
+    2,
+    1,
+    9
+   ],
+   "origin": [
+    0,
+    0,
+    7
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      80,
+      0,
+      96,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      80,
+      0,
+      96,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      80,
+      0,
+      96,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      80,
+      0,
+      96,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      80,
+      0,
+      96,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      80,
+      0,
+      96,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  }
+ ],
+ "outliner": [
+  "ada1d305-43d4-783a-f828-eae878d2f21a",
+  "759d59d9-fcea-1614-1c49-f84ed38c38db",
+  "1d09780b-9b76-c554-f52e-fab4ee915228",
+  "d3975d9c-77a2-77e9-5f45-83ab56c2d0cf",
+  "1f8a09d8-ec08-5d0c-ca93-97f6dc3cb358",
+  "10c3b4b6-0130-7efe-8465-dff1f5071edc"
+ ],
+ "textures": [
+  {
+   "name": "bellows.png",
+   "uuid": "2da64739-8597-80b1-6580-4ddf9767c8f9",
+   "width": 128,
+   "height": 128,
+   "uv_width": 128,
+   "uv_height": 128,
+   "source": "data:image/png;base64,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"
+  }
+ ],
+ "animations": []
+}

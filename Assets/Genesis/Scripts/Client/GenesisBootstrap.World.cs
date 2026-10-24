@@ -139,11 +139,19 @@ namespace Genesis.Client
 
             var hand = Spawn("HeldItem").AddComponent<HeldItemRenderer>();
             hand.Init(_ctx, mats.Opaque, cam);
+            var offHand = Spawn("HeldItemLeft").AddComponent<HeldItemRenderer>();
+            offHand.LeftHand = true;
+            offHand.Init(_ctx, mats.Opaque, cam);
+
+            // Предметы на полу и на верстаке, поворот блока в режиме создания
+            var drops = FindObjectOfType<DroppedItemRenderer>();
+            if (drops != null) drops.Ctx = _ctx;
 
             var controller = gameObject.AddComponent<PlayerController>();
             controller.Init(_ctx, cam, highlight);
             controller.Effects = fx;
             controller.Hand = hand;
+            controller.OffHand = offHand;
             _components.Add(controller);
 
             var hud = gameObject.AddComponent<GameHud>();

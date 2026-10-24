@@ -1,0 +1,9 @@
+{
+  "id": "genesis:chopper_repair",
+  "a": "genesis:chopper",
+  "b": "genesis:rope",
+  "action": "repair",
+  "seconds": 1.5,
+  "keep_a": true,
+  "repair": true
+}

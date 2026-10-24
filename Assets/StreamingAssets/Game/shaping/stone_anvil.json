@@ -1,0 +1,14 @@
+{
+  "id": "genesis:stone_anvil",
+  "targets": [
+    "genesis:cobblestone"
+  ],
+  "hits": 8,
+  "outputs": [],
+  "tools": [
+    "universal",
+    "pickaxe"
+  ],
+  "result_block": "genesis:stone_anvil",
+  "icon": "genesis:stone_anvil"
+}

@@ -6,5 +6,6 @@
     "top": "genesis:spruce_log_top",
     "bottom": "genesis:spruce_log_top",
     "side": "genesis:spruce_log"
-  }
+  },
+  "fellable": true
 }

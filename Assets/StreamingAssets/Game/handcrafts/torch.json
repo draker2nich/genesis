@@ -1,0 +1,11 @@
+{
+  "id": "genesis:torch",
+  "a": "genesis:stick",
+  "b": "genesis:ember",
+  "action": "light",
+  "seconds": 1.0,
+  "output": {
+    "item": "genesis:torch",
+    "count": 2
+  }
+}

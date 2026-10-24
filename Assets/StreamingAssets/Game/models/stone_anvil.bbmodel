@@ -1,0 +1,277 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "java_block",
+  "box_uv": false
+ },
+ "name": "stone_anvil",
+ "resolution": {
+  "width": 128,
+  "height": 128
+ },
+ "elements": [
+  {
+   "name": "stone_anvil_0",
+   "type": "cube",
+   "uuid": "1469d995-6075-fb94-2afc-a352dc13bf04",
+   "from": [
+    3,
+    0,
+    3
+   ],
+   "to": [
+    13,
+    4,
+    13
+   ],
+   "origin": [
+    3,
+    0,
+    3
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "stone_anvil_1",
+   "type": "cube",
+   "uuid": "a7fe277d-a0a5-79a8-0a66-825ac8e6ee93",
+   "from": [
+    5,
+    4,
+    5
+   ],
+   "to": [
+    11,
+    9,
+    11
+   ],
+   "origin": [
+    5,
+    4,
+    5
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      16,
+      0,
+      32,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  },
+  {
+   "name": "stone_anvil_2",
+   "type": "cube",
+   "uuid": "b70b014a-33d0-c8d1-8aa0-f48d16618b47",
+   "from": [
+    1,
+    9,
+    3
+   ],
+   "to": [
+    15,
+    13,
+    13
+   ],
+   "origin": [
+    1,
+    9,
+    3
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      32,
+      0,
+      48,
+      16
+     ],
+     "texture": 0
+    }
+   },
+   "inflate": 0
+  }
+ ],
+ "outliner": [
+  "1469d995-6075-fb94-2afc-a352dc13bf04",
+  "a7fe277d-a0a5-79a8-0a66-825ac8e6ee93",
+  "b70b014a-33d0-c8d1-8aa0-f48d16618b47"
+ ],
+ "textures": [
+  {
+   "name": "stone_anvil.png",
+   "uuid": "5a6818cf-be45-e88d-9c6a-833753747fbb",
+   "width": 128,
+   "height": 128,
+   "uv_width": 128,
+   "uv_height": 128,
+   "source": "data:image/png;base64,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"
+  }
+ ],
+ "animations": []
+}

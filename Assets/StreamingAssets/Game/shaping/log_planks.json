@@ -1,0 +1,20 @@
+{
+  "id": "genesis:log_planks",
+  "targets": [
+    "genesis:oak_log",
+    "genesis:birch_log",
+    "genesis:spruce_log",
+    "genesis:dead_log"
+  ],
+  "hits": 4,
+  "outputs": [
+    {
+      "item": "genesis:planks",
+      "count": 4
+    }
+  ],
+  "tools": [
+    "universal",
+    "axe"
+  ]
+}

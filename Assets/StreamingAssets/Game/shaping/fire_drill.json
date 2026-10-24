@@ -1,0 +1,19 @@
+{
+  "id": "genesis:fire_drill",
+  "targets": [
+    "genesis:planks"
+  ],
+  "hits": 8,
+  "outputs": [
+    {
+      "item": "genesis:ember",
+      "count": 1
+    }
+  ],
+  "item": "genesis:stick",
+  "mode": "hold",
+  "interval": 0.5,
+  "rotate": false,
+  "consume_block": false,
+  "wear": 0
+}

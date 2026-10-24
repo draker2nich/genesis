@@ -397,6 +397,37 @@ namespace Genesis.World
                         chunk.SetRaw(idx, _rubble); // бетонная оболочка, только под землёй
                 }
             }
+            DecorateLab(chunk, ox, oy, oz);
+        }
+
+        /// <summary>Место справочника в лаборатории (на столе справа от криокамеры игрока).</summary>
+        public Int3 HandbookPos => new Int3(3, BunkerFloorY + 2, 1);
+
+        /// <summary>
+        /// Криолаборатория: игрок — последний человек на Земле — выходит из открытой криокамеры. Вдоль задней стены —
+        /// капсулы (остальные мертвы), справа стол со справочником, слева терминал, под потолком аварийные лампы.
+        /// </summary>
+        private void DecorateLab(Chunk chunk, int ox, int oy, int oz)
+        {
+            int f = BunkerFloorY + 1; // первый блок над полом
+            void Set(int x, int y, int z, ushort id)
+            {
+                if (id == _air) return;
+                Put(chunk, ox, oy, oz, x, y, z, id, false);
+            }
+            // Капсулы у задней стены (z = -4): своя (x = -1) — открытая
+            for (int x = -3; x <= 3; x += 2)
+            {
+                Set(x, f, -4, x == -1 ? _capsuleOpen : _capsule);
+                Set(x, f + 1, -4, _capsuleTop);
+            }
+            Set(HandbookPos.X, f, HandbookPos.Z, _labTable);
+            Set(HandbookPos.X, HandbookPos.Y, HandbookPos.Z, _handbook);
+            Set(-4, f, 1, _terminal);
+            Set(-3, f + 3, -3, _lamp);
+            Set(3, f + 3, -3, _lamp);
+            Set(-3, f + 3, 3, _lamp);
+            Set(3, f + 3, 3, _lamp);
         }
     }
 }

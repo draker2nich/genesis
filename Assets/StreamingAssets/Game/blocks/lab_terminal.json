@@ -1,0 +1,12 @@
+{
+  "id": "genesis:lab_terminal",
+  "hardness": 4,
+  "tool": "pickaxe",
+  "drop": "none",
+  "light": 5,
+  "textures": {
+    "all": "genesis:lab_metal",
+    "front": "genesis:lab_terminal_front"
+  },
+  "orientable": true
+}

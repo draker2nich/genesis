@@ -259,8 +259,8 @@ namespace Genesis.Tests
             Assert.AreEqual(TestContent.Block("cobblestone"), server.World.GetBlock(wall));
             Assert.AreEqual(9, player.Inventory[0].Count);
 
-            // Булыжник требует кирку (harvest_tier 1): берём деревянную
-            player.Inventory[1] = new ItemStack(TestContent.Item("wooden_pickaxe"), 1);
+            // Булыжник требует инструмент (harvest_tier 1): берём рубило
+            player.Inventory[1] = new ItemStack(TestContent.Item("chopper"), 1);
             player.SelectedSlot = 1;
             Assert.IsTrue(server.TryBreakBlock(player, wall));
             Assert.AreEqual(0, server.World.GetBlock(wall));

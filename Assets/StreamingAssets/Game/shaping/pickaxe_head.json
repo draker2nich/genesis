@@ -1,0 +1,24 @@
+{
+  "id": "genesis:pickaxe_head",
+  "targets": [
+    "genesis:stone_anvil",
+    "genesis:anvil"
+  ],
+  "hits": 6,
+  "outputs": [
+    {
+      "item": "genesis:pickaxe_head",
+      "count": 1
+    }
+  ],
+  "tools": [
+    "any"
+  ],
+  "inputs": [
+    {
+      "item": "genesis:hot_iron_ingot",
+      "count": 1
+    }
+  ],
+  "rotate": false
+}

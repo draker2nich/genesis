@@ -2,6 +2,13 @@
   "id": "genesis:birch_leaves",
   "render": "cutout",
   "hardness": 0.2,
-  "drop": "genesis:stick",
-  "tint": "foliage"
+  "tint": "foliage",
+  "drops": [
+    {
+      "item": "genesis:stick",
+      "count": 1,
+      "chance": 0.3
+    }
+  ],
+  "foliage": true
 }

@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.tool",
+  "era": "primitive",
+  "order": 40,
+  "requires": [],
+  "trigger": {
+    "type": "handcraft",
+    "target": "genesis:chopper"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:chopper"
+}

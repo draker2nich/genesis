@@ -72,7 +72,7 @@ namespace Genesis.World
         /// Версия алгоритма генерации. Увеличивать при любом изменении, меняющем результат: клиент коопа
         /// генерирует нетронутые чанки сам, и разные версии дали бы разный мир (хост отклонит такого клиента).
         /// </summary>
-        public const int Version = 3;
+        public const int Version = 4; // 4: криолаборатория в бункере, галька на поверхности
 
         public readonly long Seed;
         private const int Sea = WorldConstants.SeaLevel;
@@ -87,7 +87,8 @@ namespace Genesis.World
         private readonly ushort _air, _bedrock, _stone, _dirt, _grass, _deadGrass, _sand, _gravel, _clay,
             _ash, _snow, _water, _log, _deadLog, _leaves, _ruinBricks, _rubble, _quartz, _berryBush, _mushroom,
             _birchLog, _birchLeaves, _spruceLog, _spruceLeaves, _tallGrass, _fern, _flowerRed, _flowerYellow, _flowerBlue,
-            _deadBush, _cactus, _redSand, _sandstone, _mud, _ice, _mossyCobble, _cobble;
+            _deadBush, _cactus, _redSand, _sandstone, _mud, _ice, _mossyCobble, _cobble,
+            _pebbles, _capsule, _capsuleTop, _capsuleOpen, _labTable, _handbook, _terminal, _lamp;
         private readonly ushort[] _terracottaBands;
 
         public int BunkerFloorY { get; }
@@ -159,6 +160,14 @@ namespace Genesis.World
             _mud = Or(B("mud"), _dirt);
             _ice = Or(B("ice"), _water);
             _mossyCobble = Or(B("mossy_cobblestone"), _cobble);
+            _pebbles = B("pebbles");
+            _capsule = B("cryo_capsule");
+            _capsuleTop = B("cryo_capsule_top");
+            _capsuleOpen = Or(B("cryo_capsule_open"), _capsule);
+            _labTable = B("lab_table");
+            _handbook = B("handbook");
+            _terminal = B("lab_terminal");
+            _lamp = B("lamp");
             ushort t = Or(B("terracotta"), _clay), tr = Or(B("terracotta_red"), t), tw = Or(B("terracotta_white"), t), tb = Or(B("terracotta_brown"), t);
             _terracottaBands = new[] { t, t, tr, t, tw, t, tb, tb, t, tr, tr, t, tw, t, t, tb };
 
@@ -174,7 +183,7 @@ namespace Genesis.World
 
             int h0 = Column(0, 0).Height;
             BunkerFloorY = Math.Max(h0 - 10, WorldConstants.MinY + 12);
-            SpawnPoint = new Int3(0, BunkerFloorY + 1, 0);
+            SpawnPoint = new Int3(-1, BunkerFloorY + 1, -2); // перед открытой криокамерой
         }
 
         private ushort Or(ushort a, ushort fallback) => a == _air ? fallback : a;

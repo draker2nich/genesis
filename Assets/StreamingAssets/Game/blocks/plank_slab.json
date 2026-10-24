@@ -1,0 +1,11 @@
+{
+  "id": "genesis:plank_slab",
+  "render": "cutout",
+  "hardness": 1.0,
+  "tool": "axe",
+  "model": "genesis:plank_slab",
+  "textures": {
+    "all": "genesis:slab_icon",
+    "top": "genesis:planks"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.workbench",
+  "era": "primitive",
+  "order": 62,
+  "requires": [],
+  "trigger": {
+    "type": "build",
+    "target": "genesis:workbench"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:workbench"
+}

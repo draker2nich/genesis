@@ -1,0 +1,9 @@
+{
+  "id": "genesis:coat_furnace",
+  "held": "genesis:clay",
+  "targets": [
+    "genesis:stone_furnace"
+  ],
+  "uses": 4,
+  "result_block": "genesis:clay_furnace"
+}

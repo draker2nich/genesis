@@ -116,8 +116,23 @@ namespace Genesis.Data
         [JsonProperty("model")] public string Model;
         /// <summary>Окраска по биому: "grass" (верх полностью, бока наполовину) или "foliage" (листва, трава).</summary>
         [JsonProperty("tint")] public string Tint;
+        /// <summary>
+        /// Дроп с шансами (вместо drop/drop_count): каждый элемент выпадает с вероятностью chance.
+        /// Листва даёт палки, гравий — гальку, трава — траву.
+        /// </summary>
+        [JsonProperty("drops")] public List<ItemAmount> Drops;
+        /// <summary>Ствол дерева: срубленный топором или рубилом, падает целиком вместе со всем деревом.</summary>
+        [JsonProperty("fellable")] public bool Fellable;
+        /// <summary>Листва дерева: осыпается вместе со срубленным стволом.</summary>
+        [JsonProperty("foliage")] public bool Foliage;
+        /// <summary>
+        /// Действие по ПКМ без предмета-инструмента: "sleep" (лежанка), "handbook" (справочник в лаборатории).
+        /// </summary>
+        [JsonProperty("action")] public string Action;
 
         // ---- заполняется при загрузке
+        /// <summary>Блок — продолжение многоблочной машины (верх печки, вторая половина верстака): id машины.</summary>
+        [JsonIgnore] public string PartOf;
         [JsonIgnore] public ushort NumericId;
         [JsonIgnore] public string MachineId;
         /// <summary>Индексы слоёв текстур по граням (порядок Direction) + [6] = front.</summary>
@@ -148,9 +163,17 @@ namespace Genesis.Data
         [JsonProperty("storage_cell")] public StorageCellSpec StorageCell;
         /// <summary>Беспроводной терминал ME (бесконечная дальность, привязка к контроллеру).</summary>
         [JsonProperty("me_wireless")] public bool MeWireless;
+        /// <summary>
+        /// Предмет «живёт» ограниченное время (тлеющий уголёк, раскалённый слиток): через decay_seconds
+        /// превращается в decay_to (или исчезает, если не задан). Время хранится в Meta стака.
+        /// </summary>
+        [JsonProperty("decay_seconds")] public int DecaySeconds;
+        [JsonProperty("decay_to")] public string DecayTo;
 
         [JsonIgnore] public int NumericId;
         [JsonIgnore] public int TextureLayer = -1;
+        [JsonIgnore] public int DecayToId = -1;
+        [JsonIgnore] public bool Decays => DecaySeconds > 0;
         [JsonIgnore] public bool IsFuel => FuelTicks > 0;
         [JsonIgnore] public bool IsFood => Food > 0;
     }
@@ -164,13 +187,20 @@ namespace Genesis.Data
 
     public sealed class ToolSpec
     {
-        /// <summary>pickaxe | axe | shovel | sword</summary>
+        /// <summary>
+        /// pickaxe | axe | shovel | sword | hoe | universal. Универсальный (рубило) подходит ко всему,
+        /// но работает медленнее специализированного.
+        /// </summary>
         [JsonProperty("type")] public string Type;
         [JsonProperty("tier")] public int Tier = 1;
         /// <summary>Множитель скорости добычи подходящих блоков.</summary>
         [JsonProperty("speed")] public float Speed = 2f;
         [JsonProperty("durability")] public int Durability = 60;
         [JsonProperty("damage")] public float Damage = 1f;
+
+        [JsonIgnore] public bool IsUniversal => Type == "universal";
+        /// <summary>Подходит для рубки деревьев (валит дерево целиком).</summary>
+        [JsonIgnore] public bool CanFell => Type == "axe" || Type == "universal";
     }
 
     // ---------------------------------------------------------------- Fluids
@@ -256,11 +286,33 @@ namespace Genesis.Data
         /// Рецепты генерируются при загрузке.
         /// </summary>
         [JsonProperty("crafts_of")] public string CraftsOf;
+        /// <summary>
+        /// Размер машины в блоках [ширина, высота, глубина]: ширина — вправо от «лица», высота — вверх,
+        /// глубина — назад. Верстак 2×1, печка высотой в два блока. Остальные клетки — блоки-продолжения.
+        /// </summary>
+        [JsonProperty("size")] public int[] Size;
+        /// <summary>Текстуры блоков-продолжений (иначе — как у машины).</summary>
+        [JsonProperty("part_textures")] public BlockTextures PartTextures;
+        /// <summary>Модель блоков-продолжений.</summary>
+        [JsonProperty("part_model")] public string PartModel;
+        /// <summary>
+        /// Рабочая поверхность: предметы кладут на неё ПКМ (во входные слоты) и обрабатывают в режиме создания
+        /// (верстак, наковальня).
+        /// </summary>
+        [JsonProperty("surface")] public bool Surface;
+        /// <summary>Действие блока машины по ПКМ (sleep — лежанка).</summary>
+        [JsonProperty("action")] public string Action;
         /// <summary>Устройство ME-сети (контроллер, привод, терминал, шины, провайдер).</summary>
         [JsonIgnore] public bool IsMeDevice => Behavior != null && Behavior.StartsWith("me_", StringComparison.Ordinal);
 
         [JsonIgnore] public int NumericId;
         [JsonIgnore] public SideType[] DefaultSideConfig = new SideType[6];
+        [JsonIgnore] public int Width => Size != null && Size.Length > 0 ? Math.Max(1, Size[0]) : 1;
+        [JsonIgnore] public int Height => Size != null && Size.Length > 1 ? Math.Max(1, Size[1]) : 1;
+        [JsonIgnore] public int Depth => Size != null && Size.Length > 2 ? Math.Max(1, Size[2]) : 1;
+        [JsonIgnore] public bool IsMultiBlock => Width * Height * Depth > 1;
+        /// <summary>Блок-продолжение (для многоблочных машин).</summary>
+        [JsonIgnore] public string PartBlock;
 
         [JsonIgnore] public int EnergyBuffer => Energy.Buffer > 0 ? Energy.Buffer : Math.Max(Energy.PerTick * 40, 1);
         /// <summary>Участвует ли машина в электросети.</summary>
@@ -383,9 +435,12 @@ namespace Genesis.Data
 
     public sealed class KnowledgeTrigger
     {
-        /// <summary>start | craft | place | obtain</summary>
+        /// <summary>
+        /// start | craft (крафт на станции/сетке) | place | obtain | handcraft (в двух руках) | shape (режим создания)
+        /// | build (собрать конструкцию) | use (предмет по блоку) | event (особое событие: handbook, sleep).
+        /// </summary>
         [JsonProperty("type")] public string Type = "start";
-        /// <summary>id крафта / блока / предмета.</summary>
+        /// <summary>id крафта / блока / предмета / операции / события.</summary>
         [JsonProperty("target")] public string Target;
     }
 
@@ -412,21 +467,50 @@ namespace Genesis.Data
         [JsonProperty("icon")] public string Icon;
         /// <summary>Колонка/строка в графе (для отображения).</summary>
         [JsonProperty("row")] public int Row;
+        /// <summary>Порядок квеста в справочнике (внутри эпохи).</summary>
+        [JsonProperty("order")] public int Order;
+        /// <summary>Квест показывается в справочнике (служебные узлы — нет).</summary>
+        [JsonProperty("quest")] public bool Quest = true;
 
         [JsonIgnore] public int NumericId;
         [JsonIgnore] public int EraIndex;
     }
 
+    /// <summary>
+    /// Эпохи и века. I — первобытная эпоха (без деления на века), II — промышленная (паровой и электрический
+    /// век), III — мега-эпоха (космический и квантовый). Прогресс мира хранит индекс века из All.
+    /// </summary>
     public static class Eras
     {
-        public static readonly string[] All = { "wood", "stone", "iron", "steam", "electric", "space", "quantum" };
+        public static readonly string[] All = { "primitive", "steam", "electric", "space", "quantum" };
+
+        /// <summary>Номер эпохи (1..3) для каждого века из All.</summary>
+        private static readonly int[] EpochOfEra = { 1, 2, 2, 3, 3 };
+
+        /// <summary>Старые века (дерево, камень, железо) — теперь первобытная эпоха.</summary>
+        public static readonly string[] Legacy = { "wood", "stone", "iron", "steam", "electric", "space", "quantum" };
 
         public static int IndexOf(string era)
         {
             for (int i = 0; i < All.Length; i++)
                 if (All[i] == era) return i;
+            if (era == "wood" || era == "stone" || era == "iron") return 0;
             return -1;
         }
+
+        /// <summary>Индекс века из сохранения старого формата (7 веков) → индекс в All.</summary>
+        public static int FromLegacyIndex(int legacy)
+        {
+            if (legacy < 0) return 0;
+            if (legacy >= Legacy.Length) return All.Length - 1;
+            return IndexOf(Legacy[legacy]);
+        }
+
+        public static int EpochOf(int eraIndex) =>
+            eraIndex >= 0 && eraIndex < EpochOfEra.Length ? EpochOfEra[eraIndex] : EpochOfEra[EpochOfEra.Length - 1];
+
+        /// <summary>Эпоха делится на века (кроме первобытной).</summary>
+        public static bool HasCenturies(int epoch) => epoch > 1;
     }
 
     // ---------------------------------------------------------------- Enemies

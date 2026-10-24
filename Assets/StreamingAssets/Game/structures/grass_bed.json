@@ -1,0 +1,18 @@
+{
+  "id": "genesis:grass_bed",
+  "layers": [
+    [
+      "HH"
+    ]
+  ],
+  "key": {
+    "H": "genesis:hay_bundle"
+  },
+  "result": "genesis:grass_bed",
+  "result_at": [
+    0,
+    0,
+    0
+  ],
+  "result_facing": "north"
+}

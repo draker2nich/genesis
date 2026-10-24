@@ -1,0 +1,23 @@
+{
+  "id": "genesis:bloom_to_ingot",
+  "targets": [
+    "genesis:stone_anvil",
+    "genesis:anvil"
+  ],
+  "hits": 6,
+  "outputs": [
+    {
+      "item": "genesis:iron_ingot",
+      "count": 1
+    }
+  ],
+  "tools": [
+    "any"
+  ],
+  "inputs": [
+    {
+      "item": "genesis:iron_bloom",
+      "count": 1
+    }
+  ]
+}

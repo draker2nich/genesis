@@ -1,0 +1,9 @@
+{
+  "id": "genesis:lab_table",
+  "render": "cutout",
+  "unbreakable": true,
+  "model": "genesis:lab_table",
+  "textures": {
+    "all": "genesis:lab_metal"
+  }
+}

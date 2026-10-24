@@ -17,9 +17,12 @@ namespace Genesis.Gameplay
             return content.Item(held.Item)?.Tool;
         }
 
-        /// <summary>Подходит ли инструмент по типу к блоку.</summary>
+        /// <summary>
+        /// Подходит ли инструмент по типу к блоку. Рубило (universal) подходит ко всему: им копают, рубят и дробят,
+        /// но медленнее, чем специализированным инструментом (скорость задаётся в его описании).
+        /// </summary>
         public static bool IsCorrectTool(BlockDef block, ToolSpec tool) =>
-            tool != null && block.Tool != null && tool.Type == block.Tool;
+            tool != null && block.Tool != null && (tool.Type == block.Tool || tool.IsUniversal);
 
         /// <summary>Будет ли дроп: блоку с harvest_tier нужен подходящий инструмент не ниже уровня.</summary>
         public static bool CanHarvest(BlockDef block, ToolSpec tool)

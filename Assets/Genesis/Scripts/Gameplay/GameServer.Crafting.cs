@@ -11,7 +11,9 @@ namespace Genesis.Gameplay
     {
         Inventory = 0,
         Grid = 1,
-        Result = 2
+        Result = 2,
+        /// <summary>Слот левой руки.</summary>
+        Offhand = 3
     }
 
     /// <summary>
@@ -70,7 +72,7 @@ namespace Genesis.Gameplay
                 CraftFromGrid(p, shift, false, -1);
                 return;
             }
-            var inv = container == SlotContainer.Grid ? p.CraftGrid : p.Inventory;
+            var inv = container == SlotContainer.Grid ? p.CraftGrid : (container == SlotContainer.Offhand ? p.Offhand : p.Inventory);
             if (slot < 0 || slot >= inv.Size) return;
             if (container == SlotContainer.Grid && (slot % 3 >= p.GridSize || slot / 3 >= p.GridSize)) return;
 
@@ -134,11 +136,12 @@ namespace Genesis.Gameplay
         /// <summary>Shift-клик: из сетки — в инвентарь; в инвентаре — между хотбаром и рюкзаком.</summary>
         private void QuickMove(PlayerState p, SlotContainer container, int slot)
         {
-            if (container == SlotContainer.Grid)
+            if (container == SlotContainer.Grid || container == SlotContainer.Offhand)
             {
-                var st = p.CraftGrid[slot];
+                var src = container == SlotContainer.Grid ? p.CraftGrid : p.Offhand;
+                var st = src[slot];
                 int put = p.Inventory.Insert(st);
-                p.CraftGrid[slot] = st.WithCount(st.Count - put);
+                src[slot] = st.WithCount(st.Count - put);
                 return;
             }
             var inv = p.Inventory;
@@ -404,14 +407,15 @@ namespace Genesis.Gameplay
 
         // ============================================================ Выброс предметов
 
-        /// <summary>Выбросить предметы перед игроком (Q, клик мимо окна).</summary>
+        /// <summary>Выбросить предметы перед игроком (Z, клик мимо окна). Выброшенное не исчезает со временем.</summary>
         public void DropFromPlayer(PlayerState p, ItemStack st, bool thrown = true)
         {
             if (st.IsEmpty) return;
             var dir = p.LookDirection;
             var pos = new Vec3(p.Position.X + dir.X * 0.4f, p.Position.Y + PlayerPhysics.EyeHeight - 0.35f, p.Position.Z + dir.Z * 0.4f);
             var vel = thrown ? new Vec3(dir.X * 5f, dir.Y * 5f + 2f, dir.Z * 5f) : new Vec3(dir.X, 1.5f, dir.Z);
-            Drops.Spawn(st, pos, vel, 40);
+            var d = Drops.Spawn(st, pos, vel, 40);
+            if (d != null) d.Persistent = true;
         }
 
         /// <summary>Выбросить из слота инвентаря: один предмет или весь стак.</summary>

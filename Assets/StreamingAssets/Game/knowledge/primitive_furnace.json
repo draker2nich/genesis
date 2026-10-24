@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.furnace",
+  "era": "primitive",
+  "order": 80,
+  "requires": [],
+  "trigger": {
+    "type": "build",
+    "target": "genesis:furnace"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:stone_furnace"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.fence",
+  "era": "primitive",
+  "order": 60,
+  "requires": [],
+  "trigger": {
+    "type": "shape",
+    "target": "genesis:plank_fence"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:fence"
+}

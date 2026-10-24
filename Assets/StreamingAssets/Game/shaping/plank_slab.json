@@ -1,0 +1,17 @@
+{
+  "id": "genesis:plank_slab",
+  "targets": [
+    "genesis:planks"
+  ],
+  "hits": 2,
+  "outputs": [
+    {
+      "item": "genesis:plank_slab",
+      "count": 2
+    }
+  ],
+  "tools": [
+    "universal",
+    "axe"
+  ]
+}

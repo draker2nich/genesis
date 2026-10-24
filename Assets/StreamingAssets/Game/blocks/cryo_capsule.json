@@ -1,0 +1,12 @@
+{
+  "id": "genesis:cryo_capsule",
+  "render": "cutout",
+  "hardness": 4,
+  "tool": "pickaxe",
+  "drop": "none",
+  "model": "genesis:cryo_capsule",
+  "light": 4,
+  "textures": {
+    "all": "genesis:cryo_metal"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "genesis:campfire",
+  "render": "cutout",
+  "solid": false,
+  "hardness": 0.5,
+  "light": 14,
+  "model": "genesis:campfire",
+  "drop": "none",
+  "textures": {
+    "all": "genesis:campfire_icon"
+  }
+}

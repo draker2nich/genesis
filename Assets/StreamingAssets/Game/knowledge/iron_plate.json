@@ -1,6 +1,6 @@
 {
   "id": "genesis:iron.plate",
-  "era": "iron",
+  "era": "primitive",
   "requires": [
     "genesis:iron.anvil"
   ],
@@ -17,5 +17,6 @@
   },
   "milestone": false,
   "row": 0,
-  "icon": "genesis:iron_plate"
+  "icon": "genesis:iron_plate",
+  "order": 161
 }

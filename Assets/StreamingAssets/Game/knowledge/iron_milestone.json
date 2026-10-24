@@ -1,6 +1,6 @@
 {
   "id": "genesis:iron.milestone",
-  "era": "iron",
+  "era": "primitive",
   "requires": [
     "genesis:iron.boiler"
   ],
@@ -14,5 +14,6 @@
   },
   "milestone": true,
   "row": 3,
-  "icon": "genesis:steam_boiler"
+  "icon": "genesis:steam_boiler",
+  "order": 180
 }

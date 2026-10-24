@@ -1,8 +1,8 @@
 {
   "id": "genesis:workbench",
-  "era": "wood",
+  "era": "primitive",
   "behavior": "station",
-  "input_slots": 0,
+  "input_slots": 4,
   "output_slots": 0,
   "hardness": 1.5,
   "textures": {
@@ -12,5 +12,12 @@
   },
   "anim": "none",
   "model": "genesis:workbench",
-  "craft_grid": 3
+  "craft_grid": 3,
+  "surface": true,
+  "size": [
+    2,
+    1,
+    1
+  ],
+  "part_model": "genesis:workbench"
 }

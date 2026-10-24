@@ -288,6 +288,11 @@ namespace Genesis.World
             if (Math.Abs(x) < 8 && z > -8 && z < 50) return _air; // вход в бункер
             if (y <= Sea) return _air;
             double r = Hash.Unit(Hash.Coord(Seed ^ 0xF10A, x, z));
+            // Галька — первый камень для острия. У выхода из бункера её больше, чтобы было с чего начать
+            double pebble = Hash.Unit(Hash.Coord(Seed ^ 0x9EB1, x, z));
+            bool nearExit = Math.Abs(x) < 10 && z >= 50 && z < 62;
+            bool rocky = below == _gravel || below == _stone || below == _sand || below == _cobble || below == _dirt;
+            if (_pebbles != _air && pebble < (nearExit ? 0.06 : (rocky ? 0.03 : 0.006))) return _pebbles;
             bool onGrass = below == _grass;
             bool onSand = below == _sand || below == _redSand || below == _ash || below == _deadGrass || below == _terracottaBands[0];
 

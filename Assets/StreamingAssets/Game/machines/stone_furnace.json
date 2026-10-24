@@ -1,6 +1,6 @@
 {
   "id": "genesis:stone_furnace",
-  "era": "stone",
+  "era": "primitive",
   "behavior": "furnace",
   "tier": 1,
   "energy": {
@@ -28,5 +28,14 @@
     "front": "genesis:furnace_front",
     "top": "genesis:furnace_top"
   },
-  "anim": "none"
+  "anim": "none",
+  "size": [
+    1,
+    2,
+    1
+  ],
+  "part_textures": {
+    "all": "genesis:furnace_chimney",
+    "top": "genesis:furnace_top"
+  }
 }

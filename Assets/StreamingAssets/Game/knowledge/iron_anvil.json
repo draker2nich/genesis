@@ -1,6 +1,6 @@
 {
   "id": "genesis:iron.anvil",
-  "era": "iron",
+  "era": "primitive",
   "requires": [],
   "trigger": {
     "type": "start"
@@ -13,5 +13,7 @@
   },
   "milestone": false,
   "row": 0,
-  "icon": "genesis:anvil"
+  "icon": "genesis:anvil",
+  "order": 160,
+  "quest": false
 }

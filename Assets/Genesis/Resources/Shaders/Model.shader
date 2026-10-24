@@ -36,6 +36,8 @@ Shader "Genesis/Model"
         float4 _GenesisSunDir;
         float _GenesisShadowStrength;
         float4 _GenesisHandLight;
+        // Яркость из настроек: нижняя граница освещённости (ночью и в пещерах не кромешная тьма)
+        float _GenesisMinLight;
 
         half FaceShade(float3 n)
         {
@@ -105,6 +107,7 @@ Shader "Genesis/Model"
                 half shade = lerp(1.0, shadow * lerp(0.8, 1.0, ndl), _GenesisShadowStrength * day * sky);
                 half skyL = pow(sky, 1.6) * lerp(0.09, 1.0, day);
                 half3 light = max(skyL * _GenesisSkyLight.rgb * shade, pow(blk, 1.35) * _GenesisBlockLight.rgb) + 0.018;
+                light = max(light, _GenesisMinLight);
                 light = lerp(light, 1.65, _InstLight.w);
 
                 half4 c = albedo;
@@ -219,6 +222,8 @@ Shader "Genesis/Model"
             float4 _GenesisSkyLight;
             float4 _GenesisBlockLight;
             float4 _GenesisHandLight;
+            // Яркость из настроек: нижняя граница освещённости (ночью и в пещерах не кромешная тьма)
+            float _GenesisMinLight;
 
             struct appdata { float4 vertex : POSITION; float3 normal : NORMAL; float2 uv : TEXCOORD0; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 n : TEXCOORD1; UNITY_FOG_COORDS(2) float3 wpos : TEXCOORD3; };
@@ -246,6 +251,7 @@ Shader "Genesis/Model"
                 float hl = length(hd);
                 half blk = max(_InstLight.y, saturate((_GenesisHandLight.w - hl) / 15.0) * (0.55 + 0.45 * saturate(dot(n, hd / max(hl, 1e-3)))));
                 half3 light = max(skyL * _GenesisSkyLight.rgb, pow(blk, 1.35) * _GenesisBlockLight.rgb) + 0.018;
+                light = max(light, _GenesisMinLight);
                 light = lerp(light, 1.4, _InstLight.w);
                 c.rgb *= light * face;
                 c.rgb = lerp(c.rgb, half3(1.0, 0.25, 0.2), _InstLight.z * 0.6);

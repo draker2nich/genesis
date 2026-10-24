@@ -25,9 +25,6 @@ namespace Genesis.Client.Editor
         [MenuItem("Genesis/Скриншоты")]
         public static void Capture()
         {
-            if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL &&
-                !EditorUtility.DisplayDialog("Genesis", "Активная платформа — WebGL: в редакторе генерация мира идёт медленнее. Всё равно снять?", "Снять", "Отмена"))
-                return;
             if (EditorApplication.isPlaying)
             {
                 ScreenshotDirector.Begin();

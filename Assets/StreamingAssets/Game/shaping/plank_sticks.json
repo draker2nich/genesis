@@ -1,0 +1,17 @@
+{
+  "id": "genesis:plank_sticks",
+  "targets": [
+    "genesis:planks"
+  ],
+  "hits": 2,
+  "outputs": [
+    {
+      "item": "genesis:stick",
+      "count": 4
+    }
+  ],
+  "tools": [
+    "universal",
+    "axe"
+  ]
+}

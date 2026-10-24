@@ -46,14 +46,7 @@ namespace Genesis.Client
         private void OnGUI()
         {
             UiScale.Begin();
-            if (!_contentReady)
-            {
-                // Браузер: контент ещё скачивается (своя заставка без чужих логотипов и ссылок)
-                UiSkin.Ensure();
-                UiSkin.Fill(new Rect(0, 0, UiScale.W, UiScale.H), UiSkin.Bg);
-                GUI.Label(new Rect(0, UiScale.H / 2f - 12, UiScale.W, 24), _loadingStatus, UiSkin.Center);
-                return;
-            }
+            if (!_contentReady) return;
             if (_mode == Mode.Playing)
             {
                 if (InGameSettings && _ctx != null && !_ctx.Paused) InGameSettings = false;
@@ -151,14 +144,6 @@ namespace Genesis.Client
                 _screen = MenuScreen.Play;
             }
             y += 48;
-            if (WebPlatform.IsWebGL)
-            {
-                // Браузер: без коопа (нет сокетов), модов и кнопки «Выход»
-                if (GUI.Button(new Rect(x, y, w, 36), _loc.Get("menu.settings"), UiSkin.Button)) _screen = MenuScreen.Settings;
-                y += 50;
-                DrawMenuError(x, y, w);
-                return;
-            }
             if (GUI.Button(new Rect(x, y, w, 36), _loc.Get("menu.join"), UiSkin.Button)) _screen = MenuScreen.Join;
             y += 44;
             if (GUI.Button(new Rect(x, y, w / 2 - 4, 36), _loc.Get("menu.mods") + $" ({_mods.LoadOrder.Count})", UiSkin.Button)) _screen = MenuScreen.Mods;
@@ -268,14 +253,11 @@ namespace Genesis.Client
             if (GUI.Button(new Rect(rx, ry, rw, 40), exists ? _loc.Get("menu.continue") : _loc.Get("menu.create"), UiSkin.AccentButton))
                 StartLocal(false);
             ry += 48;
-            if (!WebPlatform.IsWebGL)
-            {
-                if (GUI.Button(new Rect(rx, ry, rw, 34), _loc.Get("menu.host"), UiSkin.Button)) StartLocal(true);
-                ry += 40;
-                GUI.Label(new Rect(rx, ry, rw, 34), $"<size=11><color=#969aa0>{_loc.Get("menu.host_hint")} {TransportName()} · {_loc.Get("menu.port")} {_portText}</color></size>",
-                    new GUIStyle(UiSkin.Small) { wordWrap = true });
-                ry += 40;
-            }
+            if (GUI.Button(new Rect(rx, ry, rw, 34), _loc.Get("menu.host"), UiSkin.Button)) StartLocal(true);
+            ry += 40;
+            GUI.Label(new Rect(rx, ry, rw, 34), $"<size=11><color=#969aa0>{_loc.Get("menu.host_hint")} {TransportName()} · {_loc.Get("menu.port")} {_portText}</color></size>",
+                new GUIStyle(UiSkin.Small) { wordWrap = true });
+            ry += 40;
 
             if (exists)
             {
@@ -419,7 +401,7 @@ namespace Genesis.Client
 
         private void DrawSettingsScreen()
         {
-            var p = CenterPanel(520, 500);
+            var p = CenterPanel(520, 540);
             UiSkin.PanelTitle(p, _loc.Get("menu.settings"));
             float x = p.x + 16, w = p.width - 32, y = p.y + 54;
 
@@ -434,6 +416,8 @@ namespace Genesis.Client
             GameSettings.ViewRadius = Mathf.RoundToInt(Slider(ref y, x, w, _loc.Get("settings.view"), GameSettings.ViewRadius, 4, 16, GameSettings.ViewRadius + " " + _loc.Get("settings.chunks")));
             GameSettings.Fov = Mathf.Round(Slider(ref y, x, w, _loc.Get("settings.fov"), GameSettings.Fov, 55, 100, GameSettings.Fov.ToString("0") + "°"));
             GameSettings.MouseSensitivity = Slider(ref y, x, w, _loc.Get("settings.mouse"), GameSettings.MouseSensitivity, 0.3f, 8f, GameSettings.MouseSensitivity.ToString("0.0"));
+            // Яркость: ночью и в пещерах без неё бывает совсем темно
+            GameSettings.Brightness = Slider(ref y, x, w, _loc.Get("settings.brightness"), GameSettings.Brightness, 0f, 1f, Mathf.RoundToInt(GameSettings.Brightness * 100f) + "%");
             GameSettings.Shadows = Toggle(ref y, x, w, _loc.Get("settings.shadows"), GameSettings.Shadows);
             GameSettings.PostProcessing = Toggle(ref y, x, w, _loc.Get("settings.post"), GameSettings.PostProcessing);
             GameSettings.Clouds = Toggle(ref y, x, w, _loc.Get("settings.clouds"), GameSettings.Clouds);

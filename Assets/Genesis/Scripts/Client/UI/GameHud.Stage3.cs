@@ -8,11 +8,11 @@ using UnityEngine;
 
 namespace Genesis.Client.UI
 {
-    /// <summary>Этап 3: выживание, ручной крафт на станциях, мини-игры, дерево знаний.</summary>
+    /// <summary>Этап 3: выживание, ручной крафт на станциях, мини-игры.</summary>
     public sealed partial class GameHud
     {
         private const float CraftPanelWidth = 380f;
-        private Vector2 _craftScroll, _knowledgeScroll;
+        private Vector2 _craftScroll;
         private Dictionary<string, List<CraftDef>> _craftsByStation;
         private long _lastDamageSeen = long.MinValue;
         private float _damageFlashUntil;
@@ -46,9 +46,11 @@ namespace Genesis.Client.UI
             Bar(new Rect(x0 + half + 12, y, half, 12), p.Hunger / PlayerState.MaxHunger, hungerColor);
             UiSkin.Shadowed(new Rect(x0 + half + 12, y - 17, half, 16), $"{_ctx.Loc.Get("ui.hunger")} {Mathf.CeilToInt(p.Hunger)}", _small);
 
-            // Эпоха — в правом верхнем углу
+            // Эпоха (и век, если эпоха делится на века) — в правом верхнем углу
             bool day = Genesis.Gameplay.GameServer.SunHeight(_ctx.Session.DayPhase) > 0;
-            string era = _ctx.Loc.Get("ui.era") + ": " + _ctx.Loc.Get("era." + _ctx.Session.Knowledge.EraName) +
+            var k = _ctx.Session.Knowledge;
+            string era = _ctx.Loc.Get("epoch." + k.Epoch) +
+                         (Eras.HasCenturies(k.Epoch) ? " · " + _ctx.Loc.Get("era." + k.EraName) : "") +
                          "   " + _ctx.Loc.Get(day ? "ui.time.day" : "ui.time.night");
             var size = _label.CalcSize(new GUIContent(era));
             UiSkin.DrawPanel(new Rect(UiScale.W - size.x - 26, 8, size.x + 18, 28));
@@ -245,155 +247,6 @@ namespace Genesis.Client.UI
             {
                 GUI.Label(new Rect(p.x, p.yMax - 26, w - 12, 20), _ctx.Loc.Get("ui.minigame.quit"), new GUIStyle(_small) { alignment = TextAnchor.MiddleRight });
             }
-        }
-
-        // ================================================================ Дерево знаний
-
-        private void DrawKnowledgeWindow()
-        {
-            var content = _ctx.Content;
-            var k = _ctx.Session.Knowledge;
-            int lastEra = Mathf.Min(Eras.All.Length - 1, k.Era + 1);
-
-            const float ColW = 220, NodeW = 190, NodeH = 50, RowH = 64;
-            var columns = new List<List<KnowledgeNode>>();
-            int maxRows = 1;
-            for (int e = 0; e <= lastEra; e++)
-            {
-                var col = new List<KnowledgeNode>();
-                foreach (var n in content.Knowledge.Items)
-                    if (n.EraIndex == e) col.Add(n);
-                col.Sort((a, b) => a.Row != b.Row ? a.Row.CompareTo(b.Row) : a.NumericId.CompareTo(b.NumericId));
-                if (col.Count == 0) continue;
-                columns.Add(col);
-                maxRows = Mathf.Max(maxRows, col.Count);
-            }
-
-            float innerW = columns.Count * ColW + 20;
-            float innerH = maxRows * RowH + 50;
-            float w = Mathf.Min(UiScale.W - 40, innerW + 40);
-            float h = Mathf.Min(UiScale.H - 60, innerH + 70);
-            var p = Panel(w, h, _ctx.Loc.Get("ui.knowledge"));
-            var view = new Rect(p.x + 10, p.y + 40, w - 20, h - 50);
-            _knowledgeScroll = GUI.BeginScrollView(view, _knowledgeScroll, new Rect(0, 0, innerW, innerH));
-
-            // Раскладка
-            var rects = new Dictionary<string, Rect>();
-            for (int c = 0; c < columns.Count; c++)
-            {
-                var col = columns[c];
-                int eraIdx = col[0].EraIndex;
-                float cx = 10 + c * ColW;
-                bool current = eraIdx == k.Era;
-                Fill(new Rect(cx - 4, 0, NodeW + 8, 26), current ? new Color(0.95f, 0.65f, 0.2f, 0.85f) : new Color(1, 1, 1, eraIdx < k.Era ? 0.15f : 0.06f));
-                GUI.Label(new Rect(cx, 3, NodeW, 22), _ctx.Loc.Get("era." + Eras.All[eraIdx]), _center);
-                for (int i = 0; i < col.Count; i++)
-                    rects[col[i].Id] = new Rect(cx, 40 + i * RowH, NodeW, NodeH);
-            }
-
-            // Связи (уголком)
-            foreach (var col in columns)
-            foreach (var n in col)
-            {
-                var to = rects[n.Id];
-                foreach (var req in n.Requires)
-                {
-                    if (!rects.TryGetValue(req, out var from)) continue;
-                    var lc = k.IsUnlocked(req) ? new Color(0.6f, 0.8f, 0.6f, 0.8f) : new Color(0.5f, 0.5f, 0.5f, 0.6f);
-                    float x1 = from.xMax, y1 = from.center.y, x2 = to.x, y2 = to.center.y;
-                    if (Mathf.Abs(x1 - (to.x + NodeW)) < 1f || x2 <= x1)
-                    {
-                        // В одной колонке — линия слева
-                        float lx = from.x - 6;
-                        Fill(new Rect(lx, Mathf.Min(y1, y2), 2, Mathf.Abs(y2 - y1)), lc);
-                        Fill(new Rect(lx, y1, 6, 2), lc);
-                        Fill(new Rect(lx, y2, 6, 2), lc);
-                    }
-                    else
-                    {
-                        float mx = (x1 + x2) / 2f;
-                        Fill(new Rect(x1, y1, mx - x1, 2), lc);
-                        Fill(new Rect(mx, Mathf.Min(y1, y2), 2, Mathf.Abs(y2 - y1) + 2), lc);
-                        Fill(new Rect(mx, y2, x2 - mx, 2), lc);
-                    }
-                }
-            }
-
-            // Узлы
-            string hover = null;
-            foreach (var col in columns)
-            foreach (var n in col)
-            {
-                var r = rects[n.Id];
-                bool done = k.IsUnlocked(n);
-                bool avail = k.IsAvailable(n);
-                var bg = done ? new Color(0.2f, 0.42f, 0.25f) : (avail ? new Color(0.45f, 0.33f, 0.12f) : new Color(0.2f, 0.2f, 0.22f));
-                Fill(r, bg);
-                if (n.Milestone) Fill(new Rect(r.x, r.y, 4, r.height), Accent);
-                if (n.Icon != null)
-                {
-                    var icon = _ctx.IconOf(content.Items.IndexOf(n.Icon));
-                    if (icon != null) GUI.DrawTexture(new Rect(r.x + 7, r.y + 7, 36, 36), icon, ScaleMode.ScaleToFit);
-                }
-                GUI.Label(new Rect(r.x + 48, r.y + 4, r.width - 52, 20), _ctx.Loc.Get(n.NameKey), _small);
-                GUI.Label(new Rect(r.x + 48, r.y + 24, r.width - 52, 22), $"<size=10><color=#bbbbbb>{TriggerText(n)}</color></size>",
-                    new GUIStyle(_small) { wordWrap = true, richText = true });
-                if (r.Contains(Event.current.mousePosition)) hover = NodeTooltip(n, done, avail);
-            }
-            GUI.EndScrollView();
-
-            if (hover != null) _tooltip = hover;
-            DrawTooltip();
-        }
-
-        private string TriggerText(KnowledgeNode n)
-        {
-            var t = n.Trigger;
-            switch (t.Type)
-            {
-                case "craft":
-                {
-                    var c = _ctx.Content.Crafts.Get(t.Target);
-                    string what = c != null && c.Outputs.Count > 0 ? _ctx.ItemName(c.Outputs[0].ItemId) : t.Target;
-                    return _ctx.Loc.Format("ui.trigger.craft", what);
-                }
-                case "place":
-                {
-                    var b = _ctx.Content.Blocks.Get(t.Target);
-                    return _ctx.Loc.Format("ui.trigger.place", b != null ? _ctx.Loc.Get(b.NameKey) : t.Target);
-                }
-                case "obtain":
-                    return _ctx.Loc.Format("ui.trigger.obtain", _ctx.ItemName(_ctx.Content.Items.IndexOf(t.Target)));
-                default:
-                    return _ctx.Loc.Get("ui.trigger.start");
-            }
-        }
-
-        private string NodeTooltip(KnowledgeNode n, bool done, bool avail)
-        {
-            var sb = new StringBuilder();
-            sb.Append(_ctx.Loc.Get(n.NameKey));
-            if (n.Milestone) sb.Append("  — ").Append(_ctx.Loc.Get("ui.milestone"));
-            sb.Append('\n').Append(TriggerText(n));
-            if (n.Unlocks.Crafts.Count > 0 || n.Unlocks.Recipes.Count > 0)
-            {
-                sb.Append('\n').Append(_ctx.Loc.Get("ui.unlocks")).Append(':');
-                foreach (var cid in n.Unlocks.Crafts)
-                {
-                    var c = _ctx.Content.Crafts.Get(cid);
-                    if (c != null && c.Outputs.Count > 0) sb.Append("\n • ").Append(_ctx.ItemName(c.Outputs[0].ItemId));
-                }
-                foreach (var rid in n.Unlocks.Recipes)
-                {
-                    var r = _ctx.Content.Recipes.Get(rid);
-                    if (r == null || r.Outputs.Count == 0) continue;
-                    var machine = _ctx.Content.Machines.Get(r.Machine);
-                    sb.Append("\n • ").Append(_ctx.ItemName(r.Outputs[0].ItemId))
-                      .Append(" — ").Append(_ctx.Loc.Get("ui.automation"))
-                      .Append(machine != null ? " (" + _ctx.Loc.Get(machine.NameKey) + ")" : "");
-                }
-            }
-            return sb.ToString();
         }
     }
 }

@@ -4,22 +4,21 @@ namespace Genesis.Core
 {
     /// <summary>
     /// Возможности платформы. Ядро не знает про Unity — клиент выставляет флаги при старте.
-    /// В браузере (WebGL, Яндекс Игры) нет потоков, нативного zlib и загрузки DLL.
+    /// На платформах без потоков, нативного zlib или загрузки DLL флаги выключаются (тесты, серверные утилиты).
     /// </summary>
     public static class Platform
     {
-        /// <summary>Можно запускать фоновые потоки и Task.Run (в WebGL — нет).</summary>
+        /// <summary>Можно запускать фоновые потоки и Task.Run.</summary>
         public static bool Threads = true;
 
-        /// <summary>Работает GZipStream (в WebGL нативного zlib нет — файлы пишутся без сжатия).</summary>
+        /// <summary>Работает GZipStream (иначе файлы пишутся без сжатия).</summary>
         public static bool Compression = true;
 
         /// <summary>Можно загружать код-моды (DLL).</summary>
         public static bool CodeMods = true;
 
         /// <summary>
-        /// Вызывается после записи сохранения на диск. В браузере файловая система живёт в памяти, и её нужно
-        /// явно сбросить в IndexedDB — иначе после перезагрузки страницы сохранение пропадёт.
+        /// Вызывается после записи сохранения на диск (если платформе нужно что-то сделать с файлами после записи).
         /// </summary>
         public static Action AfterSave;
     }

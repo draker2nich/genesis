@@ -1,0 +1,12 @@
+{
+  "id": "genesis:wrapped_handle",
+  "a": "genesis:stick",
+  "b": "genesis:rope",
+  "action": "wrap",
+  "seconds": 1.5,
+  "output": {
+    "item": "genesis:wrapped_handle",
+    "count": 1
+  },
+  "to_offhand": true
+}

@@ -1,0 +1,14 @@
+{
+  "id": "genesis:iron_hoe",
+  "max_stack": 1,
+  "tool": {
+    "type": "hoe",
+    "tier": 3,
+    "speed": 4.0,
+    "durability": 250,
+    "damage": 2
+  },
+  "tags": [
+    "hoes"
+  ]
+}

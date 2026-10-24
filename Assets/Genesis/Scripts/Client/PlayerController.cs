@@ -1,6 +1,7 @@
 using Genesis.Client.Rendering;
 using Genesis.Core;
 using Genesis.Gameplay;
+using Genesis.Simulation;
 using Genesis.World;
 using UnityEngine;
 
@@ -8,8 +9,9 @@ namespace Genesis.Client
 {
     /// <summary>
     /// Локальный игрок: ввод → физика (клиент-авторитетно) → камера; взаимодействие с блоками через команды серверу.
+    /// Первобытные механики (две руки, режим создания, подсказки) — в PlayerController.Primitive.cs.
     /// </summary>
-    public sealed class PlayerController : MonoBehaviour
+    public sealed partial class PlayerController : MonoBehaviour
     {
         private ClientContext _ctx;
         private Camera _cam;
@@ -27,6 +29,8 @@ namespace Genesis.Client
 
         public EffectsRenderer Effects;
         public HeldItemRenderer Hand;
+        /// <summary>Предмет в левой руке.</summary>
+        public HeldItemRenderer OffHand;
 
         // Покачивание камеры и рывок FOV при беге
         private float _bobPhase, _bobAmount, _fovKick, _swingTimer;
@@ -78,25 +82,12 @@ namespace Genesis.Client
             bool locked = Cursor.lockState == CursorLockMode.Locked;
             // Система отобрала захват (Alt+Tab, клик вне окна в редакторе) — ставим паузу, как Minecraft
             if (_lockApplied && !locked && !Application.isFocused && _ctx.WantsCursorLock) _ctx.Paused = true;
-            // В браузере Esc снимает захват мыши сам (и до игры может не дойти) — тоже пауза. Захват браузер даёт
-            // не сразу, а по следующему клику, поэтому считаем потерей только то, что уже было захвачено.
-            if (WebPlatform.IsWebGL)
-            {
-                if (locked) _sawLocked = true;
-                else if (_sawLocked && _ctx.WantsCursorLock)
-                {
-                    _ctx.Paused = true;
-                    _sawLocked = false;
-                }
-                if (!_ctx.WantsCursorLock) _sawLocked = false;
-            }
             bool want = _ctx.WantsCursorLock && Application.isFocused;
             if (want != locked || Cursor.visible == want) LockCursor(want);
             _lockApplied = want;
         }
 
         private bool _lockApplied;
-        private bool _sawLocked;
 
         private void OnApplicationFocus(bool focus)
         {
@@ -141,9 +132,9 @@ namespace Genesis.Client
             ApplyCursor();
             bool uiOpen = !_ctx.WantsCursorLock;
 
-            // ---- Взгляд
+            // ---- Взгляд (пока открыто колесо режима создания, мышь выбирает вариант, а не крутит камеру)
             bool aiming = Cursor.lockState == CursorLockMode.Locked || TouchControls.Enabled; // на сенсорном экране захвата мыши нет
-            if (!uiOpen && aiming)
+            if (!uiOpen && aiming && !_ctx.Creation.WheelOpen)
             {
                 _body.Yaw = Mathf.Repeat(_body.Yaw + input.LookX, 360f);
                 _body.Pitch = Mathf.Clamp(_body.Pitch - input.LookY, -89f, 89f);
@@ -159,10 +150,16 @@ namespace Genesis.Client
                 move.Sprint = input.Sprint;
                 move.Descend = input.Descend;
                 if (!_ctx.Player.Creative && _body.Flying) _body.Flying = false; // креатив выключили
-                if (input.ToggleFly && _ctx.Player.Creative)
+                // Полёт в креативе — двойной пробел
+                if (input.JumpDown && _ctx.Player.Creative)
                 {
-                    _body.Flying = !_body.Flying;
-                    _body.Velocity = Vec3.Zero;
+                    if (Time.time - _lastJumpDown < 0.3f)
+                    {
+                        _body.Flying = !_body.Flying;
+                        _body.Velocity = Vec3.Zero;
+                        _lastJumpDown = -1f;
+                    }
+                    else _lastJumpDown = Time.time;
                 }
             }
 
@@ -198,9 +195,25 @@ namespace Genesis.Client
             if (uiOpen || !aiming)
             {
                 _ctx.BreakProgress = 0;
+                _ctx.HandCraftProgress = 0;
+                _craftTimer = 0;
+                if (Hand != null) Hand.Crafting = false;
+                if (OffHand != null) OffHand.Crafting = false;
                 Effects?.SetBreaking(false, default, 0);
                 return;
             }
+            UpdateHints(world);
+            if (input.SwapHands) SwapHands();
+
+            // Режим создания (R): пока он активен или открыто колесо — удары идут в обработку блока
+            if (UpdateCreation(input, world))
+            {
+                _ctx.BreakProgress = 0;
+                Effects?.SetBreaking(false, default, 0);
+                UpdateHandCraft(input, false);
+                return;
+            }
+
             _attackCooldown -= Time.deltaTime;
             if (_ctx.TargetEnemy >= 0 && _enemyHitDistance < (_ctx.HasTarget ? _lastHit.Distance : float.PositiveInfinity))
             {
@@ -216,17 +229,17 @@ namespace Genesis.Client
                 }
             }
             else HandleBreaking(input, world);
-            HandleUse(input, world);
+            // Крафт в руках важнее остальных действий ПКМ: пока подходящая пара в руках, ПКМ — крафт
+            if (!UpdateHandCraft(input, true)) HandleUse(input, world);
 
             if (input.Drop)
             {
                 _ctx.Send(new DropSlotCommand { Slot = _ctx.Player.SelectedSlot, All = input.DropAll });
                 Hand?.Swing();
             }
-
-            if (input.Rotate && _ctx.HasTarget)
-                _ctx.Send(new RotateCommand { Pos = _ctx.Target });
         }
+
+        private float _lastJumpDown = -1f;
 
         private void HandleUiKeys(InputSnapshot input)
         {
@@ -234,6 +247,11 @@ namespace Genesis.Client
             {
                 // Мини-игра модальная: Esc — бросить (материалы не тратятся)
                 if (input.Escape) _ctx.Minigame = null;
+                return;
+            }
+            if (input.Escape && (_ctx.Creation.Active || _ctx.Creation.WheelOpen))
+            {
+                ExitCreation(); // Esc сначала выходит из режима создания
                 return;
             }
             if (input.Escape)
@@ -245,9 +263,13 @@ namespace Genesis.Client
             }
             if (input.Inventory) ToggleWindow(UiWindow.Inventory);
             if (input.Creative && _ctx.Player.Creative) ToggleWindow(UiWindow.Creative);
-            if (input.Knowledge) ToggleWindow(UiWindow.Knowledge);
+            if (input.Handbook)
+            {
+                // Справочник лежит в лаборатории: пока игрок его не взял, Q ничего не открывает
+                if (_ctx.Player.HasHandbook || _ctx.Window == UiWindow.Handbook) ToggleWindow(UiWindow.Handbook);
+                else _ctx.ShowToast(_ctx.Loc.Get("ui.handbook.missing"));
+            }
             if (input.Stats) ToggleWindow(UiWindow.Stats);
-            if (input.Recipes) ToggleWindow(UiWindow.Recipes);
             if (input.Map) ToggleWindow(UiWindow.Map);
             if (input.Debug) _ctx.ShowDebug = !_ctx.ShowDebug;
             if (input.Save) GetComponent<GenesisBootstrap>()?.SaveNow();
@@ -314,6 +336,8 @@ namespace Genesis.Client
                 _ctx.HasTarget = false;
                 _highlight.Hide();
             }
+
+            UpdateDropTarget(eye, look);
 
             // Враги под прицелом: луч против AABB
             _ctx.TargetEnemy = -1;
@@ -417,15 +441,24 @@ namespace Genesis.Client
                         return;
                     }
             }
+
+            // Положенный на пол предмет ближе блока — подобрать
+            if (input.UseDown && _ctx.TargetDrop >= 0)
+            {
+                _ctx.Send(new PickupDropCommand { DropId = _ctx.TargetDrop });
+                Hand?.Swing();
+                return;
+            }
+
             var heldDef = held.IsEmpty ? null : _ctx.Content.Item(held.Item);
-            bool targetsMachine = _ctx.HasTarget && factory.MachineAt(_ctx.Target) != null;
+            var targetMachine = _ctx.HasTarget ? MultiBlock.OwnerOf(factory, _ctx.Target) : null;
+            bool targetsMachine = targetMachine != null;
 
             // Беспроводной терминал: ПКМ по контроллеру — привязать, иначе открыть сеть
             if (heldDef != null && heldDef.MeWireless && input.UseDown)
             {
-                var tm = _ctx.HasTarget ? factory.MachineAt(_ctx.Target) : null;
-                if (tm != null && tm.Def.Behavior == "me_controller")
-                    _ctx.Send(new MeLinkCommand { Controller = _ctx.Target });
+                if (targetMachine != null && targetMachine.Def.Behavior == "me_controller")
+                    _ctx.Send(new MeLinkCommand { Controller = targetMachine.Pos });
                 else
                     OpenMe(default, true);
                 return;
@@ -444,18 +477,52 @@ namespace Genesis.Client
 
             if (!_ctx.HasTarget) return;
             var target = _ctx.Target;
+            var targetDef = world.GetBlockDef(target);
+
+            // Блок с действием: взять справочник, лечь на лежанку
+            if (input.UseDown && !input.Sneak && targetDef.Action != null)
+            {
+                _ctx.Send(new UseBlockCommand { Pos = target });
+                Hand?.Swing();
+                return;
+            }
+
+            // Предмет по блоку: уголёк по хворосту, глина по печке, мотыга по земле
+            var anchorBlock = targetMachine != null ? world.GetBlock(targetMachine.Pos) : world.GetBlock(target);
+            if (input.UseDown && Interactions.Find(_ctx.Content, held, anchorBlock) != null)
+            {
+                _ctx.Send(new UseOnBlockCommand { Pos = target });
+                Hand?.Swing();
+                return;
+            }
+
+            // Рабочая поверхность (верстак, наковальня): положить предмет из руки или забрать последний
+            if (input.UseDown && !input.Sneak && targetMachine != null && targetMachine.Def.Surface)
+            {
+                if (!held.IsEmpty)
+                {
+                    _ctx.Send(new SurfaceCommand { Pos = target, Put = true });
+                    Hand?.Swing();
+                    return;
+                }
+                if (!targetMachine.Input.IsEmpty)
+                {
+                    _ctx.Send(new SurfaceCommand { Pos = target, Put = false });
+                    Hand?.Swing();
+                    return;
+                }
+            }
 
             // Открыть машину (Shift — поставить блок рядом, а не открывать)
-            var targetMachine = factory.MachineAt(target);
             if (input.UseDown && !input.Sneak && targetMachine != null &&
                 (targetMachine.Def.Behavior == "me_terminal" || targetMachine.Def.Behavior == "me_controller"))
             {
-                OpenMe(target, false);
+                OpenMe(targetMachine.Pos, false);
                 return;
             }
-            if (input.UseDown && !input.Sneak && targetMachine != null)
+            if (input.UseDown && !input.Sneak && targetMachine != null && HasWindow(targetMachine))
             {
-                _ctx.OpenMachine = target;
+                _ctx.OpenMachine = targetMachine.Pos;
                 _ctx.Window = UiWindow.Machine;
                 return;
             }
@@ -472,14 +539,33 @@ namespace Genesis.Client
                 return;
             }
 
-            if (item == null || item.PlacesBlock == null) return;
+            if (item == null || item.PlacesBlock == null)
+            {
+                // Нельзя поставить — кладём на пол (на верхнюю грань блока); Shift — весь стак
+                if (input.UseDown && _lastHit.Adjacent == target + Int3.Up && targetDef.Solid)
+                {
+                    _ctx.Send(new PlaceOnFloorCommand { Pos = target, All = input.Sneak });
+                    Hand?.Swing();
+                }
+                return;
+            }
             Hand?.Swing();
             var look = _body.LookDirection;
             _ctx.Send(new PlaceBlockCommand
             {
-                Pos = world.GetBlockDef(target).Replaceable ? target : _lastHit.Adjacent, // трава заменяется
+                Pos = targetDef.Replaceable ? target : _lastHit.Adjacent, // трава заменяется
                 LookFacing = Directions.FromLook(look.X, look.Z)
             });
+        }
+
+        /// <summary>У машины есть окно (у лежанки, кузни-заглушки без крафтов, каменной наковальни — нет).</summary>
+        private bool HasWindow(MachineInstance m)
+        {
+            if (m.Def.Behavior != "station") return true;
+            if (m.Def.CraftGrid >= 3) return true;
+            foreach (var c in _ctx.Content.Crafts.Items)
+                if (c.Station == m.Def.Id) return true;
+            return false;
         }
     }
 }

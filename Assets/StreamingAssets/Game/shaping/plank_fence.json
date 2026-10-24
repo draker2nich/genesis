@@ -1,0 +1,17 @@
+{
+  "id": "genesis:plank_fence",
+  "targets": [
+    "genesis:planks"
+  ],
+  "hits": 6,
+  "outputs": [
+    {
+      "item": "genesis:fence",
+      "count": 3
+    }
+  ],
+  "tools": [
+    "universal",
+    "axe"
+  ]
+}

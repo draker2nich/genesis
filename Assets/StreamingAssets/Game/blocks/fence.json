@@ -1,0 +1,11 @@
+{
+  "id": "genesis:fence",
+  "render": "cutout",
+  "hardness": 1.2,
+  "tool": "axe",
+  "model": "genesis:fence",
+  "textures": {
+    "all": "genesis:fence_icon",
+    "top": "genesis:planks"
+  }
+}

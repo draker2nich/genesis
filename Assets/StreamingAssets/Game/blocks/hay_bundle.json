@@ -1,0 +1,8 @@
+{
+  "id": "genesis:hay_bundle",
+  "hardness": 0.4,
+  "textures": {
+    "all": "genesis:straw_side",
+    "top": "genesis:straw"
+  }
+}

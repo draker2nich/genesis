@@ -1,0 +1,8 @@
+{
+  "id": "genesis:light_campfire_torch",
+  "held": "genesis:torch",
+  "targets": [
+    "genesis:kindling"
+  ],
+  "result_block": "genesis:campfire"
+}

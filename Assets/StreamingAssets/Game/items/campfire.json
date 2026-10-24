@@ -1,0 +1,6 @@
+{
+  "id": "genesis:campfire",
+  "places": "genesis:campfire",
+  "texture": "genesis:campfire_icon",
+  "light": 10
+}

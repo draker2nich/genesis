@@ -100,6 +100,7 @@ namespace Genesis.Client.UI
             DrawVitals();
             DrawMinimap();
             DrawTargetInfo();
+            DrawPrimitiveHud();
             if (_ctx.ShowDebug) DrawDebug();
             DrawToast();
             TouchControls.Suspended = _ctx.Window != UiWindow.None || _ctx.Paused || _ctx.InMinigame;
@@ -113,10 +114,9 @@ namespace Genesis.Client.UI
                 case UiWindow.Inventory: DrawInventoryWindow(); break;
                 case UiWindow.Creative: DrawCreativeWindow(); break;
                 case UiWindow.Machine: DrawMachineWindow(); break;
-                case UiWindow.Knowledge: DrawKnowledgeWindow(); break;
+                case UiWindow.Handbook: DrawHandbookWindow(); break;
                 case UiWindow.Stats: DrawStatsWindow(); break;
                 case UiWindow.Me: DrawMeWindow(); break;
-                case UiWindow.Recipes: DrawRecipesWindow(); break;
                 case UiWindow.Map: DrawMapWindow(); break;
                 default:
                     if (_ctx.Paused) DrawPauseMenu();
@@ -316,8 +316,8 @@ namespace Genesis.Client.UI
             var world = _ctx.Session.World;
             var def = world.GetBlockDef(_ctx.Target);
             string text = _ctx.Loc.Get(def.NameKey);
-            var m = _ctx.Session.Factory.MachineAt(_ctx.Target);
-            if (m != null)
+            var m = MultiBlock.OwnerOf(_ctx.Session.Factory, _ctx.Target);
+            if (m != null && m.Def.Behavior != "station")
                 text += $"  <color=#f5a623>[{StatusText(m.Status)}]</color>";
             var conv = _ctx.Session.Factory.ConveyorAt(_ctx.Target);
             if (conv != null) text += $"  ({conv.Items.Count}/4)";

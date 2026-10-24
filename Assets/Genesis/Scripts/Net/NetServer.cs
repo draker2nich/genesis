@@ -433,6 +433,7 @@ namespace Genesis.Net
                 w.Write((ushort)d.Stack.Count);
                 Protocol.WriteVec(w, d.Position);
                 w.Write(d.Age);
+                w.Write(d.Placed);
             }
             _transport.Send(c.Connection, Protocol.End(w, ms), false);
         }

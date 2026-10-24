@@ -1,0 +1,11 @@
+{
+  "id": "genesis:farmland",
+  "hardness": 0.6,
+  "tool": "shovel",
+  "drop": "genesis:dirt",
+  "textures": {
+    "top": "genesis:farmland_top",
+    "side": "genesis:dirt",
+    "bottom": "genesis:dirt"
+  }
+}

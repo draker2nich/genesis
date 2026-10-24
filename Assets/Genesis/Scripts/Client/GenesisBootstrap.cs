@@ -107,27 +107,14 @@ namespace Genesis.Client
             new GameObject("Genesis").AddComponent<GenesisBootstrap>();
         }
 
-        /// <summary>Контент загружен, меню можно показывать (в браузере контент сначала скачивается).</summary>
+        /// <summary>Контент загружен, меню можно показывать.</summary>
         private bool _contentReady;
-        private string _loadingStatus = "";
 
         private void Awake()
         {
             Genesis.Core.Log.InfoSink = Debug.Log;
             Genesis.Core.Log.WarnSink = Debug.LogWarning;
             Genesis.Core.Log.ErrorSink = Debug.LogError;
-            if (WebPlatform.IsWebGL)
-            {
-                // Браузер: нет потоков, zlib и DLL; сохранения нужно явно сбрасывать в IndexedDB
-                Genesis.Core.Platform.Threads = false;
-                Genesis.Core.Platform.Compression = false;
-                Genesis.Core.Platform.CodeMods = false;
-                Genesis.Core.Platform.AfterSave = WebPlatform.SyncFileSystem;
-                Application.targetFrameRate = -1; // частоту задаёт браузер (requestAnimationFrame)
-                AutosaveMinutes = 2f;
-                StartCoroutine(WebContent.Prepare(this, root => FinishStartup(root), s => _loadingStatus = s));
-                return;
-            }
             Application.targetFrameRate = 144;
             QualitySettings.vSyncCount = 1;
             FinishStartup(Path.Combine(Application.streamingAssetsPath, ModLoader.CoreFolderName));
@@ -136,12 +123,6 @@ namespace Genesis.Client
         private void FinishStartup(string coreRoot)
         {
             GameSettings.Load();
-            if (WebPlatform.IsWebGL && !GameSettings.HasSavedLanguage)
-            {
-                // Первый запуск в браузере: язык браузера
-                string lang = WebPlatform.GameLanguageFor(WebPlatform.Language);
-                if (lang != null) GameSettings.Language = lang;
-            }
             ViewRadius = GameSettings.ViewRadius;
 
             _modsRoot = coreRoot;
@@ -178,8 +159,7 @@ namespace Genesis.Client
                       $"{_content.Machines.Count} machines, {_content.Recipes.Count} recipes, hash {_content.ContentHash:X16}");
             if (_content.Blocks.Count <= 1)
                 Debug.LogError("[Genesis] Контент игры не найден: в " + _modsRoot + " нет blocks/, items/ и т. д. " +
-                               "Скорее всего, папка Assets/StreamingAssets/Game опустела после прерванной браузерной сборки — " +
-                               "верните её из GenesisGameBackup (рядом с Assets) или из репозитория. Мир без контента не создать.");
+                               "Верните папку Assets/StreamingAssets/Game из репозитория. Мир без контента не создать.");
 
             _textures = new BlockTextureFactory();
             _textures.Build(_content, _modsRoot, _mods.LoadOrder);
@@ -296,14 +276,6 @@ namespace Genesis.Client
             _mode = Mode.Menu;
             PlayerController.LockCursor(false);
             StartPanorama();
-        }
-
-        // ============================================================ Браузер (вызовы из JS по имени объекта «Genesis»)
-
-        /// <summary>Страницу скрыли или закрывают — сохраняемся (прогресс не должен теряться).</summary>
-        private void OnPageHidden()
-        {
-            if (_mode == Mode.Playing) SaveNow();
         }
 
         // ============================================================ Цикл

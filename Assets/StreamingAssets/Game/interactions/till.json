@@ -1,0 +1,11 @@
+{
+  "id": "genesis:till",
+  "held": "#hoes",
+  "targets": [
+    "genesis:dirt",
+    "genesis:grass"
+  ],
+  "consume": 0,
+  "wear": 1,
+  "result_block": "genesis:farmland"
+}

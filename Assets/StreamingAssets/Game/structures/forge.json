@@ -1,0 +1,23 @@
+{
+  "id": "genesis:forge",
+  "layers": [
+    [
+      "BF"
+    ],
+    [
+      " P"
+    ]
+  ],
+  "key": {
+    "B": "genesis:bellows",
+    "F": "genesis:clay_furnace",
+    "P": "genesis:clay_furnace_part"
+  },
+  "result": "genesis:forge",
+  "result_at": [
+    1,
+    0,
+    0
+  ],
+  "result_facing": "south"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.blade",
+  "era": "primitive",
+  "order": 30,
+  "requires": [],
+  "trigger": {
+    "type": "handcraft",
+    "target": "genesis:sharp_stone"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:sharp_stone"
+}

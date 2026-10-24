@@ -40,6 +40,8 @@ Shader "Genesis/Voxel"
         float4 _GenesisBlockLight;
         // Свет в руке (факел): xyz — точка в мире, w — уровень 0..15 (0 — нет)
         float4 _GenesisHandLight;
+        // Яркость из настроек: нижняя граница освещённости (ночью и в пещерах не кромешная тьма)
+        float _GenesisMinLight;
 
         // Динамический свет от факела в руке: как свет блока, падает на 1 уровень за блок
         half HandLight(float3 positionWS, float3 n)
@@ -157,6 +159,7 @@ Shader "Genesis/Voxel"
                 half3 skyCol = skyL * _GenesisSkyLight.rgb * shade;
                 half3 blkCol = pow(blk, 1.35) * _GenesisBlockLight.rgb;
                 half3 light = max(skyCol, blkCol) + 0.018;
+                light = max(light, _GenesisMinLight);
                 if (i.flags.x > 0.5) light = 1.65; // светится сам — даёт bloom
 
                 half4 c = albedo;
@@ -301,6 +304,8 @@ Shader "Genesis/Voxel"
             float4 _GenesisSkyLight;
             float4 _GenesisBlockLight;
             float4 _GenesisHandLight;
+            // Яркость из настроек: нижняя граница освещённости (ночью и в пещерах не кромешная тьма)
+            float _GenesisMinLight;
 
             struct appdata
             {
@@ -351,6 +356,7 @@ Shader "Genesis/Voxel"
                 half hand = saturate((_GenesisHandLight.w - hl) / 15.0) * (0.55 + 0.45 * saturate(dot(normalize(i.wn), hd / max(hl, 1e-3))));
                 half blk = max(i.color.g, hand);
                 half3 light = max(skyL * _GenesisSkyLight.rgb, pow(blk, 1.35) * _GenesisBlockLight.rgb) + 0.018;
+                light = max(light, _GenesisMinLight);
                 if (i.flags.x > 0.5) light = 1.4;
                 c.rgb *= light * i.color.b;
                 if (water) c.a = 0.75;

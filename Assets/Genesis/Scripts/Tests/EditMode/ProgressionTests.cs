@@ -71,8 +71,8 @@ namespace Genesis.Tests
             foreach (var n in Db.Knowledge.Items)
                 foreach (var r in n.Requires)
                     Assert.LessOrEqual(Db.Knowledge.Get(r).EraIndex, n.EraIndex, $"{n.Id} requires later-era {r}");
-            // В каждой реализованной эпохе есть рубеж
-            for (int e = 0; e < 3; e++)
+            // В каждом реализованном веке есть рубеж (первобытная эпоха и паровой век)
+            for (int e = 0; e < 2; e++)
             {
                 bool hasMilestone = false;
                 foreach (var n in Db.Knowledge.Items)
@@ -82,48 +82,24 @@ namespace Genesis.Tests
         }
 
         [Test]
-        public void FullPathFromWoodToIronEra()
+        public void PrimitiveEpochEndsWithSteamBoiler()
         {
             Assert.AreEqual(0, _server.Knowledge.Era);
-            Assert.IsTrue(Unlocked("wood.basics"));
-            Assert.IsFalse(Craft("wooden_pickaxe"), "wooden tools are locked before the workbench");
+            Assert.AreEqual(1, _server.Knowledge.Epoch, "the primitive epoch has no centuries");
+            Assert.IsTrue(Unlocked("iron.anvil"), "the iron anvil craft opens at start");
 
-            // Руками: брёвна → доски → верстак
-            Give("oak_log", 3);
-            Assert.IsTrue(Craft("planks"));
-            Assert.IsTrue(Craft("workbench"));
-            Select("workbench");
-            var bench = _spawn + new Int3(2, 0, 0);
-            Assert.IsTrue(_server.TryPlaceSelected(_p, bench, Direction.North));
-            Assert.IsTrue(Unlocked("wood.workbench"));
+            // Квесты не зависят друг от друга: каждый засчитывается своим действием
+            _server.Knowledge.Notify("handcraft", "genesis:chopper");
+            Assert.IsTrue(Unlocked("primitive.tool"));
+            Assert.IsFalse(Unlocked("primitive.fiber"));
 
-            // На верстаке: кирка → открывается горн
-            Give("planks", 3);
-            Give("stick", 2);
-            Assert.IsFalse(Craft("wooden_pickaxe"), "workbench craft needs the station");
-            Assert.IsTrue(Craft("wooden_pickaxe", bench));
-            Assert.IsTrue(Unlocked("wood.tools"));
-
-            Give("cobblestone", 8);
-            Assert.IsTrue(Craft("stone_furnace", bench));
-            Select("stone_furnace");
-            var furnace = _spawn + new Int3(-2, 0, 0);
-            Assert.IsTrue(_server.TryPlaceSelected(_p, furnace, Direction.North));
-            Assert.AreEqual(1, _server.Knowledge.Era, "stone furnace is the wood-era milestone");
-            Assert.IsTrue(Unlocked("stone.tools"), "start-nodes of the new era open automatically");
-
-            // Плавка вручную: без успешной мини-игры — нельзя
-            Give("iron_ore", 2);
-            Give("coal", 2);
-            Assert.IsFalse(Craft("hand_smelt_iron", furnace, false));
-            Assert.IsTrue(Craft("hand_smelt_iron", furnace, true));
-            Assert.IsTrue(Unlocked("stone.smelt_iron"));
-            Assert.IsTrue(_server.Knowledge.IsRecipeUnlocked(Db.Recipes.Get("genesis:smelt_iron_ore")), "automation unlocked");
-
-            // «Получить первое железо» — рубеж эпохи камня
-            Run(25);
-            Assert.AreEqual(2, _server.Knowledge.Era);
-            Assert.IsTrue(Unlocked("iron.anvil"));
+            // Конец первобытной эпохи — паровой котёл
+            _server.Knowledge.ForceUnlock("genesis:iron.boiler");
+            Give("steam_boiler", 1);
+            Select("steam_boiler");
+            Assert.IsTrue(_server.TryPlaceSelected(_p, _spawn + new Int3(2, 0, 2), Direction.North));
+            Assert.AreEqual(Eras.IndexOf("steam"), _server.Knowledge.Era);
+            Assert.AreEqual(2, _server.Knowledge.Epoch, "steam age is the industrial epoch");
         }
 
         [Test]
@@ -139,7 +115,7 @@ namespace Genesis.Tests
             Run(60);
             Assert.AreEqual(MachineStatus.NoInput, m.Status, "smelting iron is not automated until done by hand");
 
-            _server.Knowledge.ForceUnlock("genesis:stone.smelt_iron");
+            _server.Knowledge.ForceUnlock("genesis:primitive.iron");
             Run(230);
             Assert.AreEqual(1, m.Output.CountOf(Db.ItemId("genesis:iron_ingot")));
         }
@@ -157,8 +133,8 @@ namespace Genesis.Tests
             Assert.AreEqual(0, _p.Inventory.CountOf(cobble), "no drop without a pickaxe");
 
             _server.World.SetBlock(pos, stone);
-            Give("wooden_pickaxe", 1);
-            Select("wooden_pickaxe");
+            Give("chopper", 1);
+            Select("chopper");
             Assert.IsTrue(_server.TryBreakBlock(_p, pos));
             Assert.AreEqual(0, _p.Inventory.CountOf(cobble), "drop falls into the world first");
             Run(40);
@@ -172,11 +148,14 @@ namespace Genesis.Tests
             Assert.IsTrue(_server.TryBreakBlock(_p, pos));
             Assert.IsTrue(_p.SelectedStack.IsEmpty);
 
-            // Скорость: кирка быстрее рук, железо требует каменную кирку
+            // Рубило добывает всё (и железную руду), но железная кирка быстрее, а руками — медленнее всего
             var ore = Db.Blocks.Get("genesis:iron_ore_normal");
-            Assert.IsFalse(Mining.CanHarvest(ore, Db.Items.Get("genesis:wooden_pickaxe").Tool));
-            Assert.IsTrue(Mining.CanHarvest(ore, Db.Items.Get("genesis:stone_pickaxe").Tool));
-            Assert.Less(Mining.BreakTime(Db.Blocks.Get("genesis:stone"), Db.Items.Get("genesis:stone_pickaxe").Tool),
+            var chopper = Db.Items.Get("genesis:chopper").Tool;
+            var pick = Db.Items.Get("genesis:iron_pickaxe").Tool;
+            Assert.IsTrue(Mining.CanHarvest(ore, chopper));
+            Assert.IsTrue(Mining.CanHarvest(Db.Blocks.Get("genesis:oak_log"), chopper));
+            Assert.Less(Mining.BreakTime(ore, pick), Mining.BreakTime(ore, chopper));
+            Assert.Less(Mining.BreakTime(Db.Blocks.Get("genesis:stone"), chopper),
                         Mining.BreakTime(Db.Blocks.Get("genesis:stone"), null));
         }
 
@@ -219,6 +198,10 @@ namespace Genesis.Tests
         [Test]
         public void EnemiesAttackAndCanBeKilled()
         {
+            // Лампы лаборатории делают её безопасной зоной — гасим их, чтобы враг напал
+            for (int x = -3; x <= 3; x += 6)
+            for (int z = -3; z <= 3; z += 6)
+                _server.World.SetBlock(new Int3(x, _server.World.Generator.BunkerFloorY + 4, z), Db.AirNumeric);
             var def = Db.Enemies.Get("genesis:crawler");
             var e = _server.Enemies.Spawn(def, _p.Position + new Vec3(1.2f, 0, 0));
             Run(30);
@@ -246,7 +229,7 @@ namespace Genesis.Tests
                 var a = GameServer.Open(Db, dir, 5, 0);
                 a.ViewRadius = 1;
                 var pa = a.Join("Saver");
-                a.Knowledge.ForceUnlock("genesis:wood.milestone");
+                a.Knowledge.ForceUnlock("genesis:iron.milestone");
                 pa.Health = 7;
                 pa.Hunger = 11;
                 a.Save();
@@ -255,7 +238,7 @@ namespace Genesis.Tests
                 var b = GameServer.Open(Db, dir, 999, 0);
                 Assert.AreEqual(5, b.Seed, "seed comes from the save");
                 Assert.AreEqual(1, b.Knowledge.Era);
-                Assert.IsTrue(b.Knowledge.IsUnlocked("genesis:wood.milestone"));
+                Assert.IsTrue(b.Knowledge.IsUnlocked("genesis:iron.milestone"));
                 var pb = b.Join("Saver");
                 Assert.AreEqual(7f, pb.Health);
                 Assert.AreEqual(11f, pb.Hunger);

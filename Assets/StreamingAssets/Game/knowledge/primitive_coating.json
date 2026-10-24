@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.coating",
+  "era": "primitive",
+  "order": 112,
+  "requires": [],
+  "trigger": {
+    "type": "use",
+    "target": "genesis:coat_furnace"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:clay"
+}

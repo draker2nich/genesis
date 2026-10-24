@@ -1,0 +1,17 @@
+{
+  "id": "genesis:primitive.fire",
+  "era": "primitive",
+  "order": 70,
+  "requires": [],
+  "trigger": {
+    "type": "shape",
+    "target": "genesis:fire_drill"
+  },
+  "unlocks": {
+    "crafts": [],
+    "recipes": []
+  },
+  "milestone": false,
+  "quest": true,
+  "icon": "genesis:ember"
+}

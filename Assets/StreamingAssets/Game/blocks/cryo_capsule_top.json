@@ -1,0 +1,11 @@
+{
+  "id": "genesis:cryo_capsule_top",
+  "render": "cutout",
+  "hardness": 4,
+  "tool": "pickaxe",
+  "drop": "none",
+  "model": "genesis:cryo_capsule_top",
+  "textures": {
+    "all": "genesis:cryo_glass"
+  }
+}

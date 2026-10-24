@@ -531,6 +531,7 @@ namespace Genesis.Net
                         d.Stack = new ItemStack(item, count);
                         d.Position = Protocol.ReadVec(r);
                         d.Age = r.ReadInt32();
+                        d.Placed = r.ReadBoolean();
                         if (item >= 0) _drops.Add(d);
                     }
                     break;

@@ -1,0 +1,28 @@
+{
+  "id": "genesis:bellows",
+  "targets": [
+    "genesis:workbench"
+  ],
+  "hits": 4,
+  "outputs": [
+    {
+      "item": "genesis:bellows",
+      "count": 1
+    }
+  ],
+  "tools": [
+    "universal",
+    "axe"
+  ],
+  "rotate": false,
+  "inputs": [
+    {
+      "item": "genesis:planks",
+      "count": 2
+    },
+    {
+      "item": "genesis:hide",
+      "count": 1
+    }
+  ]
+}

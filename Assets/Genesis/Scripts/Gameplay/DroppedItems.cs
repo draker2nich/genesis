@@ -22,11 +22,18 @@ namespace Genesis.Gameplay
         public bool OnGround;
         /// <summary>Кто выбросил — ему нельзя подобрать раньше, чем через ThrowerDelay.</summary>
         public int ThrownBy;
+        /// <summary>
+        /// Положен игроком на пол (ПКМ): лежит, пока его не подберут ПКМ, — не притягивается к игроку и не исчезает.
+        /// </summary>
+        public bool Placed;
+        /// <summary>Выброшен игроком: не исчезает со временем (подбирается как обычно).</summary>
+        public bool Persistent;
     }
 
     /// <summary>
     /// Предметы в мире: падают с гравитацией, отскакивают от блоков, скользят по льду, сливаются в стопки,
-    /// притягиваются к игроку рядом и подбираются. Исчезают через 5 минут.
+    /// притягиваются к игроку рядом и подбираются. Выпавшие из блоков и существ исчезают через 5 минут;
+    /// положенные и выброшенные игроком лежат, пока их не подберут.
     /// </summary>
     public sealed class DroppedItems
     {
@@ -85,6 +92,7 @@ namespace Genesis.Gameplay
             foreach (var d in _items.Values)
             {
                 d.Age++;
+                if (d.Placed || d.Persistent) d.Age = Math.Min(d.Age, DespawnTicks / 2);
                 if (d.Age > DespawnTicks - 20 && NeverDespawn != null && NeverDespawn(d.Stack)) d.Age = 0;
                 if (d.PickupDelay > 0) d.PickupDelay--;
                 if (d.Age > DespawnTicks || d.Stack.IsEmpty || d.Position.Y < WorldConstants.MinY - 8)
@@ -94,6 +102,12 @@ namespace Genesis.Gameplay
                 }
                 var cell = d.Position.Floor();
                 if (!_world.IsLoaded(cell.X, cell.Y, cell.Z)) continue; // чанк выгружен — предмет «заморожен»
+
+                if (d.Placed)
+                {
+                    Move(d, dt); // лежит на полу: только падает, к игроку не летит
+                    continue;
+                }
 
                 // Притяжение к ближайшему игроку
                 PlayerState target = null;
@@ -209,12 +223,14 @@ namespace Genesis.Gameplay
                 {
                     var b = list[j];
                     if (b.Stack.IsEmpty || _remove.Contains(b.Id) || !a.Stack.SameKind(b.Stack)) continue;
+                    if (a.Placed != b.Placed) continue; // положенное на пол не сливается с выпавшим
                     if ((a.Position - b.Position).LengthSquared > 0.8f * 0.8f) continue;
                     int move = Math.Min(max - a.Stack.Count, b.Stack.Count);
                     if (move <= 0) continue;
                     a.Stack = a.Stack.WithCount(a.Stack.Count + move);
                     b.Stack = b.Stack.WithCount(b.Stack.Count - move);
                     a.Age = Math.Min(a.Age, b.Age);
+                    a.Persistent |= b.Persistent;
                     if (b.Stack.IsEmpty) _remove.Add(b.Id);
                 }
             }
@@ -224,7 +240,7 @@ namespace Genesis.Gameplay
 
         public void Write(BinaryWriter w)
         {
-            w.Write(1);
+            w.Write(2); // 2: флаги «положен» и «выброшен игроком»
             w.Write(_items.Count);
             foreach (var d in _items.Values)
             {
@@ -235,12 +251,13 @@ namespace Genesis.Gameplay
                 w.Write(d.Position.Y);
                 w.Write(d.Position.Z);
                 w.Write(d.Age);
+                w.Write((byte)((d.Placed ? 1 : 0) | (d.Persistent ? 2 : 0)));
             }
         }
 
         public void Read(BinaryReader r)
         {
-            r.ReadInt32();
+            int ver = r.ReadInt32();
             int n = r.ReadInt32();
             for (int i = 0; i < n; i++)
             {
@@ -248,10 +265,13 @@ namespace Genesis.Gameplay
                 int count = r.ReadInt32(), meta = r.ReadInt32();
                 var pos = new Vec3(r.ReadSingle(), r.ReadSingle(), r.ReadSingle());
                 int age = r.ReadInt32();
+                byte flags = ver >= 2 ? r.ReadByte() : (byte)0;
                 int item = _content.Items.IndexOf(id);
                 if (item < 0) continue;
                 var d = Spawn(new ItemStack(item, count, meta), pos, Vec3.Zero, 0);
                 d.Age = age;
+                d.Placed = (flags & 1) != 0;
+                d.Persistent = (flags & 2) != 0;
             }
         }
     }

@@ -1,0 +1,10 @@
+{
+  "id": "genesis:bellows",
+  "render": "cutout",
+  "hardness": 1.0,
+  "tool": "axe",
+  "model": "genesis:bellows",
+  "textures": {
+    "all": "genesis:bellows_icon"
+  }
+}

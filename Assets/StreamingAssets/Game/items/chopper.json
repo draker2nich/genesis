@@ -1,0 +1,14 @@
+{
+  "id": "genesis:chopper",
+  "max_stack": 1,
+  "tool": {
+    "type": "universal",
+    "tier": 2,
+    "speed": 1.6,
+    "durability": 150,
+    "damage": 3.5
+  },
+  "tags": [
+    "tools"
+  ]
+}
