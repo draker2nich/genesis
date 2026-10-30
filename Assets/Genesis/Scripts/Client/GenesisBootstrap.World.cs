@@ -10,15 +10,9 @@ using UnityEngine;
 
 namespace Genesis.Client
 {
-    /// <summary>Сборка картинки мира: материалы, рендер чанков, атмосфера; игра и панорама за главным меню.</summary>
+    /// <summary>Сборка картинки мира: материалы, рендер чанков, атмосфера; игра (сцена меню — в GenesisBootstrap.MenuScene.cs).</summary>
     public sealed partial class GenesisBootstrap
     {
-        private LocalSession _panorama;
-        private readonly List<GameObject> _panoramaObjects = new List<GameObject>();
-        private bool _panoramaFailed;
-        private float _panoramaAngle;
-        private float _panoramaHeight = -1;
-
         private sealed class WorldMaterials
         {
             public Material Opaque, Translucent, Line, Color;
@@ -165,81 +159,9 @@ namespace Genesis.Client
         /// <summary>Настройки изменились в игре (меню паузы) — применить к камере и окружению.</summary>
         public void ApplyGraphicsSettings()
         {
-            if (_cam != null) _cam.fieldOfView = GameSettings.Fov;
+            if (_cam != null && _mode == Mode.Playing) _cam.fieldOfView = GameSettings.Fov;
             _env?.ApplySettings();
-        }
-
-        // ============================================================ Панорама за меню
-
-        /// <summary>Временный мир без сохранения: камера медленно облетает пейзаж, пока открыто меню.</summary>
-        private void StartPanorama()
-        {
-            if (_panorama != null || _panoramaFailed || _session != null) return;
-            try
-            {
-                var server = GameServer.Open(_content, null, DefaultSeed, Genesis.Core.Platform.Threads ? Mathf.Clamp(SystemInfo.processorCount - 2, 1, 4) : 0);
-                if (!Genesis.Core.Platform.Threads) server.World.MainThreadBudgetMs = 6;
-                server.ViewRadius = Genesis.Core.Platform.Threads ? 6 : 4;
-                server.VerticalRadius = 3;
-                server.Enemies.SpawningEnabled = false;
-                server.WorldTime = GameServer.DayLength / 10; // утро — тёплый низкий свет
-                _panorama = new LocalSession(server, "panorama");
-                _panorama.LocalPlayer.Position = new Vec3(40, 120, 40);
-
-                var mats = CreateMaterials();
-                var cam = EnsureCamera();
-                cam.farClipPlane = 7 * 16f;
-                CreateWorldView(_panorama, cam, mats, _panoramaObjects, false, DefaultSeed);
-                _panoramaHeight = -1;
-                _panoramaActive = true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning("[Genesis] Menu panorama disabled: " + e.Message);
-                _panoramaFailed = true;
-                StopPanorama();
-            }
-        }
-
-        private void StopPanorama()
-        {
-            _panoramaActive = false;
-            if (_panorama != null)
-            {
-                _panorama.Dispose();
-                _panorama = null;
-            }
-            foreach (var go in _panoramaObjects) if (go != null) Destroy(go);
-            _panoramaObjects.Clear();
-        }
-
-        private void UpdatePanorama()
-        {
-            if (_panorama == null)
-            {
-                if (_mode == Mode.Menu && _session == null) StartPanorama();
-                return;
-            }
-            var cam = _mainCamera;
-            if (cam == null) return;
-
-            // Камера по кругу на высоте ~35 блоков над рельефом, взгляд чуть вниз к центру
-            _panoramaAngle += Time.deltaTime * 2.2f;
-            float a = _panoramaAngle * Mathf.Deg2Rad;
-            const float R = 70f;
-            var center = new Vector3(40, 0, 40);
-            var pos = center + new Vector3(Mathf.Cos(a) * R, 0, Mathf.Sin(a) * R);
-            var gen = _panorama.World.Generator;
-            float ground = Mathf.Max(gen.Column(Mathf.FloorToInt(pos.x), Mathf.FloorToInt(pos.z)).Height,
-                                     gen.Column((int)center.x, (int)center.z).Height, WorldConstants.SeaLevel);
-            float targetH = ground + 34f;
-            _panoramaHeight = _panoramaHeight < 0 ? targetH : Mathf.Lerp(_panoramaHeight, targetH, Time.deltaTime * 0.5f);
-            pos.y = _panoramaHeight;
-            cam.transform.position = pos;
-            cam.transform.rotation = Quaternion.LookRotation((center + Vector3.up * (_panoramaHeight - 22f)) - pos, Vector3.up);
-
-            _panorama.LocalPlayer.Position = new Vec3(pos.x, pos.y - 20f, pos.z);
-            _panorama.Update(Time.deltaTime, Time.time);
+            if (_panoramaEnv != null) _panoramaEnv.ApplySettings();
         }
     }
 }

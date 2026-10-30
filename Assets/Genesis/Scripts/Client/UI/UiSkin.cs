@@ -132,7 +132,8 @@ namespace Genesis.Client.UI
         public static void Fill(Rect r, Color c)
         {
             var old = GUI.color;
-            GUI.color = c;
+            // Прозрачность GUI.color учитывается: так панели и текст можно плавно проявлять целиком
+            GUI.color = new Color(c.r, c.g, c.b, c.a * old.a);
             GUI.DrawTexture(r, Texture2D.whiteTexture);
             GUI.color = old;
         }

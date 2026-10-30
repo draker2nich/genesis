@@ -278,6 +278,7 @@
   "menu.player": "Ваше имя",
   "menu.seed_hint": "(только для нового мира)",
   "menu.continue": "Продолжить",
+  "menu.day_n": "день {0}",
   "menu.create": "Создать мир",
   "menu.host_hint": "Друзья подключаются через",
   "menu.delete": "Удалить мир",

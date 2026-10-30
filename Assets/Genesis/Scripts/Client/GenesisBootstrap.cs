@@ -218,7 +218,7 @@ namespace Genesis.Client
         private void StartRemote()
         {
             _menuError = null;
-            StopPanorama();
+            // Сцена меню остаётся, пока идёт подключение: камера смотрит на терминал связи (уберётся в BuildGame)
             var provider = TransportRegistry.All[_transportIndex % TransportRegistry.All.Count];
             int port = int.TryParse(_portText, out var p) ? p : Protocol.DefaultPort;
             try

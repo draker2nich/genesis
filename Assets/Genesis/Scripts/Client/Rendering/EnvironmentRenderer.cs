@@ -30,6 +30,9 @@ namespace Genesis.Client.Rendering
 
         public Color HorizonColor { get; private set; }
 
+        /// <summary>Множитель блочного света (костры, лампы): сцена меню им «дышит» — мерцание огня.</summary>
+        public float BlockLightScale = 1f;
+
         // Ключевые цвета (мир после катастрофы — небо чуть пыльное)
         private static readonly Color DayZenith = new Color(0.30f, 0.49f, 0.78f);
         private static readonly Color DayHorizon = new Color(0.72f, 0.78f, 0.84f);
@@ -205,7 +208,7 @@ namespace Genesis.Client.Rendering
             Shader.SetGlobalFloat(DaylightId, day);
             var skyLight = Color.Lerp(NightLight, Color.Lerp(DayLight, DuskLight, dusk), day);
             Shader.SetGlobalColor(SkyLightId, skyLight);
-            Shader.SetGlobalColor(BlockLightId, BlockLight);
+            Shader.SetGlobalColor(BlockLightId, new Color(BlockLight.r * BlockLightScale, BlockLight.g * BlockLightScale, BlockLight.b * BlockLightScale, BlockLight.a));
             Shader.SetGlobalVector(SunDirId, sunDir);
             float shadowStrength = GameSettings.Shadows ? 0.55f * Mathf.Clamp01(sunHeight * 5f) : 0f;
             Shader.SetGlobalFloat(ShadowStrengthId, shadowStrength);

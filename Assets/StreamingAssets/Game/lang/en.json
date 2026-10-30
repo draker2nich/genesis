@@ -278,6 +278,7 @@
   "menu.player": "Your name",
   "menu.seed_hint": "(new world only)",
   "menu.continue": "Continue",
+  "menu.day_n": "day {0}",
   "menu.create": "Create world",
   "menu.host_hint": "Friends join via",
   "menu.delete": "Delete world",

@@ -43,6 +43,13 @@ namespace Genesis.Client
 
         // ============================================================ Отрисовка
 
+        /// <summary>Сторона панели подменю (-1 слева, +1 справа, 0 — по центру) и её проявление 0..1.</summary>
+        private static float _panelSide, _panelAppear = 1f;
+        /// <summary>Затенение под текстом: плавно переезжает на сторону панели.</summary>
+        private float _shadeSide = -1f;
+        private MenuScreen _shownScreen = MenuScreen.Main;
+        private float _screenChangedAt = -10f;
+
         private void OnGUI()
         {
             UiScale.Begin();
@@ -54,6 +61,8 @@ namespace Genesis.Client
                 {
                     UiSkin.Ensure();
                     UiSkin.Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0, 0, 0, 0.45f));
+                    _panelSide = 0f;
+                    _panelAppear = 1f;
                     DrawSettingsScreen();
                 }
                 return;
@@ -63,6 +72,8 @@ namespace Genesis.Client
 
             if (_mode == Mode.Connecting)
             {
+                _panelSide = 0f;
+                _panelAppear = 1f;
                 var r = CenterPanel(420, 150);
                 UiSkin.PanelTitle(r, _loc.Get("menu.join"));
                 GUI.Label(new Rect(r.x + 16, r.y + 50, r.width - 32, 24), _loc.Get("menu.connecting") + " " + _address + Dots(), UiSkin.Label);
@@ -70,6 +81,20 @@ namespace Genesis.Client
                 return;
             }
 
+            HandleMenuEscape();
+            // Экран сменился — камера уже поворачивается; панель проявляется чуть позже, со своей стороны
+            if (_screen != _shownScreen)
+            {
+                _shownScreen = _screen;
+                _screenChangedAt = Time.unscaledTime;
+                GUIUtility.keyboardControl = 0; // фокус поля ввода со старого экрана не должен глотать клавиши
+            }
+            float appear = Mathf.SmoothStep(0f, 1f, (Time.unscaledTime - _screenChangedAt - 0.1f) / 0.32f);
+            _panelSide = _panoramaActive ? PanelSideFor(_screen) : 0f;
+            _panelAppear = appear;
+
+            var oldColor = GUI.color;
+            GUI.color = new Color(oldColor.r, oldColor.g, oldColor.b, oldColor.a * appear);
             switch (_screen)
             {
                 case MenuScreen.Main: DrawMainScreen(); break;
@@ -78,25 +103,48 @@ namespace Genesis.Client
                 case MenuScreen.Mods: DrawModsScreen(); break;
                 case MenuScreen.Settings: DrawSettingsScreen(); break;
             }
+            GUI.color = oldColor;
 
-            GUI.Label(new Rect(12, UiScale.H - 24, 400, 20), "Genesis MVP · stage 5 · crafting, life & maps", UiSkin.Tiny);
+            var ver = new GUIStyle(UiSkin.Tiny) { alignment = TextAnchor.LowerRight };
+            ver.normal.textColor = new Color(UiSkin.TextDim.r, UiSkin.TextDim.g, UiSkin.TextDim.b, 0.4f);
+            GUI.Label(new Rect(UiScale.W - 412, UiScale.H - 24, 400, 20), "Genesis MVP · stage 5 · crafting, life & maps", ver);
+        }
+
+        /// <summary>Esc в подменю — назад к главному экрану (настройки при этом сохраняются).</summary>
+        private void HandleMenuEscape()
+        {
+            var e = Event.current;
+            if (e.type != EventType.KeyDown || e.keyCode != KeyCode.Escape || _screen == MenuScreen.Main) return;
+            if (_screen == MenuScreen.Settings)
+            {
+                GameSettings.Save();
+                ApplyGraphicsSettings();
+            }
+            _screen = MenuScreen.Main;
+            _deleteArmed = null;
+            if (_ambience != null) _ambience.Click();
+            e.Use();
         }
 
         private static string Dots() => new string('.', 1 + (int)(Time.unscaledTime * 2) % 3);
 
-        /// <summary>Фон: панорама мира (если показывается) с затемнением, иначе градиент «пыльного неба».</summary>
+        /// <summary>
+        /// Фон: живая сцена с виньеткой, затенением стороны с текстом и пылью; пока сцена грузится — темнота.
+        /// Без сцены (не удалось создать) — градиент «пыльного неба».
+        /// </summary>
         private void DrawMenuBackground()
         {
+            float W = UiScale.W, H = UiScale.H;
             if (_panoramaActive)
             {
-                // Виньетка поверх живой панорамы
-                UiSkin.Fill(new Rect(0, 0, UiScale.W, UiScale.H), new Color(0.02f, 0.03f, 0.05f, 0.25f));
-                for (int i = 0; i < 24; i++)
-                {
-                    float a = 0.35f * (1f - i / 24f);
-                    UiSkin.Fill(new Rect(0, i * 6, UiScale.W, 6), new Color(0, 0, 0, a * 0.8f));
-                    UiSkin.Fill(new Rect(0, UiScale.H - (i + 1) * 6, UiScale.W, 6), new Color(0, 0, 0, a));
-                }
+                float target = _mode == Mode.Connecting ? 0f : (_screen == MenuScreen.Main ? -1f : PanelSideFor(_screen));
+                if (Event.current.type == EventType.Repaint)
+                    _shadeSide = Mathf.MoveTowards(_shadeSide, target, Time.unscaledDeltaTime * 2.5f);
+                MenuFx.Vignette(new Rect(0, 0, W, H), 0.9f);
+                if (_shadeSide < 0f) MenuFx.SideShade(new Rect(0, 0, W * 0.62f, H), true, 0.8f * -_shadeSide);
+                if (_shadeSide > 0f) MenuFx.SideShade(new Rect(W * 0.38f, 0, W * 0.62f, H), false, 0.8f * _shadeSide);
+                MenuFx.Dust(new Rect(0, 0, W, H), Time.unscaledTime, _mouseParallax, 1f - _menuFade);
+                if (_menuFade > 0.001f) UiSkin.Fill(new Rect(0, 0, W, H), new Color(0.008f, 0.01f, 0.014f, _menuFade));
                 return;
             }
             int bands = 48;
@@ -104,61 +152,196 @@ namespace Genesis.Client
             {
                 float t = i / (float)(bands - 1);
                 var c = Color.Lerp(new Color(0.16f, 0.2f, 0.27f), new Color(0.04f, 0.045f, 0.06f), t);
-                UiSkin.Fill(new Rect(0, UiScale.H * i / (float)bands, UiScale.W, UiScale.H / (float)bands + 1), c);
+                UiSkin.Fill(new Rect(0, H * i / (float)bands, W, H / (float)bands + 1), c);
             }
         }
 
+        /// <summary>
+        /// Панель подменю: на сцене — у своего края экрана (предмет, к которому повернулась камера, остаётся
+        /// виден с другой стороны), при появлении чуть выезжает; без сцены и в игре — по центру.
+        /// </summary>
         private static Rect CenterPanel(float w, float h, float yOffset = 0)
         {
             w = Mathf.Min(w, UiScale.W - 24);
             h = Mathf.Min(h, UiScale.H - 24);
-            var r = new Rect((UiScale.W - w) / 2f, (UiScale.H - h) / 2f + yOffset, w, h);
+            float x = (UiScale.W - w) / 2f, margin = Mathf.Max(24f, UiScale.W * 0.06f);
+            if (_panelSide < 0f) x = Mathf.Min(x, margin);
+            else if (_panelSide > 0f) x = Mathf.Max(x, UiScale.W - w - margin);
+            x += _panelSide * (1f - _panelAppear) * 28f;
+            var r = new Rect(x, (UiScale.H - h) / 2f + yOffset, w, h);
             UiSkin.DrawPanel(r);
             return r;
         }
 
-        private void DrawLogo(float centerX, float y, float px)
-        {
-            const string logo = "GENESIS";
-            float w = PixelFont.Width(logo, px);
-            float bob = Mathf.Sin(Time.unscaledTime * 1.3f) * px * 0.5f;
-            PixelFont.Draw(centerX - w / 2f, y + bob, logo, px,
-                new Color(1f, 0.82f, 0.45f), new Color(0.85f, 0.42f, 0.12f), new Color(0, 0, 0, 0.55f));
-        }
-
         // ============================================================ Главный экран
 
+        private enum MainItem { Continue, Play, Join, Mods, Settings, Quit }
+
+        private readonly List<MainItem> _mainItems = new List<MainItem>();
+        private readonly float[] _itemHover = new float[8];
+        private int _menuFocus = -1;
+        private Vector2 _lastMenuMouse;
+        private GUIStyle _menuItemStyle, _menuSubStyle, _taglineStyle;
+
+        /// <summary>
+        /// Меню как в Metro: столбик текста слева без кнопок и рамок. Пункт под курсором (или выбранный стрелками)
+        /// светится янтарём, отъезжает вправо, слева вырастает маркер; клавиатура: ↑/↓ или W/S, Enter.
+        /// </summary>
         private void DrawMainScreen()
         {
-            float px = Mathf.Clamp(UiScale.W / 140f, 5f, 11f);
-            float logoY = UiScale.H * 0.16f;
-            DrawLogo(UiScale.W / 2f, logoY, px);
-            var tag = new GUIStyle(UiSkin.Center) { fontSize = 15 };
-            tag.normal.textColor = UiSkin.TextDim;
-            GUI.Label(new Rect(0, logoY + px * 8 + 10, UiScale.W, 24), _loc.Get("menu.tagline"), tag);
+            float W = UiScale.W, H = UiScale.H;
+            var e = Event.current;
+            EnsureMenuStyles();
 
-            float w = 300, x = (UiScale.W - w) / 2f, y = logoY + px * 8 + 60;
-            if (GUI.Button(new Rect(x, y, w, 40), _loc.Get("menu.play"), UiSkin.AccentButton))
+            float left = Mathf.Max(40f, W * 0.07f);
+            float px = Mathf.Clamp(W / 230f, 4f, 7f);
+            float logoY = H * 0.15f;
+            PixelFont.Draw(left, logoY, "GENESIS", px, new Color(1f, 0.82f, 0.45f), new Color(0.85f, 0.42f, 0.12f), new Color(0, 0, 0, 0.55f));
+            UiSkin.Shadowed(new Rect(left + 2, logoY + px * 7 + 14, W * 0.5f, 24), _loc.Get("menu.tagline"), _taglineStyle);
+
+            _mainItems.Clear();
+            if (_latestWorld != null) _mainItems.Add(MainItem.Continue);
+            _mainItems.Add(MainItem.Play);
+            _mainItems.Add(MainItem.Join);
+            _mainItems.Add(MainItem.Mods);
+            _mainItems.Add(MainItem.Settings);
+            _mainItems.Add(MainItem.Quit);
+            if (_menuFocus >= _mainItems.Count) _menuFocus = -1;
+            if (HandleMenuKeys()) return; // экран сменился
+
+            // Мышь двигалась — фокус за ней; стоит — фокус остаётся за клавиатурой
+            bool mouseMoved = false;
+            if (e.type == EventType.Repaint || e.type == EventType.MouseDown)
             {
-                RefreshWorlds();
-                _screen = MenuScreen.Play;
+                mouseMoved = (e.mousePosition - _lastMenuMouse).sqrMagnitude > 0.25f || e.type == EventType.MouseDown;
+                _lastMenuMouse = e.mousePosition;
             }
-            y += 48;
-            if (GUI.Button(new Rect(x, y, w, 36), _loc.Get("menu.join"), UiSkin.Button)) _screen = MenuScreen.Join;
-            y += 44;
-            if (GUI.Button(new Rect(x, y, w / 2 - 4, 36), _loc.Get("menu.mods") + $" ({_mods.LoadOrder.Count})", UiSkin.Button)) _screen = MenuScreen.Mods;
-            if (GUI.Button(new Rect(x + w / 2 + 4, y, w / 2 - 4, 36), _loc.Get("menu.settings"), UiSkin.Button)) _screen = MenuScreen.Settings;
-            y += 44;
-            if (GUI.Button(new Rect(x, y, w, 36), _loc.Get("menu.quit"), UiSkin.Button))
+
+            float y = Mathf.Max(logoY + px * 7 + 72, H * 0.42f);
+            float itemW = Mathf.Min(380f, W * 0.42f);
+            for (int i = 0; i < _mainItems.Count; i++)
             {
+                var item = _mainItems[i];
+                if (item == MainItem.Quit) y += 14;
+                string sub = item == MainItem.Continue ? _latestWorld + " · " + string.Format(_loc.Get("menu.day_n"), _latestDays + 1) : null;
+                float h = sub != null ? 54f : 40f;
+                var r = new Rect(left - 18, y, itemW, h - 4);
+                if (mouseMoved && r.Contains(e.mousePosition)) SetMenuFocus(i);
+
+                if (e.type == EventType.Repaint)
+                    _itemHover[i] = Mathf.MoveTowards(_itemHover[i], _menuFocus == i ? 1f : 0f, Time.unscaledDeltaTime * 7f);
+                float k = Mathf.SmoothStep(0f, 1f, _itemHover[i]);
+
+                MenuFx.HoverBar(new Rect(r.x, r.y + 3, r.width, h - 10), k);
+                float barH = (h - 18) * k;
+                if (barH > 0.5f) UiSkin.Fill(new Rect(r.x, r.y + (h - 4) / 2f - barH / 2f, 3, barH), UiSkin.Accent);
+
+                _menuItemStyle.normal.textColor = Color.Lerp(new Color(0.86f, 0.84f, 0.8f, 0.85f), UiSkin.Accent, k);
+                UiSkin.Shadowed(new Rect(left + 10f * k, y + 2, itemW, 32), MainItemLabel(item), _menuItemStyle);
+                if (sub != null) GUI.Label(new Rect(left + 10f * k + 1, y + 32, itemW, 18), sub, _menuSubStyle);
+
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none))
+                {
+                    SetMenuFocus(i);
+                    ActivateMainItem(item);
+                    return;
+                }
+                y += h;
+            }
+            DrawMenuErrorLeft(left, y + 14, itemW + 60);
+        }
+
+        private void EnsureMenuStyles()
+        {
+            if (_menuItemStyle != null) return;
+            _menuItemStyle = new GUIStyle(UiSkin.Label) { fontSize = 23, alignment = TextAnchor.MiddleLeft };
+            _menuSubStyle = new GUIStyle(UiSkin.Small) { fontSize = 12 };
+            _menuSubStyle.normal.textColor = new Color(UiSkin.TextDim.r, UiSkin.TextDim.g, UiSkin.TextDim.b, 0.85f);
+            _taglineStyle = new GUIStyle(UiSkin.Label) { fontSize = 15, fontStyle = FontStyle.Italic };
+            _taglineStyle.normal.textColor = new Color(0.88f, 0.84f, 0.76f, 0.92f);
+        }
+
+        private string MainItemLabel(MainItem item)
+        {
+            switch (item)
+            {
+                case MainItem.Continue: return _loc.Get("menu.continue");
+                case MainItem.Play: return _loc.Get("menu.play");
+                case MainItem.Join: return _loc.Get("menu.join");
+                case MainItem.Mods: return _loc.Get("menu.mods") + $" ({_mods.LoadOrder.Count})";
+                case MainItem.Settings: return _loc.Get("menu.settings");
+                default: return _loc.Get("menu.quit");
+            }
+        }
+
+        private void SetMenuFocus(int i)
+        {
+            if (i == _menuFocus) return;
+            _menuFocus = i;
+            if (i >= 0 && _ambience != null) _ambience.Tick();
+        }
+
+        /// <summary>Стрелки/WS — выбор пункта, Enter/Пробел — действие. true — экран сменился.</summary>
+        private bool HandleMenuKeys()
+        {
+            var e = Event.current;
+            if (e.type != EventType.KeyDown || GUIUtility.keyboardControl != 0) return false;
+            int n = _mainItems.Count;
+            switch (e.keyCode)
+            {
+                case KeyCode.UpArrow:
+                case KeyCode.W:
+                    SetMenuFocus(_menuFocus <= 0 ? n - 1 : _menuFocus - 1);
+                    e.Use();
+                    return false;
+                case KeyCode.DownArrow:
+                case KeyCode.S:
+                    SetMenuFocus(_menuFocus < 0 || _menuFocus >= n - 1 ? 0 : _menuFocus + 1);
+                    e.Use();
+                    return false;
+                case KeyCode.Return:
+                case KeyCode.KeypadEnter:
+                case KeyCode.Space:
+                    if (_menuFocus < 0 || _menuFocus >= n) return false;
+                    e.Use();
+                    ActivateMainItem(_mainItems[_menuFocus]);
+                    return true;
+            }
+            return false;
+        }
+
+        private void ActivateMainItem(MainItem item)
+        {
+            if (_ambience != null) _ambience.Click();
+            switch (item)
+            {
+                case MainItem.Continue:
+                    _worldName = _latestWorld;
+                    StartLocal(false);
+                    break;
+                case MainItem.Play:
+                    RefreshWorlds();
+                    _screen = MenuScreen.Play;
+                    break;
+                case MainItem.Join: _screen = MenuScreen.Join; break;
+                case MainItem.Mods: _screen = MenuScreen.Mods; break;
+                case MainItem.Settings: _screen = MenuScreen.Settings; break;
+                case MainItem.Quit:
 #if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
+                    UnityEditor.EditorApplication.isPlaying = false;
 #else
-                Application.Quit();
+                    Application.Quit();
 #endif
+                    break;
             }
-            y += 50;
-            DrawMenuError(x, y, w);
+        }
+
+        private void DrawMenuErrorLeft(float x, float y, float w)
+        {
+            if (string.IsNullOrEmpty(_menuError)) return;
+            var err = new GUIStyle(UiSkin.Label) { wordWrap = true };
+            err.normal.textColor = UiSkin.Danger;
+            UiSkin.Shadowed(new Rect(x, y, w, 60), _menuError, err);
         }
 
         private void DrawMenuError(float x, float y, float w)
@@ -173,6 +356,7 @@ namespace Genesis.Client
         {
             if (GUI.Button(new Rect(panel.x + 16, panel.yMax - 50, 120, 34), "← " + _loc.Get("menu.back"), UiSkin.Button))
             {
+                if (!InGameSettings && _ambience != null) _ambience.Click();
                 _screen = MenuScreen.Main;
                 _deleteArmed = null;
                 return true;
